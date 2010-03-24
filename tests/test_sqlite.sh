@@ -1,0 +1,5 @@
+sqlite3 test.db  "create table t1 (t1key INTEGER PRIMARY KEY,data TEXT,num INTEGER,timeEnter DATE);"
+sqlite3 test.db  "insert into t1 (data,num) values ('This is sample data',3);"
+sqlite3 test.db  "insert into t1 (data,num) values ('More sample data',6);"
+sqlite3 test.db  "insert into t1 (data,num) values ('And a little more',9);"
+sqlite3 test.db  "create table t2 (t2key INTEGER PRIMARY KEY, t1key INTEGER, num INTEGER,timeEnter DATE,FOREIGN KEY (t1key) REFERENCES t1(t1key));"

@@ -1,0 +1,10 @@
+digraph A {
+	Files -> ProcessedDataset;
+	Files -> Block;
+	ProcAlgo -> AlgorithmConfig;
+	ProcAlgo -> ProcessedDataset;
+	ProcDSTier -> DataTier;
+	ProcDSTier -> ProcessedDataset;
+	ProcessedDataset -> PrimaryDataset;
+	Block -> ProcessedDataset;
+}

@@ -1,0 +1,6 @@
+digraph A {
+	ProcAlgo -> ProcessedDataset;
+	AlgorithmConfig -> ProcAlgo;
+	AppExecutable -> AlgorithmConfig;
+	AppExecutable -> Person;
+}

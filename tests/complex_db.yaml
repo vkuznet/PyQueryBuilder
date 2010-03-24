@@ -1,0 +1,108 @@
+Person:
+  - member : ID
+    primaryKey :
+  - member : FullName
+
+ProcessedDataset:
+  - member : ID
+    primaryKey :
+  - member : Status
+  - member : Name
+  - member : PhysicsGroup
+  - member : PrimaryDataset
+    foreignKey: PrimaryDataset
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+    
+PrimaryDataset:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Description
+  - member: Type
+  - member: StartDate
+  - member: EndDate
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+
+Block:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: BlockSize
+  - member: NumberOfFiles
+  - member: NumberOfEvents
+  - member: OpenForWriting
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+  
+ProcDSTier:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: DataTier
+    foreignKey  : DataTier
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+
+DataTier:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+    
+Files:
+  - member: ID
+    primaryKey:
+  - member: LogicalFileName
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: Block
+    foreignKey  : Block
+  - member: Checksum
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+
+ProcAlgo:
+  - member: ID
+    primaryKey:
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: Algorithm
+    foreignKey  : AlgorithmConfig
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+
+AlgorithmConfig:
+  - member: ID
+    primaryKey:
+  - member: ExecutableName
+  - member: ApplicationVersion
+  - member: ApplicationFamily
+  - member : CreatedBy
+    foreignKey: Person
+  - member : ModifiedBy
+    foreignKey: Person
+
+
+
+  

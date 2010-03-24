@@ -1,0 +1,48 @@
+Introduction:
+-------------
+
+The PyQueryBuilder is a project to build SQL queries out of provided
+Query Language (QL) expresions. This project has been started within
+CMS High-Energy Physics collaboration (CERN, Geneva, Switzerland) to 
+provide access to CMS Data Bookkeeping System. It was used as general
+purpose Data Discovery service. 
+
+We decided to take it apart from CMS infrastructure and create a
+general purpose QL builder with intention to be transparent to DB back-end
+and underlying schema implementation.
+
+For more information about it please refer to the following paper:
+The CMS Dataset Bookkeeping Service Query Language (DBSql)
+By A. Afaq, V. Kuznetsov, L. Lueking, D.Riley, V. Sekhri 
+CMS CR-2009/076, To be published in CHEP 2009 procedings.
+
+Credits:
+--------
+The idea of QL was developed by the following team:
+
+- Valentin Kuznetsov, Cornell University
+- Andrew J. Dolgert, Cornell University
+- Dan Riley, Cornell Univerisity
+- Anzar Afaq, FNAL
+- Lee Lueking, FNAL
+- Vijej Sekhri, FNAL
+
+The actual implementation of PyQueryBuilder was done by
+- Valentin Kuznetsov, vkuznet [at] gmail [dot] com
+- Andrew J. Dolgert, ajd27 [at] cornell [dot] edu
+- Dong Liang, Liangd [at] cern.ch
+
+Dependencies:
+-------------
+The PyQueryBuilder depends on the following software:
+
+- sqlalchemy [http://www.sqlalchemy.org] is used as general SQL ORM;
+- YAML [http://pyyaml.org/wiki/PyYAMLDocumentation] is used as interchange data format;
+- cherrypy web framework [http://www.cherrypy.org]
+- cheetah python template framework [http://www.cheetahtemplate.org/]
+
+License:
+--------
+The PyQueryBuilder is licensed under free BSD license, please see doc/LICENSE
+for more information
+

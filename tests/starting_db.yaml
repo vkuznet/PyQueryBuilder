@@ -1,0 +1,71 @@
+ProcessedDataset:
+  - member : ID
+    primaryKey :
+  - member : Status
+  - member : Name
+  - member : PhysicsGroup
+  - member : PrimaryDataset
+    foreignKey: PrimaryDataset
+    
+PrimaryDataset:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Description
+  - member: Type
+  - member: StartDate
+  - member: EndDate
+
+Block:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: BlockSize
+  - member: NumberOfFiles
+  - member: NumberOfEvents
+  - member: OpenForWriting
+  
+ProcDSTier:
+  - member: ID
+    primaryKey:
+  - member: Name
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: DataTier
+    foreignKey  : DataTier
+
+DataTier:
+  - member: ID
+    primaryKey:
+  - member: Name
+    
+Files:
+  - member: ID
+    primaryKey:
+  - member: LogicalFileName
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: Block
+    foreignKey  : Block
+  - member: Checksum
+
+ProcAlgo:
+  - member: ID
+    primaryKey:
+  - member: Dataset
+    foreignKey  : ProcessedDataset
+  - member: Algorithm
+    foreignKey  : AlgorithmConfig
+
+AlgorithmConfig:
+  - member: ID
+    primaryKey:
+  - member: ExecutableName
+  - member: ApplicationVersion
+  - member: ApplicationFamily
+
+
+
+  
