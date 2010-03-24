@@ -1,0 +1,5 @@
+recursive-include pyquerybuilder/web/templates *.tmpl
+recursive-include pyquerybuilder/web/css *.css
+recursive-include pyquerybuilder/web/js *.js
+recursive-include doc *
+recursive-include bin *
