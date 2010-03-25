@@ -16,8 +16,7 @@ from pyquerybuilder import version
 required_python_version = '2.6'
 requirements = []
 version      = version
-#readme       = open('doc/README', 'r').read()
-readme       = "test"
+readme       = open('doc/README', 'r').read()
 name         = "PyQueryBuilder"
 desc         = "A general purpose Query Builder over RDMS system"
 keywords     = ["Query Language", "SQL", "RDMS", "databases"]
