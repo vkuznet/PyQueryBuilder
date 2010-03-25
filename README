@@ -30,7 +30,7 @@ The idea of QL was developed by the following team:
 The actual implementation of PyQueryBuilder was done by
 - Valentin Kuznetsov, vkuznet [at] gmail [dot] com
 - Andrew J. Dolgert, ajd27 [at] cornell [dot] edu
-- Dong Liang, Liangd [at] cern.ch
+- Dong Liang, Liangd [at] ihep [dot] ac [dot] cn
 
 Dependencies:
 -------------
