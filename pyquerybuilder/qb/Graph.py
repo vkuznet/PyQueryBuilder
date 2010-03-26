@@ -21,8 +21,8 @@ class Graph(object):
         self._edge_count  = None
 
     def __eq__(self, other):
-        '''Compare each node are equal or not, Order of the edges doesn't counta
-        when measuring equality.'''
+        """Compare each node are equal or not, Order of the edges doesn't counta
+        when measuring equality."""
         if len(self._graph) is not other.__len__():
             return False
         equal = True
@@ -40,7 +40,7 @@ class Graph(object):
         return repr(self._graph)
 
     def __len__(self):
-        """overite to graph tuple)"""
+        """ovewrite to graph tuple"""
         return len(self._graph)
 
     def get_adjacent(self, node_index):
@@ -66,8 +66,8 @@ class Graph(object):
         return len(filter(lambda x: x is True, visited))
 
     def breadth_first_search(self, node_index):
-        '''Find a breadth first spanning tree of the graph. The return value 
-        is another graph.'''
+        """Find a breadth first spanning tree of the graph. The return value 
+        is another graph."""
         unexplored = [node_index]
         #visited    = [False for x in self._graph]
         visited = [False] * self.__len__()
@@ -93,8 +93,8 @@ class Graph(object):
 
 
     def breadth_first(self, node_index):
-        '''Return an iterator whose value is (child,parent) for every edge in 
-        the graph. it's in breadth first order'''
+        """Return an iterator whose value is (child,parent) for every edge in 
+        the graph. it's in breadth first order"""
         unexplored = [(node_index, None)]
         #visited    = [False for x in self._graph]
         visited = [False] * self.__len__()  
@@ -114,8 +114,8 @@ class Graph(object):
         return
 
     def get_edges_including(self, node_set):
-        '''Assumes we are working with a spanning tree with single directed 
-        edges. Finds edges including the node_set.'''
+        """Assumes we are working with a spanning tree with single directed 
+        edges. Finds edges including the node_set."""
         reverse = self.get_reverse()
         edges = set()
         for node in node_set:
@@ -132,8 +132,8 @@ class Graph(object):
         return Graph((tuple(x) for x in undirected))
 
     def get_coverage(self):
-        '''Coverage returns the set of nodes in the graph. 
-        We say a node is in the graph if it is on an edge.'''
+        """Coverage returns the set of nodes in the graph. 
+        We say a node is in the graph if it is on an edge."""
         if self._coverage:
             return self._coverage
         self._coverage = set()
@@ -146,7 +146,7 @@ class Graph(object):
         return self._coverage
 
     def get_reverse(self):
-        '''Reverse the direction of the graph.'''
+        """Reverse the direction of the graph."""
         if self._reverse:
             return self._reverse
 
@@ -159,9 +159,9 @@ class Graph(object):
         return self._reverse
 
     def edges_from_node(self, node_index):
-        '''Given a node, follow its edges until the end. Return the edges. 
+        """Given a node, follow its edges until the end. Return the edges. 
         Assumes only one edge out of each node. breadth first, 
-        (node,next_node)'''
+        (node,next_node)"""
         edges = set()
         next_nodes = self._graph[node_index]
         while next_nodes:
@@ -189,7 +189,7 @@ class RootedGraph(Graph):
         self.root_index = root
 
     def __repr__(self):
-        """overite"""
+        """ovewrite"""
         return "Root(%d) %s" % (self.root_index, Graph.__repr__(self))
 
     def add_branch_in_set(self, node_index, node_set, add_to):
@@ -211,9 +211,9 @@ class RootedGraph(Graph):
         return apply(Graph.breadth_first, (self, self.root_index))
 
     def subtree_including(self, node_set):
-        '''Find a subtree of a directed, acyclic graph pruning
+        """Find a subtree of a directed, acyclic graph pruning
         branches which don't contain nodes in the node_set.
-        return subtree from node_set'''
+        return subtree from node_set"""
         if not node_set.issubset(self.get_coverage()): 
             return None
 
