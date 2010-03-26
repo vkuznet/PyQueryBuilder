@@ -114,14 +114,14 @@ class Schema(object):
         return sel
 
     def root_join(self, query):
-        '''
+        """
         Query is a sqlalchemy query with select elements and where clauses.
         This method:
 
             - looks through the elements and clauses to determine 
               which tables need to be joined in order to support the query. 
             - adds those joins to the query and returns it.
-        '''
+        """
 
         tables_of_concern = set()
         # col.table returns a select statement. We want the metadata table.
@@ -284,8 +284,8 @@ class Schema(object):
                     len(metadata.tables)))
             raise Exception(
                 "Could not find the table for a given foreign key constraint.",
-                '''Constraint table %s len(ordered)=%d len(metadata.tables)=%d
-                ordered=%s''' % (search_name, len(self._ordered),
+                """Constraint table %s len(ordered)=%d len(metadata.tables)=%d
+                ordered=%s""" % (search_name, len(self._ordered),
                 len(metadata.tables), str([xdx.name for xdx in self._ordered])))
         return relations
 
@@ -302,7 +302,7 @@ class Schema(object):
         dot.finish_output()
 
 def make_view_without_table(metadata, rid_name, rid_replace):
-    '''
+    """
     The subroutine looks through all tables in metadata, copying them
     to the new metadata instance. When it finds a table has a foreign
     key to the rid_table, it creates a view of that table where the
@@ -316,7 +316,7 @@ def make_view_without_table(metadata, rid_name, rid_replace):
         - rid_replace = String column name of column to use from rid_table
       
     Returns new MetaData object containing only the tables we want.
-    '''
+    """
 #    new_md = MetaData(metadata.name+"view")
     new_md = MetaData()
     rid_table = metadata.tables[rid_name]
