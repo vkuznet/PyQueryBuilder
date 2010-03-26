@@ -1,12 +1,16 @@
 #!/usr/bin/env python
+#-*- coding: ISO-8859-1 -*-
+
+"""
+SQLAlchemy Graph writer
+"""
 
 # system modules
 from sqlalchemy import sql
-#from sqlalchemy import Join
 from sqlalchemy.sql.expression import Join
 
 def write_sql_alchemy_graph(dot, metadata, exclude_tables):
-    '''This shows how tables relate through foreign keys in a sqlalchemy schema.'''
+    """This shows how tables relate through foreign keys in a sqlalchemy schema."""
 #    if metadata.name:
 #        dot.set_name(metadata.name)
 #    else:
@@ -24,7 +28,7 @@ def write_sql_alchemy_graph(dot, metadata, exclude_tables):
     
 
 #class MeasureGraph(object):
-#    '''This is a writer that just counts the number of edges in a graph.'''
+#    """This is a writer that just counts the number of edges in a graph."""
 #    def __init__(self):
 #        self.name=""
 #        self.edgeCnt=0
@@ -47,8 +51,8 @@ def _write_side(dot, join):
         _write_side(dot, join.right)
 
 def write_query_alchemy_graph(dot, query):
-    '''This writes a sqlalchemy query as a graph showing which tables
-    join with which other tables.'''
+    """This writes a sqlalchemy query as a graph showing which tables
+    join with which other tables."""
     dot.set_name("A")
     froms = [xdx for xdx in query.froms]
     if froms:
