@@ -1,0 +1,9 @@
+*~
+*.pyc
+.*.swp
+doc/.build
+doc/_build
+doc/build
+build/
+dist/
+PyQueryBuilder.egg-info
