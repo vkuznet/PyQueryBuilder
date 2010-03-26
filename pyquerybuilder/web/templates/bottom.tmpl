@@ -1,0 +1,18 @@
+<!-- bottom.tmpl -->
+<hr class="line" />
+<div class="results">
+<table width="100%" class="small">
+<tr>
+<td align="right">
+#if $ctime
+#set ftime = "%5.3f"%$ctime
+Execution time: $ftime sec, 
+#end if
+$timestamp
+</td>
+</tr>
+</table>
+</div> <!-- end of id="results" -->
+<!-- end of bottom.tmpl -->
+</body>
+</html>

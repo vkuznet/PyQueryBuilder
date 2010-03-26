@@ -1,0 +1,72 @@
+<!-- top.tmpl -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head profile="http://www.w3.org/2005/11/profile">
+    <title>PyQueryBuilder Web Service</title>
+
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Language" content="en-us" />
+    <meta http-equiv="Content-Script-Type" content="application/javascript" />
+    <meta http-equiv="imagetoolbar" content="no" />
+    <meta name="author" content="Valentin Kuznetsov (vkuznet at gmail dot com)" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+    <meta name="ROBOTS" content="ALL" />
+    <meta name="Copyright" content="(CC) 2010, Valentin Kuznetsov" />
+    <meta name="Rating" content="General" />
+
+    <link rel="icon" type="image/png" href="$base/images/QB_logo.png" />
+
+    <link rel="stylesheet" type="text/css" href="$base/css/main.css"/>
+
+    <script type="application/javascript" src="$base/js/prototype.js"></script>
+    <script type="application/javascript" src="$base/js/utils.js"></script>
+    <script type="application/javascript" src="$base/js/ajax_utils.js"></script>
+
+    <!-- YUI stuff -->
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/fonts/fonts-min.css" />
+    <link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/2.8.0r4/build/container/assets/skins/sam/container.css" />
+
+    <script type="application/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/yahoo-dom-event/yahoo-dom-event.js"></script>
+    <script type="application/javascript" src="http://yui.yahooapis.com/2.8.0r4/build/container/container-min.js"></script>
+
+</head>
+<body class="yui-skin-sam">
+
+<div id="banner">
+<table>
+<tr>
+<td>
+<img src="$base/images/QB_logo.png" alt="Logo" width="30" style="border:none" />
+</td>
+<td>
+<h3>
+QueryBuilder service
+<a href="$base/">Home</a> |
+<a id="bug" href="$base/bugs">Bug report</a> |
+<a id="faq" href="$base/faq">FAQ</a> |
+<a id="cli" href="$base/cli">CLI</a> |
+<a id="doc" href="$base/doc/index.html">Documentation</a>
+</h3>
+</td>
+</tr>
+</table>
+</div>
+<hr class="line" />
+<script type="application/javascript">
+//YAHOO.example.container.tt1 = new YAHOO.widget.Tooltip("tt1", 
+top_tt1 = new YAHOO.widget.Tooltip("top_tt1", 
+    { context:"srv", text:"Service description" });
+top_tt2 = new YAHOO.widget.Tooltip("top_tt2", 
+    { context:"bug", text:"Report the problem" });
+top_tt3 = new YAHOO.widget.Tooltip("top_tt3", 
+    { context:"faq", text:"Frequiently Asked Question or HELP" });
+top_tt4 = new YAHOO.widget.Tooltip("top_tt4", 
+    { context:"cli", text:"Command Line Tool" });
+top_tt5 = new YAHOO.widget.Tooltip("top_tt5", 
+    { context:"doc", text:"Online Documentation" });
+function wait() {
+    var id=document.getElementById('_response');
+    id.innerHTML='<div><img src="$base/images/loading.gif" alt="loading" /> please wait</div>';
+}
+</script>
+<!-- end of top.tmpl -->
