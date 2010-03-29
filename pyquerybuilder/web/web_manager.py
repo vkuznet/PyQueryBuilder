@@ -14,6 +14,7 @@ __email__ = "vkuznet@gmail.com"
 import os
 import sys
 import time
+import urllib
 
 # cherrypy modules
 import cherrypy
@@ -21,7 +22,8 @@ from cherrypy import expose, response, tools
 from cherrypy.lib.static import serve_file
 from cherrypy import config as cherryconf
 
-from pyquerybuilder.web.tools import exposecss, exposejs, TemplatedPage
+from pyquerybuilder.web.tools import exposecss, exposejs, exposejson
+from pyquerybuilder.web.tools import TemplatedPage
 
 def set_headers(itype, size=0):
     """
@@ -247,9 +249,81 @@ class WebServerManager(WebManager):
         Define footer for all web pages
         """
         page  = self.top()
-        page += self.templatepage('base', base=self.base)
+        page += self.templatepage('search', base=self.base)
         page += content
         timestamp = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
         page += self.templatepage('bottom', ctime=ctime, timestamp=timestamp)
         return page
+
+    def get_data(self, uinput, idx, limit, sort, sdir):
+        """
+        Retrieves data from the back-end
+        """
+        rows    = [{'id':str(r), 'title1':str(r), 'title2':str(r)} \
+                        for r in range(0,10)]
+        if  sdir == 'desc':
+            rows.sort()
+            rows.reverse()
+        return rows
+
+    def get_total(self, uinput):
+        """Gets total number of results for provided input, i.e. count(*)"""
+        total = 10
+        return total
+
+    @exposejson
+    def yuijson(self, **kwargs):
+        """
+        Provides JSON in YUI compatible format to be used in DynamicData table
+        widget, see
+        http://developer.yahoo.com/yui/examples/datatable/dt_dynamicdata.html
+        """
+#        print "\n###call yuijson", kwargs
+        sort   = kwargs.get('sort', 'id')
+        uinput = kwargs.get('input', '')
+        limit  = int(kwargs.get('limit', 10)) # number of shown results
+        idx    = int(kwargs.get('idx', 0)) # start with
+        sdir   = kwargs.get('dir', 'desc') 
+        rows   = self.get_data(uinput, idx, limit, sort, sdir)
+        total  = self.get_total(uinput)
+        jsondict = {'recordsReturned': len(rows),
+                   'totalRecords': total, 'startIndex':idx,
+                   'sort':'true', 'dir':'asc',
+                   'pageSize': limit,
+                   'records': rows}
+#        print "\n###jsondict", jsondict
+        return jsondict
+
+    @expose
+    def results(self, *args, **kwargs):
+        """
+        Page representing result table
+        """
+#        print "\n### call results", args, kwargs
+        titles  = ['id'] + ['title1', 'title2']
+        limit   = 10
+        coldefs = ""
+        for title in titles:
+            coldefs += '{key:"%s",label:"%s",sortable:true,resizeable:true},' \
+                        % (title, title)
+        coldefs = "[%s]" % coldefs[:-1] # remove last comma
+        coldefs = coldefs.replace("},{","},\n{")
+
+        uinput  = kwargs.get('input', '')
+        if  not uinput:
+            return self.error
+
+        total   = self.get_total(uinput)
+        names   = {'titlelist':titles,
+                   'coldefs':coldefs, 'rowsperpage':limit,
+                   'total':total, 'tag':'mytag',
+                   'input':urllib.quote(uinput)}
+        page    = self.templatepage('table', **names)
+        page    = self.page(page)
+        return page
+
+    @expose
+    def error(self, msg=''):
+        """Return error page"""
+        return self.page(msg)
 

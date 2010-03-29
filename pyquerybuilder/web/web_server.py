@@ -24,7 +24,6 @@ from cherrypy import config as cpconfig
 # local modules
 from pyquerybuilder.tools.config import readconfig
 from pyquerybuilder.web.web_manager import WebManager, WebServerManager
-#from pyquerybuilder.web.service import WebServerManager
 
 class Root(object):
     """
