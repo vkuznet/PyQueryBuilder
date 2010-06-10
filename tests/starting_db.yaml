@@ -4,6 +4,7 @@ ProcessedDataset:
   - member : Status
   - member : Name
   - member : PhysicsGroup
+  - member : CreateDate
   - member : PrimaryDataset
     foreignKey: PrimaryDataset
     
@@ -27,6 +28,11 @@ Block:
   - member: NumberOfEvents
   - member: OpenForWriting
   
+DataTier:
+  - member: ID
+    primaryKey:
+  - member: Name
+
 ProcDSTier:
   - member: ID
     primaryKey:
@@ -35,11 +41,6 @@ ProcDSTier:
     foreignKey  : ProcessedDataset
   - member: DataTier
     foreignKey  : DataTier
-
-DataTier:
-  - member: ID
-    primaryKey:
-  - member: Name
     
 Files:
   - member: ID
@@ -50,6 +51,9 @@ Files:
   - member: Block
     foreignKey  : Block
   - member: Checksum
+  - member: CreateDate
+  - member: Path
+  - member: Name
 
 ProcAlgo:
   - member: ID

@@ -8,17 +8,11 @@ __revision__ = "$Revision: 1.1 $"
 
 # system modules
 import re
-import unittest
 
-from os import unlink, path
-from os import unlink, path
 from sqlalchemy import MetaData, Column, Table, Integer, ForeignKey
 from yaml import load as yamlload
 from logging import getLogger
 
-# local modules
-from pyquerybuilder.qb.DotGraph import DotGraph
-from pyquerybuilder.qb.WriteSqlAlchemyGraph import write_sql_alchemy_graph
 
 _LOGGER = getLogger("ConstructQuery")
 
@@ -26,6 +20,55 @@ def load_from_file(filename):
     """load from file"""
     udb = UnittestDB()
     return udb.load_from_file(filename)
+def topo_sort(graph):
+    """find node which in degree = 0"""
+    visit = {}
+    finish = {}
+    indegree = {}
+    for node in range(0, len(graph)):
+        visit[node] = 0
+        indegree[node] = 0
+    for node in graph:
+        for vert in node:
+            indegree[vert] = 1
+#    for node in range(0, len(graph)):
+#        if indegree[node] == 0:
+#            print "indegree 0 is ", node
+    time = [0]
+    for node in range(0, len(graph)):
+        if visit[node] == 0 and indegree[node] == 0:
+            dfs_visit(graph, node, time, visit, finish)
+    sequence = []
+    for node in finish:
+        if len(sequence) ==  0:
+            sequence.append(node)
+            continue
+        if finish[node] > finish[sequence[0]]:
+            sequence.insert(0, node)
+        elif finish[node] < finish[sequence[-1]]:
+            sequence.append(node)
+        else:
+            for count in range(0, len(sequence)):
+                if finish[node] >= finish[sequence[count]]:
+                    sequence.insert(count, node)
+                    break
+
+#    print "sequence is ", sequence
+    return sequence
+
+def dfs_visit(graph, node, time, visit, finish):
+    """DFS visit"""
+    visit[node] = 1
+    time[0] = time[0] + 1
+    for adj in graph[node]:
+        if visit[adj] == 0:
+            dfs_visit(graph, adj, time, visit, finish)
+    visit[node] = 2
+    time[0] = time[0] + 1
+    finish[node] = time[0]
+
+    
+    
 
 class UnittestDB(object):
     """create DB for Unittest """
@@ -53,13 +96,13 @@ class UnittestDB(object):
                                % (d_tablename, d_colname))
                 if d_col.has_key('foreignKey'):
                     s_col.append(Column(d_colname, Integer,
-                                 ForeignKey(d_col["foreignKey"]+".ID")))
+                                 ForeignKey(d_col["foreignKey"].lower()+".ID")))
                 elif d_col.has_key("primaryKey"):
                     s_col.append(Column(d_colname, Integer, primary_key=True))
                 else:
                     s_col.append(Column(d_colname, Integer))
                 s_vals[d_colname] = 0
-            apply(Table, [d_tablename, metadata] + s_col)
+            apply(Table, [d_tablename.lower(), metadata] + s_col)
         return metadata
 
     def column_count(self, metadata):
@@ -80,33 +123,73 @@ class UnittestDB(object):
         metadata = self.create_from(schema_yaml)
         return metadata
 
+    def fill_table(self, table, idx):
+        """fill table with our test data"""
+#        print "fill_table %s %d"%( table.name,idx)
+        insert_clause = table.insert()
+        c_names = [col.name for col in table.c]
+        insert_dict = {}
+        for col_name in c_names:
+            if table.c[col_name].primary_key:
+                insert_dict[col_name] = idx
+            elif table.c[col_name].foreign_keys:
+                insert_dict[col_name] = idx
+            else:
+                insert_dict[col_name] = idx + 100
+#            _LOGGER.debug("insert %s %s" % (table.name, insert_dict))
+        insert_clause.execute(insert_dict)
+    
+    def get_graph(self, sorted_tables, table_index, graph):
+        """get graph"""
+        index = 0
+        for table in sorted_tables:
+            name = table.name
+            c_names = [col.name for col in table.c]
+            for col_name in c_names:
+                if table.c[col_name].foreign_keys:
+                    fk_table = table.c[col_name].foreign_keys[0]
+                    fk_name = fk_table.target_fullname
+                    fk_tbname = fk_name.split('.')[0]
+                    # 1. fk to him self 
+                    if fk_tbname == name:
+                        continue
+                    # 2. duplicate fk to a table
+                    if index in graph[table_index[fk_tbname]]:
+                        continue
+                    graph[table_index[fk_tbname]].append(index)
+            index = index + 1 
+#        print "graph is ", graph
+        
+
     def fill_tables(self, metadata, row_cnt):
         """ fill table by row lines test data
-            PK col idx ++ 
-            FK col idx ++
-            other col running idx ++"""
-        for table in metadata.sorted_tables:
-            name = table.name
-            insert_clause = table.insert()
-            id_idx = 0
-            running_idx = 0
-            c_names = [col.name for col in table.c]
-            inserts = []
-            for _ in range(0, row_cnt):
-                insert_dict = {}
-                for col_name in c_names:
-                    if table.c[col_name].primary_key:
-                        insert_dict[col_name] = id_idx
-                        id_idx = id_idx + 1
-                    elif table.c[col_name].foreign_keys:
-                        insert_dict[col_name] = ((id_idx + 1) % row_cnt)
-                    else:
-                        insert_dict[col_name] = running_idx
-                    running_idx = running_idx + 1
-                _LOGGER.debug("insert %s %s" % (name, insert_dict))
-                inserts.append(insert_dict)
-                
-            insert_clause.execute(inserts)
+        """
+        sorted_tables = metadata.sorted_tables
+        sorted_tb = {}
+        table_index = {}
+        graph = []
+        count = 0
+        for table in sorted_tables:
+            sorted_tb[table.name] = table
+            table_index[table.name] = count
+            count = count + 1
+            graph.append([])  
+#            print "  ", table.name
+        self.get_graph(sorted_tables, table_index, graph)
+#        self.get_graph(sorted_tables, sorted_tb, table_index, graph)
+#        for index in range(0, len(graph)):
+#            for idx in graph[index]:
+#                print "%s -> %s" %( sorted_tables[index].name,\
+#                        sorted_tables[idx].name)
+        sequence = topo_sort(graph)
+#        for index in sequence:
+#            print index, " ", sorted_tables[index].name
+#        print "%s = %s"%(len(sorted_tables),len(sequence))
+        for idx in range(0, row_cnt):
+            for index in sequence:
+                self.fill_table(sorted_tables[index], idx+1)
+ 
+
 
     def load_with_fake_data(self, filename, dbname):
         """load with fake data"""
@@ -116,6 +199,7 @@ class UnittestDB(object):
         elif filename.endswith("sql"):
             metadata = udb.read_from_oracle(filename)
         metadata.bind = dbname
+        metadata.drop_all()
         metadata.create_all()
         udb.fill_tables(metadata, 10)
         return metadata
@@ -183,87 +267,3 @@ class UnittestDB(object):
        
         return metadata
 
-class TestUnittestDB(unittest.TestCase):
-    """test UnittestDB"""
-    def setUp(self):
-        """default"""
-        pass
-
-    def tearDown(self):
-        """default"""
-        pass
-            
-    def test_sample_query(self):
-        """test sample query"""
-        db_test = UnittestDB()
-#        class zCol(object):
-#            """z col"""
-#            def __init__(self, prim, fkey):
-#                """initialize"""
-#                self.primarykey = prim
-#                self.foreignkey = fkey
-        inputs = { "t0" : [{ "member" : "ID", "primaryKey" : None},
-                          {"member" : "zCol"}
-                         ],
-                  "t1" : [{ "member" : "ID", "primaryKey" : None},
-                          { "member" : "who", "foreignKey" : "t0"}
-                         ]
-                }
-        metadata = db_test.create_from(inputs)
-        c_count = db_test.column_count(metadata)
-        self.assertEqual(c_count, 4)
-
-    def test_from_yaml(self):
-        """test from yaml"""
-        metadata = load_from_file('starting_db.yaml')
-        udb = UnittestDB()
-        c_count = udb.column_count(metadata)
-        self.assertEqual(c_count, 36)
-    
-    def test_fill(self):
-        """test fill"""
-        if path.exists('unittest2.db'):
-            unlink('unittest2.db')
-        udb = UnittestDB()
-        metadata = udb.load_from_file('starting_db.yaml')
-#        for table in metadata.sorted_tables:
-#            print table.name
-#            for col in table.columns:
-#                print col
-        metadata.bind = 'sqlite:///unittest2.db'
-        metadata.create_all()
-        udb.fill_tables(metadata, 10)
-#        metadata.dispose()
-
-    def test_oracle_write(self):
-        """test oracle write"""
-        udb = UnittestDB()
-        metadata = udb.read_from_oracle('oracle.sql')
-        dot = DotGraph(file("oracle.dot", "w"))
-        write_sql_alchemy_graph(dot, metadata, set(['Person']))
-        
-    def test_from_oracle(self):
-        """test from oracle"""
-        if path.exists('unittest2.db'):
-            unlink('unittest2.db')
-        udb = UnittestDB()
-        metadata = udb.read_from_oracle('oracle.sql')
-#        for table in metadata.sorted_tables:
-#            print table.name
-#            for col in table.columns:
-#                print col
-        metadata.bind = 'sqlite:///unittest2.db'
-        metadata.create_all()
-        udb.fill_tables(metadata, 10)
-#        metadata.dispose()
-        
-def suite():
-    """suite of unittest"""
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestUnittestDB))
-    return suite
-                         
-if __name__ == '__main__':
-    #import ConfigureLog
-    #ConfigureLog.configurelog()
-    unittest.TextTestRunner(verbosity=1).run(suite())

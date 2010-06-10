@@ -221,23 +221,28 @@ class DBManager(object):
         meta.bind = remote_engine
         table_names = tables.keys()
         table_names.sort()
+        con = remote_engine.connect()
         for table in table_names:
             if  self.verbose:
                 print table
-            tables[table].create(bind = remote_engine)
             new_table = tables[table].tometadata(meta)
+#            tables[table].create(bind = remote_engine, checkfirst=True)
+            new_table.create(bind = remote_engine, checkfirst=True)
             query = "select * from %s" % table
             try:
                 result = db_con.execute(query)
             except Error:
                 raise traceback.print_exc()
-            con = remote_engine.connect()
             for item in result:
                 if type(item) is types.StringType:
                     raise item + "\n"
                 ins = new_table.insert(values = item.values())
-                con.execute(ins)
-            con.close()
+
+                try:
+                    con.execute(ins)
+                except Error:
+                    raise traceback.print_exc()
+        con.close()
         if  self.verbose:
             print "The content of '%s' has been successfully migrated to '%s'" % \
                           (db_alias, new_dbalias)
@@ -339,6 +344,7 @@ class DBManager(object):
         Close connection to database
         """
         self.con.close()
+
         for dict in self.members:
             member = getattr(self, dict)
             if  member.has_key(db_alias):
@@ -346,6 +352,9 @@ class DBManager(object):
                     member.pop(db_alias)
                 except Error:
                     pass
+        if self.verbose:
+            print "database connection %s has been closed" % \
+                 db_alias
         
     def parse(self, arg):
         """ 

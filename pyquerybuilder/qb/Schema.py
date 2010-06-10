@@ -100,7 +100,8 @@ class Schema(object):
     def build_query(self, query):
         """build query by root_join"""
         root_join = self.root_join(query)
-        query.append_from(root_join)
+        if query != root_join:
+            query.append_from(root_join)
         return query
 
     def build_query_with_sel(self, sel, query, add_join = None):
@@ -114,21 +115,23 @@ class Schema(object):
         return sel
 
     def root_join(self, query):
-        """
+        '''
         Query is a sqlalchemy query with select elements and where clauses.
         This method:
 
             - looks through the elements and clauses to determine 
               which tables need to be joined in order to support the query. 
             - adds those joins to the query and returns it.
-        """
+        '''
 
         tables_of_concern = set()
         # col.table returns a select statement. We want the metadata table.
         # This is unsupported in sqlalchemy!
         # Todo I need verify this.
-        for col in query._raw_columns:
-            tables_of_concern.add(col.table)
+#        for col in query._raw_columns:
+#            tables_of_concern.add(col.table)
+        for table in query.froms:
+            tables_of_concern.add(table)
         if  query.__dict__.has_key('whereclause'): # SQLAlchemy 0.3
             where_clause = query.whereclause
         elif query.__dict__.has_key('_whereclause'): # SQLAlchemy 0.4 0.5
@@ -196,7 +199,6 @@ class Schema(object):
                 else:
                     root_join = root_join.join(r_col.table, l_col == r_col)
 #                root_join = root_join.join(r_col.table, l_col==r_col)
-
         return root_join
 #        query.append_from(root_join)
 #        return query
@@ -284,8 +286,8 @@ class Schema(object):
                     len(metadata.tables)))
             raise Exception(
                 "Could not find the table for a given foreign key constraint.",
-                """Constraint table %s len(ordered)=%d len(metadata.tables)=%d
-                ordered=%s""" % (search_name, len(self._ordered),
+                '''Constraint table %s len(ordered)=%d len(metadata.tables)=%d
+                ordered=%s''' % (search_name, len(self._ordered),
                 len(metadata.tables), str([xdx.name for xdx in self._ordered])))
         return relations
 
@@ -302,7 +304,7 @@ class Schema(object):
         dot.finish_output()
 
 def make_view_without_table(metadata, rid_name, rid_replace):
-    """
+    '''
     The subroutine looks through all tables in metadata, copying them
     to the new metadata instance. When it finds a table has a foreign
     key to the rid_table, it creates a view of that table where the
@@ -316,7 +318,7 @@ def make_view_without_table(metadata, rid_name, rid_replace):
         - rid_replace = String column name of column to use from rid_table
       
     Returns new MetaData object containing only the tables we want.
-    """
+    '''
 #    new_md = MetaData(metadata.name+"view")
     new_md = MetaData()
     rid_table = metadata.tables[rid_name]

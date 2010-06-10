@@ -5,7 +5,7 @@ Test QueryBuilder on Schema object
 
 # system modules
 import unittest
-import os
+import os, logging, sys
 
 from logging import getLogger
 from StringIO import StringIO
@@ -20,6 +20,8 @@ try:
 except :
     pass
 from pyquerybuilder.qb.WriteSqlAlchemyGraph import write_query_alchemy_graph
+#from pyquerybuilder.qb.ConstructQuery import ConstructQuery
+
 _LOGGER = getLogger("ConstructQuery")
 
 
@@ -57,7 +59,8 @@ class TestQueryBuilder(unittest.TestCase):
                                 process_dataset.c.ID == 0)
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-#        print str(query)
+        print query
+#        print query.compile()
 
     def test_yaml_query(self):
         """test yaml query, using multiple tables"""
@@ -70,11 +73,11 @@ class TestQueryBuilder(unittest.TestCase):
                            process_dataset.c.Description])
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-#        print str(query)
+#        print query
         select_test1 = select([process_dataset.c.Name, data_tier.c.Name,
                            files.c.LogicalFileName])
         query = query_builder.build_query(select_test1)
-#        print str(query)
+#        print query
 
     def test_oracle_query(self):
         """test oracle query
@@ -92,7 +95,7 @@ class TestQueryBuilder(unittest.TestCase):
                         app_exec.c.ExecutableName])
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-#        print str(query)
+#        print query
         person = find_table(metadata, 'Person')
         select_test = select([process_dataset.c.Name,
                          app_exec.c.ExecutableName, person.c.Name])
@@ -101,7 +104,7 @@ class TestQueryBuilder(unittest.TestCase):
         dot = DotGraph(file("testOracleQuery.dot", "w"))
 
         write_query_alchemy_graph(dot, query)
-#        print str(query)
+#        print query
         _LOGGER.debug("test_oracle_query finish")
 
 
@@ -120,7 +123,7 @@ class TestQueryBuilder(unittest.TestCase):
         select_test = select([process_dataset.c.Name])
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-#        print str(query)
+#        print query
         _LOGGER.debug("test_oracle_simple finish")
 
     def test_operators(self):
@@ -134,7 +137,7 @@ class TestQueryBuilder(unittest.TestCase):
                 process_dataset.c.Description], process_dataset.c.ID==0)
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-#        print str(query)
+#        print query
 
     def test_dotgraph(self):
         """test DotGraph"""
@@ -213,7 +216,7 @@ class TestLive(unittest.TestCase):
 
     def display_rows(self, rows):
         """display rows on LOGGER"""
-        _LOGGER.debug(rows[0].keys())
+#        _LOGGER.debug(rows[0].keys())
         for row in rows:
             _LOGGER.debug(row)
 
@@ -228,6 +231,7 @@ class TestLive(unittest.TestCase):
         # First try a regular select query.
         select_test = select([process_dataset.c.Name, data_tier.c.Name,
               process_dataset.c.Description], process_dataset.c.ID == 0)
+#        print "regular select ", select_test
         results = select_test.execute()
 #        rows = results.fetchall()
 #        self.display_rows(rows)
@@ -237,6 +241,7 @@ class TestLive(unittest.TestCase):
                                  process_dataset.c.Description])
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
+#        print "modified select", query
         _LOGGER.debug(query)
         select_clause = query
         results = select_clause.execute()
@@ -246,9 +251,10 @@ class TestLive(unittest.TestCase):
 
         select_test = select([process_dataset.c.ID, process_dataset.c.Name,
                        data_tier.c.ID, process_dataset.c.Description],
-                       process_dataset.c.ID == 0)
+                       process_dataset.c.ID == 1)
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
+#        print "query: ", query
         _LOGGER.debug(query)
         select_clause = query
         results = select_clause.execute()
@@ -271,22 +277,29 @@ class TestLive(unittest.TestCase):
                               app_exec.c.ExecutableName])
         query_builder = Schema(view.tables, foreignkeys)
         query = query_builder.build_query(select_test)
+#        print "test_live_view query:", query
         results = query.execute()
         rows = results.fetchall()
+
         _LOGGER.debug("test_live_view query: " + str(query))
         _LOGGER.debug("test_live_view result: %s" % (rows,))
+#        print "test_live_view result: %s" % (rows,)
         _LOGGER.debug("test_live_view finish")
 
+
+    
 def suite():
     """suite all test together"""
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestQueryBuilder))
+#    suite.addTest(unittest.makeSuite(TestQueryBuilder))
     suite.addTest(unittest.makeSuite(TestLive))
     return suite
 
 if __name__ == '__main__':
 #    import ConfigureLog
 #    ConfigureLog.configurelog()
-    unittest.TextTestRunner(verbosity=1).run(suite())
+    logging.basicConfig(stream=sys.stderr)
+    logging.getLogger("ConstructQuery").setLevel(logging.DEBUG)
+    unittest.TextTestRunner(verbosity=3).run(suite())
 
 
