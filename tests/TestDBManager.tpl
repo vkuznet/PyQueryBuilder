@@ -23,20 +23,20 @@ class TestDBManager(unittest.TestCase):
         """test get connection with diff DB"""
         self.manager.connect(self.url)
         self.manager.show_table(self.name)
-        results = self.manager.execute("select count(*) from t1")
+        results = self.manager.execute("select count(*) from block")
         rows = results.fetchall()
         self.manager.close(self.name)
-        self.assertEqual(3, rows[0][0])
+        self.assertEqual(10, rows[0][0])
         rows = []
 
     def test_desc(self):
         """test describe database"""
 
         self.manager.connect(self.url)
-        length = self.manager.desc(self.name, 't1')
-        self.assertEqual(4, length)
-        length = self.manager.desc(self.name, 't2')
-        self.assertEqual(4, length)
+        length = self.manager.desc(self.name, 'block')
+        self.assertEqual(7, length)
+        length = self.manager.desc(self.name, 'processeddataset')
+        self.assertEqual(6, length)
         self.manager.close(self.name)
 
     def test_dump(self):
@@ -55,13 +55,13 @@ class TestDBManager(unittest.TestCase):
         self.manager.close(self.name)
         self.manager.connect(self.murl)
 
-        results = self.manager.execute("select count(*) from t1")
+        results = self.manager.execute("select count(*) from block")
         rows = results.fetchall()
-        self.assertEqual(3, rows[0][0])
+        self.assertEqual(10, rows[0][0])
         self.manager.close(self.mname)
         
         self.manager.connect(self.murl)
-        self.manager.drop_table(self.mname, 't2')
+        self.manager.drop_table(self.mname, 'PrimaryDataset')
         self.manager.drop_db(self.mname)
         self.manager.close(self.mname)
 

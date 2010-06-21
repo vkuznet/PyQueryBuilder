@@ -21,8 +21,6 @@ __revision__ = "$Revision: 1.1 $"
 import re
 
 _DICT = {}
-_DICT_M = {}
-
 
 def get_connect_string():
     """get db connect string"""
@@ -33,14 +31,12 @@ def get_connect_string():
     for cfg_line in cfg_file.readlines():
         if not cfg_line.startswith('#'):
             params = cfg_line.split()
-            if len(params) >= 5:
-                _DICT_M[params[0]] = params[4].lower()
+            if len(params) >= 3:
                 _DICT[params[0]] = params[2].lower()
-            elif len(params) >= 3:
-                _DICT_M[params[0]] = params[2].lower()
-                _DICT[params[0]] = params[2].lower()
-
+            elif len(params) >= 1:
+                _DICT[params[0]] = None
     cfg_file.close()          
+    
     if _DICT.has_key('type'):
         mtype = _DICT['type']
         if mtype == 'oracle':
@@ -55,17 +51,17 @@ def get_connect_string():
             connect_string = "sqlite://%s" % _DICT['database']
     else: 
         print "type error"
-    if len(_DICT_M) > 0 :
+    if _DICT.has_key('mdatabase') :
         if mtype == 'oracle':
             migrate_string = "oracle://%s:%s@%s:%s/%s:%s" % \
-            (_DICT_M['account'], _DICT_M['password'], _DICT_M['host'], \
-             _DICT_M['port'], _DICT_M['database'],_DICT_M['dbowner'])
+            (_DICT['maccount'], _DICT['mpassword'], _DICT['mhost'], \
+             _DICT['mport'], _DICT['mdatabase'],_DICT['mdbowner'])
         elif mtype == 'postgresql' or mtype == 'mysql':
             migrate_string = "%s://%s:%s@%s:%s/%s" % \
-            (_DICT_M['type'], _DICT_M['account'], _DICT_M['password'], \
-             _DICT_M['host'],  _DICT_M['port'], _DICT_M['database'])
+            (_DICT['type'], _DICT['maccount'], _DICT['mpassword'], \
+             _DICT['mhost'],  _DICT['mport'], _DICT['mdatabase'])
         elif _DICT['type'].lower() == 'sqlite':
-            migrate_string = "sqlite://%s" % _DICT_M['database']
+            migrate_string = "sqlite://%s" % _DICT['mdatabase']
     return connect_string, migrate_string
 
 def gen_dbmanager_test(connect_string, migrate_string ):
@@ -91,26 +87,26 @@ def gen_dbmanager_test(connect_string, migrate_string ):
     if _DICT['type'] == 'oracle':
         pname_r = "oracle-%s-%s |\#> " % (_DICT['database'], _DICT['dbowner']) 
         name_r = "%s-%s" % (_DICT['database'], _DICT['dbowner'])
-        mname_r = "%s-%s" % (_DICT_M['database'], _DICT_M['dbowner'])
+        mname_r = "%s-%s" % (_DICT['mdatabase'], _DICT['mdbowner'])
 
     elif _DICT['type'] == 'sqlite' :
         f_name = _DICT['database'].split("/")[-1]
         pname_r = "sqlite-%s |\#> " % f_name
         name_r = "%s-sqlite" % f_name
-        f_mname = _DICT_M['database'].split("/")[-1]
+        f_mname = _DICT['mdatabase'].split("/")[-1]
         mname_r = "%s-sqlite" % f_mname 
     else: 
         pname_r = "%s-%s-%s |\#> " % (_DICT['type'], _DICT['database'], \
                _DICT['host'])
         name_r = "%s-%s" % (_DICT['database'], _DICT['type'])
-        mname_r = "%s-%s" % (_DICT_M['database'], _DICT_M['type'])
+        mname_r = "%s-%s" % (_DICT['mdatabase'], _DICT['type'])
 
     temp = url.sub(connect_string, temp)
     temp =  murl.sub(migrate_string, temp)
     temp = pname.sub(pname_r, temp)
     temp = name.sub(name_r, temp)
     temp = mname.sub(mname_r, temp)
-    filename = "testDBManger_%s.py" % _DICT['type']
+    filename = "testDBManager_%s.py" % _DICT['type']
     ofile = open(filename,'w')
     ofile.write(temp)
     ofile.close()

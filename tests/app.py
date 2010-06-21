@@ -15,11 +15,12 @@ from sqlalchemy.sql.expression import func
 from pyquerybuilder.qb.Schema import Schema, find_table
 from pyquerybuilder.db.DBManager import DBManager, print_list
 from pyquerybuilder.utils.Errors import Error
-from pyquerybuilder.tools.Mapper import Mapper
+from pyquerybuilder.tools.map_reader import Mapper
 from pyquerybuilder.parser import qparse
+from  pyquerybuilder.tools.schema_loader import load_from_file
 #from pyquerybuilder.qb.ConstructQuery import ConstructQuery
 
-from UnittestDB import load_from_file
+
 
 _LOGGER = getLogger("ConstructQuery")
 

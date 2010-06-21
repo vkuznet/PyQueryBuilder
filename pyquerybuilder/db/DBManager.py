@@ -38,6 +38,74 @@ def print_table(t_list, o_list, l_list, msg = None):
     for idx in xrange(0, len(o_list)):
         print o_list[idx]
     
+def get_graph(sorted_tables, table_index, graph):
+    """get graph"""
+    index = 0
+    for table in sorted_tables:
+        name = table.name
+
+        c_names = [col.name for col in table.c]
+        for col_name in c_names:
+            if table.c[col_name].foreign_keys:
+                fk_table = table.c[col_name].foreign_keys[0]
+                fk_name = fk_table.target_fullname
+                fk_tbname = fk_name.split('.')[0]
+                # 1. fk to him self
+                if fk_tbname == name:
+                    continue
+                # 2. duplicate fk to a table
+                if index in graph[table_index[fk_tbname]]:
+                    continue
+                graph[table_index[fk_tbname]].append(index)
+        index = index + 1
+
+def topo_sort(graph):
+    """find node which in degree = 0"""
+    visit = {}
+    finish = {}
+    indegree = {}
+    for node in range(0, len(graph)):
+        visit[node] = 0
+        indegree[node] = 0
+    for node in graph:
+        for vert in node:
+            indegree[vert] = 1
+#    for node in range(0, len(graph)):
+#        if indegree[node] == 0:
+#            print "indegree 0 is ", node
+    time = [0]
+    for node in range(0, len(graph)):
+        if visit[node] == 0 and indegree[node] == 0:
+            dfs_visit(graph, node, time, visit, finish)
+    sequence = []
+    for node in finish:
+        if len(sequence) ==  0:
+            sequence.append(node)
+            continue
+        if finish[node] > finish[sequence[0]]:
+            sequence.insert(0, node)
+        elif finish[node] < finish[sequence[-1]]:
+            sequence.append(node)
+        else:
+            for count in range(0, len(sequence)):
+                if finish[node] >= finish[sequence[count]]:
+                    sequence.insert(count, node)
+                    break
+
+#    print "sequence is ", sequence
+    return sequence
+
+def dfs_visit(graph, node, time, visit, finish):
+    """DFS visit"""
+    visit[node] = 1
+    time[0] = time[0] + 1
+    for adj in graph[node]:
+        if visit[adj] == 0:
+            dfs_visit(graph, adj, time, visit, finish)
+    visit[node] = 2
+    time[0] = time[0] + 1
+    finish[node] = time[0]
+
 class DBManager(object):
     """
     A main class which allows access to underlying RDMS system.
@@ -219,16 +287,36 @@ class DBManager(object):
         remote_engine = self.engine[new_dbalias]
         meta = sqlalchemy.MetaData()
         meta.bind = remote_engine
-        table_names = tables.keys()
-        table_names.sort()
+# add topo sort for migrate table
+#        sorted_tables = self.meta_dict[db_alias].sorted_tables
+        sorted_tables = tables.values()
+        if self.verbose:
+            print "sorted_tables is ", sorted_tables
+            print tables.keys()
+        sorted_tb = {}
+        table_index = {}
+        graph = []
+        count = 0
+        for table in sorted_tables:
+            name = table.name 
+            sorted_tb[table.name] = table
+            table_index[table.name] = count
+            count = count + 1
+            graph.append([])
+        get_graph(sorted_tables, table_index, graph)
+        if self.verbose:
+            print "graph is ", graph
+        sequence = topo_sort(graph)
         con = remote_engine.connect()
-        for table in table_names:
-            if  self.verbose:
-                print table
-            new_table = tables[table].tometadata(meta)
-#            tables[table].create(bind = remote_engine, checkfirst=True)
+        if self.verbose:
+            print "sequence is ", sequence
+        for index in sequence:
+            new_table = sorted_tables[index].tometadata(meta)
+            if self.verbose:
+                print new_table
             new_table.create(bind = remote_engine, checkfirst=True)
-            query = "select * from %s" % table
+            query = "select * from %s" % sorted_tables[index].name
+            print "migrating table %s" % sorted_tables[index].name
             try:
                 result = db_con.execute(query)
             except Error:
@@ -237,7 +325,6 @@ class DBManager(object):
                 if type(item) is types.StringType:
                     raise item + "\n"
                 ins = new_table.insert(values = item.values())
-
                 try:
                     con.execute(ins)
                 except Error:
@@ -247,10 +334,46 @@ class DBManager(object):
             print "The content of '%s' has been successfully migrated to '%s'" % \
                           (db_alias, new_dbalias)
         self.close(new_dbalias)
+
+            
+#
+#        table_names = tables.keys()
+#        table_names.sort()
+#        con = remote_engine.connect()
+#        for table in table_names:
+#            if  self.verbose:
+#                print table
+#            new_table = tables[table].tometadata(meta)
+##            tables[table].create(bind = remote_engine, checkfirst=True)
+#            new_table.create(bind = remote_engine, checkfirst=True)
+#            query = "select * from %s" % table
+#            try:
+#                result = db_con.execute(query)
+#            except Error:
+#                raise traceback.print_exc()
+#            for item in result:
+#                if type(item) is types.StringType:
+#                    raise item + "\n"
+#                ins = new_table.insert(values = item.values())
+#
+#                try:
+#                    con.execute(ins)
+#                except Error:
+#                    raise traceback.print_exc()
+#        con.close()
+#        if  self.verbose:
+#            print "The content of '%s' has been successfully migrated to '%s'" % \
+#                          (db_alias, new_dbalias)
+#        self.close(new_dbalias)
   
     def create_alias(self, name, params):
         """Update self.aliases"""
-        self.aliases[name] = params
+        pass
+#        self.aliases[name] = params
+
+    def get_alias(self, driver):
+        """get db alias"""
+        return self.aliases[driver]
   
     def execute(self, query, list_results = 1):
         """Execute query and print result"""
@@ -295,13 +418,36 @@ class DBManager(object):
         Drop database
         """
         tables = self.load_tables(db_alias)
-        for t_name in tables.keys():
-            table = tables[t_name]
+# add topo sort in drop db
+#        sorted_tables = self.meta_dict[db_alias].sorted_tables
+        sorted_tables = tables.values()
+        sorted_tb = {}
+        table_index = {}
+        graph = []
+        count = 0
+        for table in sorted_tables:
+            sorted_tb[table.name] = table
+            table_index[table.name] = count
+            count = count + 1
+            graph.append([])
+        get_graph(sorted_tables, table_index, graph)
+        sequence = topo_sort(graph)
+        sequence.reverse()
+        for index in sequence:
+            print "dropping table %s" % sorted_tables[index].name
             try:
-                table.drop()
+                sorted_tables[index].drop()
             except Error:
                 traceback.print_exc()
         self.db_tables.pop(db_alias)
+
+#        for t_name in tables.keys():
+#            table = tables[t_name]
+#            try:
+#                table.drop()
+#            except Error:
+#                traceback.print_exc()
+#        self.db_tables.pop(db_alias)
   
     def drop_table(self, db_alias, table_name):
         """
