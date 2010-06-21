@@ -136,6 +136,7 @@ def main():
 
     config = readconfig()
     config['port'] = config['server_port']
+    print config
 
     # Start DAS server
     root = Root(config)

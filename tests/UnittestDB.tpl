@@ -70,6 +70,9 @@ class TestUnittestDB(unittest.TestCase):
         connection = self.engine.connect()
         metadata.bind = connection
         metadata.drop_all()
+        for table in metadata.sorted_tables:
+            for col in table.columns:
+                col.autoincrement = False
         metadata.create_all()
         udb.fill_tables(metadata, 10)
         connection.close()
@@ -83,8 +86,13 @@ class TestUnittestDB(unittest.TestCase):
 
     def test_by_sql_file(self):
         """test by sql file"""
-#        if path.exists('unittest2.db'):
-#            unlink('unittest2.db')
+        udb = UnittestDB()
+        metadata = udb.load_from_file('starting_db.yaml')
+        connection = self.engine.connect()
+        metadata.bind = connection
+        metadata.drop_all()
+        connection.close()
+
         udb = UnittestDB()
         metadata = udb.read_from_oracle('oracle.sql')
 #        for table in metadata.sorted_tables:

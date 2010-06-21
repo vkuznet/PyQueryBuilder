@@ -25,6 +25,10 @@ from cherrypy import config as cherryconf
 from pyquerybuilder.web.tools import exposecss, exposejs, exposejson
 from pyquerybuilder.web.tools import TemplatedPage
 
+from pyquerybuilder.pyqb import QuerybuilderApp
+from pyquerybuilder.utils.Errors import Error
+import traceback
+
 def set_headers(itype, size=0):
     """
     Set response header Content-type (itype) and Content-Length (size).
@@ -199,8 +203,17 @@ class WebServerManager(WebManager):
     WebServerManager interface.
     """
     def __init__(self, config={}):
+        url = 'oracle://liangd:tiger@localhost.localdomain:1522/orcl:liangd'
+        alias = 'orcl-liangd'
+        map = '../tools/map.yaml'
         WebManager.__init__(self, config)
         self.base = '' # define base url path, no path is required right now
+        pyqb = QuerybuilderApp()
+        pyqb.set_manager(url, alias)
+        pyqb.get_db_connection()
+        pyqb.set_mapper(map)
+        pyqb.set_querybuilder()
+        self.pyqb = pyqb
 
     @expose
     def index(self, *args, **kwargs):
@@ -259,8 +272,21 @@ class WebServerManager(WebManager):
         """
         Retrieves data from the back-end
         """
-        rows    = [{'id':str(r), 'title1':str(r), 'title2':str(r)} \
-                        for r in range(0,10)]
+#        rows    = [{'id':str(r), 'title1':str(r), 'title2':str(r)} \
+#                        for r in range(0,10)]
+        try:
+            result = self.pyqb.execute(uinput)
+        except Error:
+            traceback.print_exc()
+        rows = []
+        if result:
+            for res in result:
+                if len(res) == 3:
+                    record = {'id':str(res[0]), 'title1':str(res[1]), \
+                         'title2':str(res[2])}
+                    rows.append(record)
+        else:
+            rows  = [{'id':'', 'title1':'', 'title2':''}]
         if  sdir == 'desc':
             rows.sort()
             rows.reverse()
