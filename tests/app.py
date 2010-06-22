@@ -7,6 +7,7 @@ App for testing QueryBuilder
 import traceback
 from collections import deque
 from logging import getLogger
+from optparse import OptionParser
 
 from sqlalchemy import select, MetaData
 #from sqlalchemy.sql import and_, or_, not_
@@ -221,18 +222,21 @@ class App():
         self.url = None
         self.mapper = None
 
-    def set_manager(self, url, alias):
+    def set_manager(self, url):
         """set manager"""
         self.manager = DBManager()
         self.url = url
-        self.db_name = alias
         
     def get_db_connection(self):
         """get db connection"""
-        return self.manager.connect(self.url)    
+        print "get connection to %s " % self.url
+        connection = self.manager.connect(self.url)    
+        self.db_name = self.manager.get_alias(self.url)
+        return connection 
 
     def close_db_connection(self):
         """close db connection"""
+        print "close connection to %s" % self.url
         return self.manager.close(self.db_name)
     
     def set_mapper(self, mapfile='map.yaml'):
@@ -279,54 +283,98 @@ class App():
         except Error:
             print Error
             return None
+def main():
+    """main"""
 
-if __name__ == '__main__':
-    INPUTS = """find dataset, file, file.block  where dataset 
-               like names and primds.startdate > 20100501 or 
-                block.size < 250"""
-    INPUTS = """find block, file where (dataset like names and 
-               primds.startdate > 20100501) or block.size < 250"""
-    INPUTS = """find dataset, count(file), max(block.size) 
-               where dataset like cosmic and (dataset.createdate>2010 
-               or (block.size > 200 and file.createdate > 
-               2010-01-01 02:30:30 CST) or block.size < 500)"""
-    INPUTS = """find  file where dataset.createdate > 0 
-               or (block.size > 0 and file.createdate > 0) 
-               or block.size < 0"""
-    APP = App()
-    MURL = 'oracle://liangd:tiger@localhost.localdomain:1522/orcl:liangd'
-    DB_ALIAS = 'orcl-liangd'
-    APP.set_manager(MURL, DB_ALIAS)
-    APP.get_db_connection()
-    APP.set_querybuilder()
-    APP.set_mapper('testmap.yaml')
-#    query = APP.parse_input(input)
-#    query = APP.generate_sqlalchemy_query(query)
-#    result = APP.execute(query)
+#    inputs = """find dataset, file, file.block  where dataset 
+#               like names and primds.startdate > 20100501 or 
+#                block.size < 250"""
+#    inputs = """find block, file where (dataset like names and 
+#               primds.startdate > 20100501) or block.size < 250"""
+#    inputs = """find dataset, count(file), max(block.size) 
+#               where dataset like cosmic and (dataset.createdate>2010 
+#               or (block.size > 200 and file.createdate > 
+#               2010-01-01 02:30:30 CST) or block.size < 500)"""
+#    inputs = """find  file where dataset.createdate > 0 
+#               or (block.size > 0 and file.createdate > 0) 
+#               or block.size < 0"""
+    usage = "usage: %prog  -q query \n"
+    usage += "  optional:  -d database -m mapfile \n"
+    parser = OptionParser(usage=usage, version="%prog 1.0")
+    dhelp = """database source link as: sqlite://database.db
+                oracle://account:passwd@host:port/database:owner
+                mysql://account:passwd@host:port/database
+                postgresql://account:passwd@host:port/database
+            """
+    parser.add_option("-m", "--mapfile", action="store", type="string",
+          dest="mapfile", help="input yaml map file")
+    parser.add_option("-d", "--database", action="store",
+          dest="database", help=dhelp)
+    parser.add_option("-q", "--query", action="store", type="string",
+          dest="query", help="input query")
+    (options, args) = parser.parse_args()
+
+    app = App()
+    murl = 'sqlite://test.db'
+    mapfile = '../pyquerybuilder/tools/map.yaml'
+
+    if options.database:
+        murl = options.database
+    if options.mapfile:
+        mapfile = options.mapfile
+
+    app.set_manager(murl)
+    app.get_db_connection()
+    app.set_querybuilder()
+    app.set_mapper(mapfile)
+    
+    if options.query:
+        querys = options.query.split('\n')
+        for query in querys:
+            try:
+                mquery = app.parse_input(query)
+                print mquery
+                mquery = app.generate_sqlalchemy_query(mquery)
+                print mquery
+                mquery = app.build_query(mquery)
+                print mquery
+                result = app.execute_query(mquery)
+                if result:
+                    print_list(result)
+            except Error:
+                traceback.print_exc()
+                continue
+        app.close_db_connection()
+        return None
+#    query = app.parse_input(input)
+#    query = app.generate_sqlalchemy_query(query)
+#    result = app.execute(query)
 #    print_list(result)
     
 #    test_single_query(manager,result)
     while True:
         try:
-            INPUTS = raw_input('calc > ')
+            inputs = raw_input('query > ')
         except EOFError:
             break
-        if not INPUTS:
+        if not inputs:
             continue
         try:
-            MQUERY = APP.parse_input(INPUTS)
-            print MQUERY
-            MQUERY = APP.generate_sqlalchemy_query(MQUERY)
-            print MQUERY
-            MQUERY = APP.build_query(MQUERY)
-            print MQUERY
-            RESULT = APP.execute_query(MQUERY)
-            if RESULT: 
-                print_list(RESULT)
+            mquery = app.parse_input(inputs)
+            print mquery
+            mquery = app.generate_sqlalchemy_query(mquery)
+            print mquery
+            mquery = app.build_query(mquery)
+            print mquery
+            result = app.execute_query(mquery)
+            if result: 
+                print_list(result)
         except Error:
             traceback.print_exc()
             continue
-        
+    app.close_db_connection()
 
-    APP.close_db_connection()
 
+
+if __name__ == '__main__':
+    main()
