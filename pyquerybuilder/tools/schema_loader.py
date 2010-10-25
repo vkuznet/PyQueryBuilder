@@ -14,9 +14,13 @@ from logging import getLogger
 _LOGGER = getLogger("ConstructQuery")
 
 def load_from_file(filename):
-    """load from ymal file """
+    """load from .yaml file or .sql file"""
+    suffix = filename.split('.')[-1]
     loader = SchemaLoader()
-    return loader.load_from_file(filename)
+    if suffix == 'yaml':
+        return loader.load_from_file(filename)
+    if suffix == 'sql':
+        return loader.read_from_oracle(filename)
 
 class SchemaLoader(object):
     """load schema from file"""

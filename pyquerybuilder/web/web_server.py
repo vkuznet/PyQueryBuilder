@@ -11,8 +11,8 @@ __version__ = "$Revision: 1.6 $"
 __author__ = "Valentin Kuznetsov"
 
 # system modules
-import os
-import sys
+#import os
+#import sys
 import yaml
 import logging 
 from optparse import OptionParser
@@ -20,10 +20,44 @@ from optparse import OptionParser
 # CherryPy modules
 from cherrypy import log, tree, engine
 from cherrypy import config as cpconfig
+import cherrypy
 
 # local modules
 from pyquerybuilder.tools.config import readconfig
-from pyquerybuilder.web.web_manager import WebManager, WebServerManager
+from pyquerybuilder.web.web_manager import WebServerManager
+from pyquerybuilder.db.DBManager import DBManager
+from pyquerybuilder.qb.pyqb import QueryBuilder
+from pyquerybuilder.dbsh.dbresults import Results
+
+from cherrypy.process import plugins
+
+class QueryBuilderBus(plugins.SimplePlugin):
+    """
+    A WSPBus plugin that controls 
+      1. a SQLAlchemy engine/connection pool.
+      2. a QueryBuilder 
+    """
+    def __init__(self, bus, url=None, map_file=None):
+        plugins.SimplePlugin.__init__(self, bus)
+        self.url = url
+        self.dbm = DBManager()
+        self.qbs = QueryBuilder()
+        self.qbs.set_mapper(map_file)
+        self.db_result = Results()
+        self.con = None
+
+    def start(self):
+        """get db connection"""
+        print 'Connecting to database %s' % self.url
+        self.con = self.dbm.connect(self.url)
+        self.qbs.set_from_tables(self.dbm.load_tables( \
+                 self.dbm.get_alias(self.url)))
+
+    def stop(self):
+        """close db connection"""
+        self.con.close()
+        self.con = None
+
 
 class Root(object):
     """
@@ -44,7 +78,8 @@ class Root(object):
         except:
             cpconfig.update ({"server.thread_pool": 30})
         try:
-            cpconfig.update ({"server.socket_queue_size": self.config['socket_queue_size']})
+            cpconfig.update ({"server.socket_queue_size": \
+                             self.config['socket_queue_size']})
         except:
             cpconfig.update ({"server.socket_queue_size": 15})
         try:
@@ -105,7 +140,9 @@ class Root(object):
     def start(self, blocking=True):
         """Configure and start the server."""
         self.configure()
-        config = {} # can be something to consider
+        config = {'db_url':self.config['db_url'],
+                  'map_file':self.config['map_file']} 
+        # can be something to consider
         obj = WebServerManager(config) # mount the web server manager
         tree.mount(obj, '/')
         engine.start()
@@ -138,9 +175,17 @@ def main():
     config['port'] = config['server_port']
     print config
 
-    # Start DAS server
     root = Root(config)
+    print root.config
+    # subscribe plugins
+    cherrypy.engine.qbm = QueryBuilderBus(cherrypy.engine, \
+                           root.config['db_url'], root.config['map_file'])
+
+    cherrypy.engine.qbm.subscribe()
+
+    # Start DAS server
     root.start()
+
 
 if __name__ == "__main__":
     main()

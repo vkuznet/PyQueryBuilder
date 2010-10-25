@@ -21,13 +21,16 @@ name         = "PyQueryBuilder"
 desc         = "A general purpose Query Builder over RDMS system"
 keywords     = ["Query Language", "SQL", "RDMS", "databases"]
 #scriptfiles  = filter(os.path.isfile, ['etc/web_service'])
+data_files = [('config',['pyquerybuilder/config/ipythonrc']),
+              ('map',['pyquerybuilder/tools/map.yaml'])],
 packages     = find_packages()
+
 #data_files   = [
 #    ('src/doc', ['LICENSE', 'README']),
 #]
 package_data = {
     'pyquerybuilder': ['web/templates/*.tmpl', 'web/css/*.css', 
-            'web/images/*.img', 'web/js/*.js','doc/*'],
+            'web/images/*', 'web/js/*.js','doc/*'],
 }
 classifiers = [
             "Development Status :: Alpha",

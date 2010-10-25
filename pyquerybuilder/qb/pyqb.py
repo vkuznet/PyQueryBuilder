@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-App for testing QueryBuilder 
+QueryBuilder
 """
 
 
@@ -66,7 +66,7 @@ def generate_query(metadata, query):
             constraint = stack.pop()
         else:
             return  select(key_list, whereclause)
-        # sort out the sequence by using a stack a queue        
+        # sort out the sequence by using a stack and a queue        
         while constraint:
             if type(constraint) is type([]):
                 if len(constraint) == 1:
@@ -202,8 +202,8 @@ def test_query_parser(mapper, in_put):
 #    print presult
     return presult
 
-class App():
-    """Application demo"""
+class QueryBuilder():
+    """Application QueryBuilder"""
     def __init__(self, verbose = 0):
         """initialize"""
         class MySchema(object):
@@ -215,46 +215,42 @@ class App():
             def set_tables(self, tables):
                 """set tables"""
                 self.tables = tables
+
+            def is_loaded(self):
+                """tables loaded"""
+                if self.tables != None:
+                    return 1
+                return 0
+
         self.schema = MySchema()
-        self.manager = None
-        self.db_name = None
         self.querybuilder = None
-        self.url = None
         self.mapper = None
+        self.keywords = []
 
-    def set_manager(self, url):
-        """set manager"""
-        self.manager = DBManager()
-        self.url = url
-        
-    def get_db_connection(self):
-        """get db connection"""
-        print "get connection to %s " % self.url
-        connection = self.manager.connect(self.url)    
-        self.db_name = self.manager.get_alias(self.url)
-        return connection 
-
-    def close_db_connection(self):
-        """close db connection"""
-        print "close connection to %s" % self.url
-        return self.manager.close(self.db_name)
+    def is_ready(self):
+        """check schema is loaded"""
+        if (self.schema.is_loaded() and self.querybuilder != None):
+            return 1
+        return 0
     
     def set_mapper(self, mapfile='map.yaml'):
         """set mapper"""
         self.mapper = Mapper()
         self.mapper.load_mapfile(mapfile)
 
-    def set_querybuilder(self, schema_file=None):
-        """set querybuilder"""
+    def set_from_tables(self, tables):
+        """set querybuilder from tables"""
+        self.schema.set_tables(tables)
+        self.querybuilder = Schema(tables)
+
+    def set_from_files(self, schema_file):
+        """set querybuilder from schema file"""
         metadata = MetaData()
         tables = None
-        if schema_file:
-            metadata = load_from_file(schema_file)
-            tables = metadata.tables
-            self.schema = metadata
-        else: 
-            tables = self.manager.load_tables(self.db_name)
-            self.schema.set_tables(tables)
+        metadata = load_from_file(schema_file)
+        tables = metadata.tables
+#        self.schema = metadata
+        self.schema.set_tables(tables)
         self.querybuilder = Schema(tables)
            
     def parse_input(self, in_puts):
@@ -273,108 +269,10 @@ class App():
 #    print "query.inner_columns is ", [col for col in select_test.inner_columns]
 #    print "query.froms is ", select_test.froms
 #    print dir(select_test)
-        return  self.querybuilder.build_query(query)
+        keys = query.split('find')[1].split('where')[0].split(',')
+        keywords = [x.strip() for x in keys ]
+        mquery = test_query_parser(self.mapper, query)
+        self.keywords = keywords
+        mquery = generate_query(self.schema, mquery)
+        return  self.querybuilder.build_query(mquery)
 
-    def execute_query(self, query):
-        """execute query"""
-        try:
-            result =  self.manager.execute(query)
-            return result
-        except Error:
-            print Error
-            return None
-def main():
-    """main"""
-
-#    inputs = """find dataset, file, file.block  where dataset 
-#               like names and primds.startdate > 20100501 or 
-#                block.size < 250"""
-#    inputs = """find block, file where (dataset like names and 
-#               primds.startdate > 20100501) or block.size < 250"""
-#    inputs = """find dataset, count(file), max(block.size) 
-#               where dataset like cosmic and (dataset.createdate>2010 
-#               or (block.size > 200 and file.createdate > 
-#               2010-01-01 02:30:30 CST) or block.size < 500)"""
-#    inputs = """find  file where dataset.createdate > 0 
-#               or (block.size > 0 and file.createdate > 0) 
-#               or block.size < 0"""
-    usage = "usage: %prog  -q query \n"
-    usage += "  optional:  -d database -m mapfile \n"
-    parser = OptionParser(usage=usage, version="%prog 1.0")
-    dhelp = """database source link as: sqlite://database.db
-                oracle://account:passwd@host:port/database:owner
-                mysql://account:passwd@host:port/database
-                postgresql://account:passwd@host:port/database
-            """
-    parser.add_option("-m", "--mapfile", action="store", type="string",
-          dest="mapfile", help="input yaml map file")
-    parser.add_option("-d", "--database", action="store",
-          dest="database", help=dhelp)
-    parser.add_option("-q", "--query", action="store", type="string",
-          dest="query", help="input query")
-    (options, args) = parser.parse_args()
-
-    app = App()
-    murl = 'sqlite://test.db'
-    mapfile = '../pyquerybuilder/config/map.yaml'
-
-    if options.database:
-        murl = options.database
-    if options.mapfile:
-        mapfile = options.mapfile
-
-    app.set_manager(murl)
-    app.get_db_connection()
-    app.set_querybuilder()
-    app.set_mapper(mapfile)
-    
-    if options.query:
-        querys = options.query.split('\n')
-        for query in querys:
-            try:
-                mquery = app.parse_input(query)
-                print mquery
-                mquery = app.generate_sqlalchemy_query(mquery)
-                print mquery
-                mquery = app.build_query(mquery)
-                print mquery
-                result = app.execute_query(mquery)
-                if result:
-                    print_list(result)
-            except Error:
-                traceback.print_exc()
-                continue
-        app.close_db_connection()
-        return None
-#    query = app.parse_input(input)
-#    query = app.generate_sqlalchemy_query(query)
-#    result = app.execute(query)
-#    print_list(result)
-    
-#    test_single_query(manager,result)
-    while True:
-        try:
-            inputs = raw_input('query > ')
-        except EOFError:
-            break
-        if not inputs:
-            continue
-        try:
-            mquery = app.parse_input(inputs)
-            print mquery
-            mquery = app.generate_sqlalchemy_query(mquery)
-            print mquery
-            mquery = app.build_query(mquery)
-            print mquery
-            result = app.execute_query(mquery)
-            if result: 
-                print_list(result)
-        except Error:
-            traceback.print_exc()
-            continue
-    app.close_db_connection()
-
-
-
-if __name__ == '__main__':
-    main()

@@ -25,8 +25,10 @@ from cherrypy import config as cherryconf
 from pyquerybuilder.web.tools import exposecss, exposejs, exposejson
 from pyquerybuilder.web.tools import TemplatedPage
 
-from pyquerybuilder.pyqb import QuerybuilderApp
+#from pyquerybuilder.qb.pyqb import QueryBuilder
 from pyquerybuilder.utils.Errors import Error
+from pyquerybuilder.dbsh.dbresults import Results
+#from pyquerybuilder.db.DBManager import DBManager
 import traceback
 
 def set_headers(itype, size=0):
@@ -202,18 +204,22 @@ class WebServerManager(WebManager):
     """
     WebServerManager interface.
     """
-    def __init__(self, config={}):
-        url = 'oracle://liangd:tiger@localhost.localdomain:1522/orcl:liangd'
-        alias = 'orcl-liangd'
-        map = '../tools/map.yaml'
+    def __init__(self, config):
         WebManager.__init__(self, config)
         self.base = '' # define base url path, no path is required right now
-        pyqb = QuerybuilderApp()
-        pyqb.set_manager(url, alias)
-        pyqb.get_db_connection()
-        pyqb.set_mapper(map)
-        pyqb.set_querybuilder()
-        self.pyqb = pyqb
+#        self.dbm = DBManager()
+#        self.pyqb = QueryBuilder()
+#        try:
+#            self.pyqb.set_mapper(config['map_file'])
+#            self.dbm.connect(config['db_url'])
+#            db_alias = self.dbm.get_alias(config['db_url'])
+#            tables = self.dbm.load_tables(db_alias)
+#            self.pyqb.set_from_tables(tables)
+#        except Error:
+#            traceback.print_exc()
+#        self.db_result = Results()
+        self.c_titles = []
+        self.c_length = 0
 
     @expose
     def index(self, *args, **kwargs):
@@ -272,30 +278,32 @@ class WebServerManager(WebManager):
         """
         Retrieves data from the back-end
         """
-#        rows    = [{'id':str(r), 'title1':str(r), 'title2':str(r)} \
-#                        for r in range(0,10)]
-        try:
-            result = self.pyqb.execute(uinput)
-        except Error:
-            traceback.print_exc()
+        result = cherrypy.engine.qbm.dbm.next(index=idx, suppress=True)
+        t_list = result[1]
+        o_list = result[2]
         rows = []
-        if result:
-            for res in result:
-                if len(res) == 3:
-                    record = {'id':str(res[0]), 'title1':str(res[1]), \
-                         'title2':str(res[2])}
-                    rows.append(record)
-        else:
-            rows  = [{'id':'', 'title1':'', 'title2':''}]
-        if  sdir == 'desc':
-            rows.sort()
-            rows.reverse()
+        if o_list == {}:
+            record = {}
+            for title in t_list:
+                record[title] = ''
+            rows.append(record)
+        for res in o_list: 
+            index = 0
+            record = {}
+            for index in range(0, len(t_list)):
+                record[t_list[index]] = str(res[index])
+            rows.append(record)
+#        if sdir == 'asc':
+#            rows.sort()
+#        elif  sdir == 'desc':
+#            rows.sort()
+#            rows.reverse()
+#        print rows
         return rows
 
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
-        total = 10
-        return total
+        return self.c_length
 
     @exposejson
     def yuijson(self, **kwargs):
@@ -307,14 +315,16 @@ class WebServerManager(WebManager):
 #        print "\n###call yuijson", kwargs
         sort   = kwargs.get('sort', 'id')
         uinput = kwargs.get('input', '')
-        limit  = int(kwargs.get('limit', 10)) # number of shown results
+        limit  = int(kwargs.get('limit', 5)) # number of shown results
         idx    = int(kwargs.get('idx', 0)) # start with
-        sdir   = kwargs.get('dir', 'desc') 
+        sdir   = kwargs.get('dir', 'asc') 
         rows   = self.get_data(uinput, idx, limit, sort, sdir)
         total  = self.get_total(uinput)
         jsondict = {'recordsReturned': len(rows),
-                   'totalRecords': total, 'startIndex':idx,
-                   'sort':'true', 'dir':'asc',
+                   'totalRecords': total, 
+                   'startIndex':idx,
+                   'sort':'true', 
+                   'dir':'asc',
                    'pageSize': limit,
                    'records': rows}
 #        print "\n###jsondict", jsondict
@@ -326,24 +336,51 @@ class WebServerManager(WebManager):
         Page representing result table
         """
 #        print "\n### call results", args, kwargs
-        titles  = ['id'] + ['title1', 'title2']
-        limit   = 10
-        coldefs = ""
-        for title in titles:
-            coldefs += '{key:"%s",label:"%s",sortable:true,resizeable:true},' \
-                        % (title, title)
-        coldefs = "[%s]" % coldefs[:-1] # remove last comma
-        coldefs = coldefs.replace("},{","},\n{")
-
-        uinput  = kwargs.get('input', '')
+        uinput = kwargs.get('input', '')
         if  not uinput:
             return self.error
+        manager = cherrypy.engine.qbm
+        try:
+            if cherrypy.engine.qbm.qbs == None:
+                raise Exception, "qbs is None" 
+                self.log("qbs is None", 1)
+            self.log(uinput, 1)
+            mquery = manager.qbs.build_query(uinput)
+            self.log(mquery, 1)
+            print mquery
+            res = manager.dbm.execute(mquery)
+        except Error:
+            traceback.print_exc()
+        self.c_titles = res.keys
+        keywords = manager.qbs.keywords
+        self.c_length = res.rowcount
+
+        result = manager.dbm.print_result(res, mquery, suppress=True)
+
+        titles = self.c_titles
+        limit   = 5
+        cherrypy.engine.qbm.dbm.page('%d' % limit)
+        coldefs = ""
+        myfields = ""
+        for t_index in range(0, len(titles)):
+            coldefs += '{key:"%s",label:"%s",sortable:true,resizeable:true},' \
+                        % (titles[t_index], keywords[t_index])
+            myfields += '{key:"%s"},' % titles[t_index]
+
+        coldefs = "[%s]" % coldefs[:-1] # remove last comma
+        myfields = "[%s]" % myfields[:-1]
+        coldefs = coldefs.replace("},{", "},\n{")
+        myfields = myfields.replace("},{", "},\n{")
 
         total   = self.get_total(uinput)
-        names   = {'titlelist':titles,
-                   'coldefs':coldefs, 'rowsperpage':limit,
-                   'total':total, 'tag':'mytag',
-                   'input':urllib.quote(uinput)}
+
+        names   = {'title1':titles[0],
+                   'coldefs':coldefs, 
+                   'rowsperpage':limit,
+                   'total':total, 
+                   'tag':'mytag',
+                   'input':urllib.quote(uinput),
+                   'fields':myfields}
         page    = self.templatepage('table', **names)
         page    = self.page(page)
         return page

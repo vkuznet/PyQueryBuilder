@@ -33,8 +33,13 @@ def readconfig():
 
     configdict['server_port'] = config.get('server', 'server_port', 8212)
     configdict['verbose'] = config.getint('server', 'verbose')
-    configdict['db_url'] = config.get('server', 'db_url')
-    configdict['db_alias'] = config.get('server', 'db_alias')
+    db_url = config.get('server', 'db_url') 
+    if db_url == 'tests/test.db':
+        configdict['db_url'] = 'sqlite:///%s/tests/test.db' % \
+                                 os.environ['QB_ROOT']
+    else:                                 
+        configdict['db_url'] = db_url
+#    configdict['db_alias'] = config.get('server', 'db_alias')
     configdict['map_file'] = os.path.join(os.environ['QB_ROOT'], \
                                          config.get('server', 'map_file'))
     return configdict

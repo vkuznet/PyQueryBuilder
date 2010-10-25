@@ -14,12 +14,17 @@ import time
 import types
 import traceback
 
+import os
+import thread
+
 # SQLAlchemy modules
 import sqlalchemy
 
 # local modules
 from pyquerybuilder.qb.DotGraph import DotGraph
 from pyquerybuilder.utils.Errors import Error
+from pyquerybuilder.dbsh.dbprint import PrintOutput
+from pyquerybuilder.dbsh.utils import fetch_from_to
 
 def print_list(input_list, msg = None):
     """Print input list"""
@@ -30,13 +35,13 @@ def print_list(input_list, msg = None):
     for item in input_list:
         print item
 
-def print_table(t_list, o_list, l_list, msg = None):
-    """Distribute discription of this table to diff method"""
-    if  msg:
-        print msg
-    print t_list
-    for idx in xrange(0, len(o_list)):
-        print o_list[idx]
+#def print_table(t_list, o_list, l_list, msg = None):
+#    """Distribute discription of this table to diff method"""
+#    if  msg:
+#        print msg
+#    print t_list
+#    for idx in xrange(0, len(o_list)):
+#        print o_list[idx]
     
 def get_graph(sorted_tables, table_index, graph):
     """get graph"""
@@ -73,10 +78,10 @@ def topo_sort(graph):
 #    for node in range(0, len(graph)):
 #        if indegree[node] == 0:
 #            print "indegree 0 is ", node
-    time = [0]
+    timer = [0]
     for node in range(0, len(graph)):
         if visit[node] == 0 and indegree[node] == 0:
-            dfs_visit(graph, node, time, visit, finish)
+            dfs_visit(graph, node, timer, visit, finish)
     sequence = []
     for node in finish:
         if len(sequence) ==  0:
@@ -95,16 +100,16 @@ def topo_sort(graph):
 #    print "sequence is ", sequence
     return sequence
 
-def dfs_visit(graph, node, time, visit, finish):
+def dfs_visit(graph, node, timer, visit, finish):
     """DFS visit"""
     visit[node] = 1
-    time[0] = time[0] + 1
+    timer[0] = timer[0] + 1
     for adj in graph[node]:
         if visit[adj] == 0:
-            dfs_visit(graph, adj, time, visit, finish)
+            dfs_visit(graph, adj, timer, visit, finish)
     visit[node] = 2
-    time[0] = time[0] + 1
-    finish[node] = time[0]
+    timer[0] = timer[0] + 1
+    finish[node] = timer[0]
 
 class DBManager(object):
     """
@@ -120,6 +125,20 @@ class DBManager(object):
         self.members     = ['engine', 'db_tables', 'table_names', 
                             'db_type', 'db_owner', 'db_schema', 
                             'meta_dict', 'drivers', 'aliases']
+        # for print_table
+        self.print_mgr  = PrintOutput()
+        self.print_method = "txt"
+        # for plot
+        self.formats   = ['jpg', 'png', 'gif', 'svg', 'ps']
+        # for fetch_from_to
+        self.limit     = None
+        self.offset    = None
+        self.results   = ""
+        self.query     = ""
+        self.new_paged     = 0
+        # for web dynamic table 
+        self.t_result = [] # titles of current result
+        self.l_result = 0 # total length of current reuslt
         # all parameters below are defined at run time
         self.t_cache     = []
         self.engine      = {}
@@ -133,7 +152,7 @@ class DBManager(object):
         self.aliases     = {}
         self.con         = None
         
-    def write_graph(self, db_alias, f_mat=None):
+    def write_graph(self, db_alias, format_l=None):
         """
         Write graph of DB schema to db_alias.dot file
         Using dot in shell to create result in given format
@@ -155,6 +174,20 @@ class DBManager(object):
                 if right != 'person': # exclude person table
                     dot.add_edge(table_name, right)
         dot.finish_output()
+        if  format_l:
+            if  format_l not in self.formats:
+                msg = "Unsupported format '%s', please use %s" \
+                       % (format_l, str(self.formats))
+                raise Exception, msg
+            cmd = "dot -v -T%s -O %s" % (format_l, file_name)
+            try:
+                status = os.system(cmd)
+                print "Executing", cmd
+            except Error:
+                print "Fail to execute %s " % cmd , status
+                print "Please verify that you have dot installed on your system"
+                print traceback.print_exc()
+
   
     def dbname(self, arg):
         """
@@ -185,11 +218,45 @@ class DBManager(object):
         if  self.table_names.has_key(db_alias):
             tables = self.table_names[db_alias]
             tables.sort()
-            if  self.verbose:
-                print_list(tables, "\nFound tables:")
+#            if  self.verbose:
+            print_list(tables, "\nFound tables:")
         else:
-            if  self.verbose:
-                print_list([]," \nFound tables")
+#            if  self.verbose:
+            print_list([]," \nFound tables")
+
+    def plot(self, db_alias, query):
+        """plot result of query, which is a 2-dimensional data in a thread.
+           It will throw exception if the result is more than 3-dimens."""
+        try:
+            result = self.con.execute(query)
+        except:
+            raise traceback.print_exc()
+        x_list  = []
+        y_list  = []
+        t_list  = []
+        for item in result:
+            if type(item) is types.StringType:
+                raise Exception, item + "\n"
+            if not t_list:
+                t_list = list(item.keys())
+            if len(item) != 2:
+                raise Exception, "Plot support only 2-dimensional data"
+            x_val, y_val = item
+            x_list.append(x_val)
+            y_list.append(y_val)
+        thread.start_new_thread(self.pylab_plot,
+                               (x_list, y_list, t_list, query))
+
+    def pylab_plot(self, x_list, y_list, t_list, title):
+        """plot 2-dimensional data x,y under title[0,1] using pylab library"""
+        import pylab
+        pylab.plot(x_list, y_list)
+        pylab.xlabel(t_list[0])
+        pylab.ylabel(t_list[1])
+        pylab.title(title)
+        pylab.grid(True)
+        pylab.show()
+
         
     def desc(self, db_alias, table):
         """
@@ -223,8 +290,8 @@ class DBManager(object):
                 if l_list[idx] < len(str(v_list[idx])): 
                     l_list[idx] = len(str(v_list[idx]))
         o_list.sort() 
-        if  self.verbose:
-            print_table(t_list, o_list, l_list)
+#        if  self.verbose:
+        self.print_table(t_list, o_list, l_list)
         return len(o_list)
   
     def dump(self, db_alias, file_name = None):
@@ -331,8 +398,8 @@ class DBManager(object):
                     raise traceback.print_exc()
         con.close()
         if  self.verbose:
-            print "The content of '%s' has been successfully migrated to '%s'" % \
-                          (db_alias, new_dbalias)
+            print "The content of '%s' has been successfully migrated to '%s'" \
+                      % (db_alias, new_dbalias)
         self.close(new_dbalias)
 
             
@@ -362,8 +429,8 @@ class DBManager(object):
 #                    raise traceback.print_exc()
 #        con.close()
 #        if  self.verbose:
-#            print "The content of '%s' has been successfully migrated to '%s'" % \
-#                          (db_alias, new_dbalias)
+#            print "The content of '%s' has been successfully migrated to '%s'"
+#                        %  (db_alias, new_dbalias)
 #        self.close(new_dbalias)
   
     def create_alias(self, name, params):
@@ -375,20 +442,79 @@ class DBManager(object):
         """get db alias"""
         return self.aliases[driver]
   
-    def execute(self, query, list_results = 1):
+    def execute(self, query, db_alias = "", list_results = 1):
         """Execute query and print result"""
         self.t_cache = []
         try:
             result = self.con.execute(query)
+            self.results = result            
         except Error:
             raise Exception
         if not list_results: 
             return None
-#        return self.print_result(result, query)
+        if self.verbose:
+            self.print_result(result, query)
 #        self.print_result(result, query)
         return result
+
+    def page(self, arg):
+        """page by inputing offset and limit per page
+           page(offset,limit)
+           page(limit)
+        """
+        i_list = arg.split()
+#        self.new_paged = 1
+        if  len(i_list) == 2:
+            self.offset = int(i_list[0])
+            self.limit = int(i_list[1])
+        elif len(i_list) == 1:
+            self.limit = int(i_list[0])
+            self.offset = 0
+        else:
+            msg = "ERROR: page support only one or two arguments"
+#            msg+= cmdDictExt['page']+"\n"
+            raise Exception, msg + "\n"
+
+    def next(self, index=None, suppress=False):
+        """
+        move to next page
+        offset is the offset from the first record of all result
+        so offset increase by limit
+        self.t_cache > self.offset then read from t_cache
+        otherwise if results is open read from self.results
+                  if results is closed, return without data
+        """
+#        if self.new_paged:
+#            self.new_paged = 0
+#            result = self.t_cache[self.offset : self.offset + self.limit]
+#            return self.print_result(result, self.query, suppress)
+
+        new_offset = self.offset + self.limit
+        if index != None:
+            new_offset = index 
+        if len(self.t_cache) > new_offset:
+            self.offset = new_offset
+            result = self.t_cache[self.offset : self.offset + self.limit]
+        else:
+            if self.results.closed:
+                result = self.t_cache[self.offset : self.offset + self.limit]
+            else: 
+                result = self.results
+        return self.print_result(result, self.query, suppress)
+
+    def prev(self, suppress=False):
+        """
+        move to previous page
+        offset decreased by limit if capable, otherwise the first page     
+        """
+        new_offset = self.offset - self.limit
+        if new_offset > 0:
+            self.offset = new_offset
+        result = self.t_cache[self.offset : self.offset + self.limit]
+        return self.print_result(result, self.query, suppress)
+
   
-    def print_result(self, result, query):
+    def print_result(self, result, query, suppress=False):
         """
         Print result and query
         return query and title list and values list
@@ -396,9 +522,13 @@ class DBManager(object):
         o_list  = []
         t_list  = []
         l_list  = []
+        #NEW after dbprint
+        if self.limit and not (type(result) is types.ListType):
+            result = fetch_from_to(result, self.limit, self.offset)
+        #END of NEW
         for item in result:
             if type(item) is types.StringType:
-                raise Exception, item+"\n"
+                raise Exception, item + "\n"
             if not (type(result) is types.ListType):
                 self.t_cache.append(item)
             if not t_list:
@@ -409,8 +539,8 @@ class DBManager(object):
             for idx in xrange(0, len(v_list)):
                 if l_list[idx] < len(str(v_list[idx])): 
                     l_list[idx] = len(str(v_list[idx]))
-        if  self.verbose:
-            print_table(t_list, o_list, l_list, query)
+        if not suppress:
+            self.print_table(t_list, o_list, l_list, query)
         return (query, t_list, o_list)
   
     def drop_db(self, db_alias):
@@ -490,7 +620,6 @@ class DBManager(object):
         Close connection to database
         """
         self.con.close()
-
         for dict in self.members:
             member = getattr(self, dict)
             if  member.has_key(db_alias):
@@ -498,8 +627,8 @@ class DBManager(object):
                     member.pop(db_alias)
                 except Error:
                     pass
-        if self.verbose:
-            print "database connection %s has been closed" % \
+#        if self.verbose:
+        print "database connection %s has been closed" % \
                  db_alias
         
     def parse(self, arg):
@@ -529,6 +658,7 @@ class DBManager(object):
             driver, dbparams = arg.split("://")
         except Error:
             msg = "Fail to parse connect argument '%s'\n" % arg
+            # msg += cmdDictExt['connect']
             raise Exception, msg + "\n"
         if  dbparams.find("@") != -1:
             user_pass, rest  = dbparams.split("@")
@@ -565,12 +695,15 @@ class DBManager(object):
             self.parse(arg)
         db_schema = None
         if db_type =='oracle' and db_owner:
-            db_alias  = '%s-%s' % (db_name, db_owner)
+            db_alias  = '%s-%s-%s' % (db_type, db_name, db_owner)
             db_schema = db_owner.lower()
+        elif db_type == 'sqlite':
+            db_alias = '%s-%s' % (db_type, db_name)
         else:
             db_alias = db_name
             if db_type: 
-                db_alias += "-" + db_type
+#                db_alias += "-" + db_type
+                db_alias = '%s-%s-%s' % (db_type, db_name, host)
 #            print "db_alias: %s"% db_alias
         if  not self.drivers.has_key(driver):
             self.drivers[db_alias] = driver
@@ -663,4 +796,17 @@ class DBManager(object):
             tables[tab_name] = sqlalchemy.Table(tab_name, db_meta, **kwargs)
         self.db_tables[db_alias] = tables
         return tables
-  
+
+    def print_table(self, t_list, o_list, l_list, msg=None):
+        """Distribute discription of this table to diff method"""
+        if self.print_method == "txt":
+            self.print_mgr.print_txt(t_list, o_list, l_list, msg)
+        elif self.print_method == "xml":
+            self.print_mgr.print_xml(t_list, o_list, l_list, msg)
+        elif self.print_method == "html":
+            self.print_mgr.print_html(t_list, o_list, l_list, msg)
+        elif self.print_method == "csv":
+            self.print_mgr.print_csv(t_list, o_list, l_list, msg)
+        else:
+            self.print_mgr.print_txt(t_list, o_list, l_list, msg)
+ 

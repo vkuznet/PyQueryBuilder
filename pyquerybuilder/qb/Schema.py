@@ -158,7 +158,7 @@ class Schema(object):
 
         # Find the smallest spanning tree containing tables 
         #      for SELECT and WHERE.
-        # table_indices is the index list of table not concerns 
+        # table_indices is the index list of table concerns 
         #      references to self._ordered
         table_indices = [self._ordered.index(table) 
                                 for table in tables_of_concern]

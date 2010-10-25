@@ -1,0 +1,3 @@
+find dataset where dataset > 101
+find file 
+find block where block.size > 102 and (dataset > 100 or file > 102)

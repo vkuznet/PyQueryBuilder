@@ -86,20 +86,27 @@ def gen_dbmanager_test(connect_string, migrate_string ):
 #   'sqlite-test.db |\#> '
     if _DICT['type'] == 'oracle':
         pname_r = "oracle-%s-%s |\#> " % (_DICT['database'], _DICT['dbowner']) 
-        name_r = "%s-%s" % (_DICT['database'], _DICT['dbowner'])
-        mname_r = "%s-%s" % (_DICT['mdatabase'], _DICT['mdbowner'])
+        name_r = "oracle-%s-%s" % (_DICT['database'], _DICT['dbowner'])
+        mname_r = "oracle-%s-%s" % (_DICT['mdatabase'], _DICT['mdbowner'])
 
     elif _DICT['type'] == 'sqlite' :
         f_name = _DICT['database'].split("/")[-1]
         pname_r = "sqlite-%s |\#> " % f_name
-        name_r = "%s-sqlite" % f_name
+#        name_r = "%s-sqlite" % f_name
+        name_r = "sqlite-%s" % f_name
         f_mname = _DICT['mdatabase'].split("/")[-1]
-        mname_r = "%s-sqlite" % f_mname 
+#        mname_r = "%s-sqlite" % f_mname 
+        mname_r = "sqlite-%s" % f_mname
     else: 
         pname_r = "%s-%s-%s |\#> " % (_DICT['type'], _DICT['database'], \
                _DICT['host'])
-        name_r = "%s-%s" % (_DICT['database'], _DICT['type'])
-        mname_r = "%s-%s" % (_DICT['mdatabase'], _DICT['type'])
+#        name_r = "%s-%s" % (_DICT['database'], _DICT['type'])
+#        mname_r = "%s-%s" % (_DICT['mdatabase'], _DICT['type'])
+        name_r = "%s-%s-%s" % (_DICT['type'], _DICT['database'], \
+               _DICT['host'])
+        mname_r = "%s-%s-%s" % (_DICT['type'], _DICT['mdatabase'], \
+               _DICT['mhost'])
+               
 
     temp = url.sub(connect_string, temp)
     temp =  murl.sub(migrate_string, temp)

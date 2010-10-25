@@ -21,6 +21,10 @@ class Mapper(object):
 
     def load_mapfile(self, filename):
         """load map file"""
+        if filename == None:
+            raise Error('argments can not be None')
+        if not os.path.isfile(filename):
+            raise Error('map file %s does not exists' % filename)
         map_file = file(filename)
         map_yaml = yamlload(map_file)
 #        print map_yaml
