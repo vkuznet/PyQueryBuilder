@@ -1,0 +1,157 @@
+\documentstyle[12pt]{article}
+\textheight 215mm
+\textwidth 145mm
+\begin{document}
+\oddsidemargin 0pt
+\evensidemargin 0pt
+\topmargin 0pt
+\title{Math representation of Query Language related problem}
+\maketitle
+\vspace{0.5cm}
+\begin{center}
+{\section*{{\normalsize\bf 1.Questions}}}
+\end{center}
+\setcounter{section}{1}
+What is CMS DBS Query Language?\\
+Solved and the unsolved problem? Represent the problem in Math.\\
+Where's this problem settle in Computing Science? \\
+Are there any similar design? Possible solution for this problem\\
+How to evaluate the solution?\\
+What kinds of schema are worth our work on providing path?
+\begin{center}
+{\section*{{\normalsize\bf 2.CMS DBS Query Language}}}
+\end{center}
+\setcounter{section}{2}
+The CMS DBS Query Language is a generalized query system in addition to existing web and programmatic interfaces to the DBS system. Based on them, user could find data in a flexible and powerful way within the CMS physics data catalog. The CMS DBS QL builds the input query parser and tokenizer, followed by a query builder that uses a graph representation of the DBS schema to construct the SQL query sent to underlying database.
+
+DBS is the authoritative record of the data available for physics analysis. It provides the ability to identify MC and trigger source, track data provenance, construct datasets for analysis, and discover interesting data. It was a critical integral part of CMS data Management and Workflow Management System; it provides support for localized processing or private analysis as well as global access for CMS users at large.  The system is built as a multi-tier web application with Java servlets running under Tomcat with connections via JDBC to Oracle or MySQL database back-ends. Clients connect to the service through HTTP or HTTPS with authentication provided by GRID certificates and authorization through VOMS.
+The complicities and advantages of DBS are located at:
+\begin{enumerate}
+\item Design of the DB to match the structure of CMS data model and computing model.
+\item Design of the API to match the use case of CMS production, analysis or Data Management requirement.
+\item Increasing size and increasing queries but limit response time.
+\item Output XML format to be able to exchange integration on CMS offline Workflow.
+\item Hierarchy enable for the distribution environment.
+\item Authentication and security guarantee
+\end{enumerate}
+
+     The ideal interface for physicists to access the metadata is combing the relatively unstructured queries of IR tools (such as web search engine) with the precision semantics of DBMS query languages. While the programmatic interfaces and formatted XML output simplified the integration for the production system, QL simplified the metadata searching for the physicists.
+
+     Before the QL, several user interfaces were proposed to address this issue, including structured top-down approaches, while it rapidly encountered scaling limits as the number of entries to in the drop-down menus became unwieldy. Management of such large lists in the browser interface presents significant challenges.
+
+Architecture:
+ We're adopted a simplified syntax,
+\begin{center}
+find key1, key2 ... where \(< key > < op > < value > and | or...\)
+\end{center}
+
+ We tokenize and then map the keys to attribute of the DB entities, during tokenizing and mapping we would check the correctness of the input query, and provide the appropriate diagnostics to the end user.
+
+ A parser and lexer will build a syntax tree to collect the tokens and mapping all the keywords into defined keys. We are using PLY to get a parser and lexer, and the mapping are based on yaml file which defined \(key : entity.<attribute>\) pairs. For the schema information of DB, we could get by schema file or directly from a DB.
+
+Considering a change on DB schema name, what have to update?
+\begin{enumerate}
+\item Two parts need to be updated,
+    \begin{enumerate} 
+    \item map-file for \(<key: entity>\) translate,
+    \item Schema information from either schema file or DB.
+    \end{enumerate}
+\end{enumerate}
+
+Translate the queries into SQL queries including reorganize the sequence of join orders, which need an external mapping between tables and graph nodes using Dijkstra's shortest path algorithm for finding a solution. Database schema is represented as a weighted directed graph with nodes mapped to tables and edges representing relationships between tables. Dijkstra's shortest path algorithm is used to determine the least-weigh path from one table to another and resolve multi-path ambiguities.
+
+Send the SQL queries to DB back-end, and provide results to user either by programming command-line tools or by web interfaces.
+\begin{center}
+{\section*{{\normalsize\bf 3.Description in Math}}}
+\end{center}
+\begin{enumerate}
+\item {\bf Definitions}:
+  \begin{itemize}
+  \item Consider a relational database schema as a directed graph $G_S(V,E)$, called a schema graph, where $V$ represents the set of relation schemas ${R_1, R_2, ... R_n}$ and $E$ represents the set of edges between two relation schemas.
+  \item Given two relation schemas, $R_i$ and $R_j$, if {\it primary key} defined on $R_i$ is referenced by the {\it foreign key} defined on $R_j$, we denote $R_i \rightarrow R_j$ as a edge on $G_S(V,E)$.
+  \item If we have multiple edges from $R_i$ to $R_j$, $R_i \stackrel{X}{\longrightarrow} R_j$ is used, where $X$ is the {\it foreign key} attribute names.
+  \item $V(G)$ and $E(G)$ denote the set of nodes and the set of edges of a graph $G$, respectively.
+  \item $r(R_i)$ and $r(R_j)$ denote the set of tuples involved in the {\it JOIN} operation, and $r(R_i) \subset R_i$ and $r(R_j) \subset R_j$
+  \item $dist(t_i,t_j)$ is defined as the minimum number of connections between tuple $t_i$ and $t_j$
+  \item $T(R)$ is the number of tuples in $R$
+  \item $B(R)$ is the number of block storing $R$
+  \item $S(R, A)$ is the count of {\it attribute} $A$ on $R$, it equals number of distinct values on {\it attribute} $A$ at relation $R$.
+  \item $S(R, [A_1, A_2 ... A_n])$ is when we count $A_1, A_2  ... An$ together as a distinct value.
+  \item $R_a(R_i)[X] = n[r(R_i)] / n[R_i]$, is numbers of tuples in $r(R_i)$ divided by numbers of tuples in $R_i$ when operated by the {\it JOIN} operation on $R_i$ and $R_j$ on {\it attribute} $X$. Here $X$ could be multiples attributes.
+  \item JNT is a connected tree of tuples where every two adjacent tuples $t_i \in r(R_i)$ and $t_j \in r(R_j)$ can be joined based on the foreign key reference defined on relational schema $R_i$ and $R_j$ in $G_s(V,E)$ (either $R_i \rightarrow R_j$ or $R_j \rightarrow R_i$)
+  \item MTJNT is the minimal total joining network of tuples.
+    \begin{itemize}
+    \item Minimal: a joining network of tuples in not total if any tuple is removed.
+    \item Total: each keyword in the query must be contained in at least one tuple of the joining network.
+    \end{itemize}
+  \item $w_{ij}[X]$, weight of edges ($Ri \rightarrow Rj$), we assign weight on each edge to represent the cost of {\it JOIN} on {\it attribute} $X$ between two nodes of this edges
+  \item $W_{out}: \sum{w_{ij}}$ which $w_{ij}$ are edges of connect tree 
+  \end{itemize}
+\item {\bf Problem represent}:
+\begin{itemize}
+  \item {\bf Input}: $Q = V(Q)$  set of {\it entity.[attribute]} from select keywords and where {\it conditions}, subset of $V(G)$ 
+  \item {\bf Output}: $M(Q)$ is a MTJNT for $Q$ on $G_s(V,E)$, which satisfy \\
+        $min(W_{out}(J(Q)))$.
+\end{itemize}
+\item {\bf To find out the MTJNT, current solution}:
+  \begin{enumerate}
+  \item Get $G_S'(V,E)$ the undirected version of $G_S(V, E)$,
+  \item For each node on $G_S'(V,E)$, compute and store the MST (minimal spinning tree) from this node (Dijkstra's shortest path algorithm for weighted graph and BFS for the unweighted graph)
+  \item For query $Q$:
+    \begin{enumerate}
+    \item For each MST which contains all nodes at $V(Q)$, compute the $W_{out}$.
+    \item Get the $\min(MST)$ which computed the $\min(W_{out})$, it might not unique. Currently we chose the first.
+    \item Using BFS explore the MST' and recover the foreign keys on directed graph $G_S(V,E)$
+  \end{enumerate}
+\item {\bf Collision problem, which causes debugging difficulties}:
+  \begin{enumerate} 
+  \item Multiple Trees are satisfying $\min(W_{out})$, which means MTJNT are not unique.
+  \item Multiple paths are the same weight when finding MST by Dijkstra's algorithm or BFS.
+  \end{enumerate}
+\item {\bf Weighting assignment problem}: \\
+Given a large schema, it takes time for the experts to assign weight on the Graph, also during the application servicing, the weighted could be changed by the insertion or deletion on the RDBS. Join processing in relational databases, Estimating Join operation cost, Optimizing join orders are the area settled this question. 
+  \begin{itemize}
+  \item Estimating join operation cost and calculates the weight of each edge based on cost.
+  \item Evaluate the estimated weights by comparing top-k MTJNT, and adjust the weights.
+  \end{itemize}
+  \begin{enumerate}
+  \item Estimating join operation cost: 
+    \begin{enumerate}
+    \item The main cost could be load tuples and perform the comparison, which means the number of tuples involved in JOIN operation is the main factor of the JOIN operation cost.\\
+
+     {\it Assumption to simplify the estimating:}\\
+
+       Containment of Value Sets. \\
+       If $Y$ is an attribute appearing in several relations, then each relation chooses its values from the front of a fixed list of values $y_1, y_2, y_3, ...$ and has all the values in that prefix, As a consequence, if $R_i$ and $R_j$ are two relations with an attribute $Y$, and $S(R_i,Y) < S(R_j, Y)$, then every Y-value of $R_i$ will be a Y-value of $R_j$.\\
+
+       Preservation of Value Sets. \\
+       If we join a relation $R_i$ with another relation $R_j$ then an {\it attribute A} that is not a join attribute(i.e., not present in both relations) does not lose values from its set of possible values. More precisely, if A is an attribute of $R_i$ but not of $R_j$, then $S(R_i \Join R_j, A) = S(R_i, A)$. Note that the order of joining $R_i$ and $R_j$ is not important, so we could just as well have said that $S(R_j \Join R_i, A) = S(R_i, A)$.
+
+    \item For $R_i \Join _X R_j$: \\
+    $T(R_i \Join _X R_j)  = T(R_i) * T(R_j) / \max(S(R_i, X), S(R_j, X))$
+    \item For $R_i \Join _X R_j$ on multiple attribute $X_i$ : \\
+    $T(R_i \Join _{X_i} R_j) = T(R_i) * T(R_j) / \prod_{i=1}^n\max(S(R_i,X_i),S(R_j,X_i))$
+    \item For $R_i \Join _{X_1} R_j \Join _{X2} R_k$ :
+    $T(R_i \Join _{X_1} R_j \Join _{X_2} R_k) =  T(R_i \Join _{X_1} R_j) * T(R_k) / \max(S(R_j, X_2), S(R_k, X_2))$
+  \item Retrieve the statistics for each Relation in database schema. For Oracle, we have \texttt{NUM\string_ROWS , NUM\string_DISTINCT per Column in DBA\string_TABLES or ALL\string_TABLES or USER\string_TABLES}.
+    \end{enumerate}
+  \item Calculating the weights for each edge:\\
+     The weights of edge between $R_i$ and $R_j$ could be estimate by: $w_{ij}$ = AVG( $T(R_i \Join R_j)$ on all the attribute $X_i$ ) mapping to a real number (1, size of schema).
+  \item Evaluate the estimated weights by comparing top-k MTJNT:\\
+  Based on the historical queries accounting, we choose the most frequent query, and calculate the top-k MTJNT, time it in real SQL query.\\
+  {\it If the top-2 is better than top-1}\\
+  {\it If top-1 MTJNT is not unique, there could be someone better than other.}\\
+    \begin{enumerate}
+       \item Then we do the comparison, find out the set of the different edges, the sum of weight we need to increase is $E(+)$ (edges need to increase weithgt) and the sum of weight we need to decrease is $E(-)$.
+       \item We can do the increase or decrease operation after a set of query, which like a training set of queries. After this training set, for each edge $w_{ij}$, it may get 20 '+' and 10 '-', then we increase $w_{ij}$ by 10.
+       \item Also we could assign a weight to the known queries (such as 0.8) in the training set, and after the training, 3+ (query weight [0.8, 0.6, 0.3]) and 2- (query weight [0.5, 0.4]). We increase $w_{ij}$ by 0.8.
+    \end{enumerate}
+  \item Redo the training for several loops to see whether it's going to converge.
+  \end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\begin{center}
+{\section*{{\normalsize\bf 4. Schema complexity and data redundance}}}
+To be update...
+\end{center}
+\end{document}
