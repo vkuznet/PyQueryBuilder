@@ -113,7 +113,8 @@ def gen_dbmanager_test(connect_string, migrate_string ):
     temp = pname.sub(pname_r, temp)
     temp = name.sub(name_r, temp)
     temp = mname.sub(mname_r, temp)
-    filename = "testDBManager_%s.py" % _DICT['type']
+#    filename = "TestDBManager_%s.py" % _DICT['type']
+    filename = "TestDBManager.py"
     ofile = open(filename,'w')
     ofile.write(temp)
     ofile.close()
@@ -135,7 +136,8 @@ def gen_unittestdb_test(connect_string):
         connect_string = "sqlite:///%s" % _DICT['database']
 
     temp = url.sub(connect_string, temp)
-    filename = "UnittestDB_%s.py" % _DICT['type']
+#    filename = "TestDB_%s.py" % _DICT['type']
+    filename = "TestDB.py"
     ofile = open(filename,'w')
     ofile.write(temp)
     ofile.close()
