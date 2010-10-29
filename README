@@ -46,3 +46,9 @@ License:
 The PyQueryBuilder is licensed under free BSD license, please see doc/LICENSE
 for more information
 
+Usage:
+--------
+Commandline tools:
+       $> sh pyquerybuilder/dbsh.sh 
+WebServer:
+       $> python pyquerybuilder/web/web_server.py
