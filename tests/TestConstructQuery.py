@@ -4,7 +4,7 @@ Test ConstuctQuery object
 """
 
 from pyquerybuilder.qb.ConstructQuery import ConstructQuery
-from TestGraph import TestGraph
+#from TestGraph import TestGraph
 import unittest
 
 class TestConstructQuery(unittest.TestCase):
@@ -78,11 +78,11 @@ class TestConstructQuery(unittest.TestCase):
 def suite():
     """test suite for all TestConstructQuery class"""
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestGraph))
+#    suite.addTest(unittest.makeSuite(TestGraph))
     suite.addTest(unittest.makeSuite(TestConstructQuery))
     return suite
 
 
 if __name__ == '__main__':
-    unittest.TextTestRunner(verbosity = 1).run(suite())
+    unittest.TextTestRunner(verbosity = 3).run(suite())
 
