@@ -3,7 +3,7 @@
 Test mapper object
 """
 import unittest
-from pyquerybuilder.tools.Mapper import Mapper
+from pyquerybuilder.tools.map_reader import Mapper
 from UnittestDB import UnittestDB
 
 
@@ -16,7 +16,7 @@ class TestMapper(unittest.TestCase):
         udb = UnittestDB()
         metadata = udb.load_from_file('starting_db.yaml')
         self.mapper.load_mapfile(self.mapfile)
-        self.mapper.validate_map(metadata)
+        self.mapper.validate_map(metadata.sorted_tables)
         self.assertEqual(12, len(self.mapper.dict))
         
     def test_get_key(self):
