@@ -12,6 +12,7 @@ from distutils.errors import DistutilsPlatformError, DistutilsExecError
 from distutils.core import Extension
 from distutils.command.install import INSTALL_SCHEMES
 from pyquerybuilder import version
+from disttest import test
 
 required_python_version = '2.6'
 requirements = []
@@ -46,6 +47,7 @@ author_email = 'vkuznet@gmail.com, ajd27@cornell.edu, liangd@ihep.ac.cn'
 url          = 'http://a.b.c'
 license      = 'BSD'
 
+
 def main():
     """Main routine"""
     if sys.version < required_python_version:
@@ -77,7 +79,14 @@ def main():
       author_email         = author_email,
       url                  = url,
       license              = license,
-     )
+#     for setup.py test
+      cmdclass = {'test': test},
+      options = {
+          'test': {
+              'test_dir':['tests'], # will run all .py files in the tests/ directory
+          }
+      },
+    )
 if __name__ == "__main__":
     main()
 
