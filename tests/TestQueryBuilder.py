@@ -59,7 +59,7 @@ class TestQueryBuilder(unittest.TestCase):
                                 process_dataset.c.ID == 0)
         query_builder = Schema(metadata.tables)
         query = query_builder.build_query(select_test)
-        print query
+#        print query
 #        print query.compile()
 
     def test_yaml_query(self):
@@ -110,7 +110,7 @@ class TestQueryBuilder(unittest.TestCase):
 
     def test_oracle_simple(self):
         """test oracle simple query"""
-        _LOGGER.debug("test_oracle_simple start")
+#        _LOGGER.debug("test_oracle_simple start")
         test_db = UnittestDB()
         metadata = test_db.read_from_oracle('oracle.sql')
         process_dataset = find_table(metadata, 'ProcessedDataset')
@@ -233,8 +233,8 @@ class TestLive(unittest.TestCase):
               process_dataset.c.Description], process_dataset.c.ID == 0)
 #        print "regular select ", select_test
         results = select_test.execute()
-#        rows = results.fetchall()
-#        self.display_rows(rows)
+        rows = results.fetchall()
+        self.display_rows(rows)
 
         # Then use our software to modify one.
         select_test = select([process_dataset.c.Name, data_tier.c.Name,
@@ -291,15 +291,15 @@ class TestLive(unittest.TestCase):
 def suite():
     """suite all test together"""
     suite = unittest.TestSuite()
-#    suite.addTest(unittest.makeSuite(TestQueryBuilder))
+    suite.addTest(unittest.makeSuite(TestQueryBuilder))
     suite.addTest(unittest.makeSuite(TestLive))
     return suite
 
 if __name__ == '__main__':
 #    import ConfigureLog
 #    ConfigureLog.configurelog()
-    logging.basicConfig(stream=sys.stderr)
-    logging.getLogger("ConstructQuery").setLevel(logging.DEBUG)
-    unittest.TextTestRunner(verbosity=3).run(suite())
+#    logging.basicConfig(stream=sys.stderr)
+#    logging.getLogger("ConstructQuery").setLevel(logging.DEBUG)
+    unittest.TextTestRunner(verbosity=2).run(suite())
 
 
