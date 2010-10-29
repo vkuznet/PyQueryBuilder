@@ -144,7 +144,7 @@ def generate_query(metadata, query):
 
 
 
-def test_query_parser(mapper, in_put):
+def query_parser(mapper, in_put):
     """input query ==parse==> output dictionary 
        ==mapper==> select sentences"""
     presult = qparse.parse(in_put)
@@ -259,7 +259,7 @@ class App():
            
     def parse_input(self, in_puts):
         """parse input"""
-        return test_query_parser(self.mapper, in_puts)
+        return query_parser(self.mapper, in_puts)
     
     def generate_sqlalchemy_query(self, query):
         """generate sqlalcemy query"""
