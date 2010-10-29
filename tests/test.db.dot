@@ -1,3 +1,0 @@
-digraph G {
-	t2 -> t1;
-}
