@@ -49,7 +49,7 @@ YAHOO.example.DynamicData = function() {
     var myConfigs = {
         initialRequest: "input=$input&limit=$rowsperpage&idx=0&sort=$title1&dir=desc", // Initial request for first page of data
         dynamicData: true, // Enables dynamic server-driven data
-        sortedBy : {key:"id", dir:YAHOO.widget.DataTable.CLASS_ASC}, // Sets UI initial sort arrow
+        sortedBy : {key:"$title1", dir:YAHOO.widget.DataTable.CLASS_DESC}, // Sets UI initial sort arrow
         paginator: new YAHOO.widget.Paginator({ rowsPerPage:$rowsperpage}), // Enables pagination 
         generateRequest: myRequestBuilder
     };
