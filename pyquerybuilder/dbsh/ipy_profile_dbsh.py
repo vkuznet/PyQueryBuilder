@@ -38,8 +38,8 @@ try:
     DB = DBManager()
     DBPRINT = PrintOutput()
     QB = QueryBuilder()
-    FILE_DICT['MAP_FILE'] = os.getenv('HOME')+'/.ipython/map.yaml'
-    QB.set_mapper(FILE_DICT['MAP_FILE'])
+#    FILE_DICT['MAP_FILE'] = os.getenv('HOME')+'/.ipython/map.yaml'
+#    QB.set_mapper(FILE_DICT['MAP_FILE'])
 except:
     traceback.print_exc()
     raise Exception, "ERROR: fail to load DBManager"
@@ -61,10 +61,15 @@ def qb_ready():
     1. It can be loaded from DB when DB is connected, after loaded no matter
        DB is connected or closed, QueryBuilder can work
     2. It can be loaded from Schema file.
+    Check mapper is ready:
+    1. mapfile is loaded 
+    2. mapper initialized without error
     """
     if not QB.is_ready():
-        print "This function is not avaliable till you loaded schema to QB" + \
-              "either from DB or from schema file"
+        print """This function is not avaliable till you: 
+                 1. schema loaded to QB, either from DB or from schema file
+                 2. map file loaded.
+              """
         return 1
     return 0
     
@@ -140,21 +145,19 @@ def show(self, arg):
     """
     if arg and arg.lower() == 'help':
         return dbhelp(self, 'show')
-    if qb_ready(): 
+    if db_ready(): 
         return
     arg = arg.replace(";","")
     if arg == 'tables':
         DB.show_table(db_alias())
     else:
-        if db_ready():
-            return
         DB.execute("show ", db_alias())
 
 def desc(self, arg):
     """desc table"""
     if arg and arg.lower() == 'help':
         return dbhelp(self, 'desc')
-    if qb_ready(): 
+    if db_ready(): 
         return
     DB.desc(db_alias(), arg.replace(";",""))
 
