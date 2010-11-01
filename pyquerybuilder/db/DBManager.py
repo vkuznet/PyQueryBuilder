@@ -718,7 +718,10 @@ class DBManager(object):
         if  not self.engine.has_key(db_alias):
             e_name = ""
             if e_type == 'sqlite':
-                e_name = "%s:///%s" % (e_type, file_name)
+                e_name = "%s://%s?check_same_thread=False" % (e_type, file_name)
+                if not file_name.startswith('/'):
+                    e_name = "%s:///:memory:%s?check_same_thread=False" % \
+                             (e_type, file_name)
                 engine = sqlalchemy.create_engine(e_name)
             elif e_type == 'oracle':
                 e_name = "%s://%s:%s@%s" % (e_type, db_user, db_pass, db_name)
