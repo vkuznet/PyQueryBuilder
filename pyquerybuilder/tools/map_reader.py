@@ -18,6 +18,7 @@ class Mapper(object):
         self.dict = {}
         self.tbdict = {}
         self.coldict = {}
+        self.mapfile = None
 
     def load_mapfile(self, filename):
         """load map file"""
@@ -39,7 +40,14 @@ class Mapper(object):
                 else: 
                     self.tbdict[key] = names[0].lower() 
                     self.coldict[key] = names[1]
+        self.mapfile = filename
         self.dict = map_yaml
+ 
+    def is_ready(self):
+        """Check map file is loaded and mapper is initialized"""
+        if self.mapfile != None and self.dict != {} :
+            return 1
+        return 0    
         
     def validate_map(self, sorted_tables):
         """validate loaded map""" 
