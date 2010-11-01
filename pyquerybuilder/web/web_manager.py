@@ -344,16 +344,18 @@ class WebServerManager(WebManager):
             if cherrypy.engine.qbm.qbs == None:
                 raise Exception, "qbs is None" 
                 self.log("qbs is None", 1)
-            self.log(uinput, 1)
             mquery = manager.qbs.build_query(uinput)
-            self.log(mquery, 1)
+            rescot = manager.dbm.execute(mquery.count())
+            self.c_length = rescot.fetchall()[0][0]
             print mquery
             res = manager.dbm.execute(mquery)
+
         except Error:
             traceback.print_exc()
         self.c_titles = res.keys
         keywords = manager.qbs.keywords
-        self.c_length = res.rowcount
+        if res.rowcount != -1:
+            self.c_length = res.rowcount
 
         result = manager.dbm.print_result(res, mquery, suppress=True)
 
