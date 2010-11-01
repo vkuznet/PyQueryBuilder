@@ -25,33 +25,15 @@ YAHOO.example.DynamicData = function() {
     myDataSource.responseType = YAHOO.util.DataSource.TYPE_JSON;
     myDataSource.responseSchema = {
         resultsList: "records",
-        fields: [
-#for key in $titlelist
-#if $key != $titlelist[-1]
-        {key: "$key"},
-#else
-        {key: "$key"}
-#end if
-#end for
-        ],
+        fields:  ${fields} ,
         metaFields: {
             totalRecords: "totalRecords" // Access to value in the server response
         }
     };
-    // DataTable configuration
-    var myConfigs = {
-        initialRequest: "input=$input&idx=0&limit=$rowsperpage", // Initial request for first page of data
-        dynamicData: true, // Enables dynamic server-driven data
-        sortedBy : {key:"id", dir:YAHOO.widget.DataTable.CLASS_ASC}, // Sets UI initial sort arrow
-        paginator: new YAHOO.widget.Paginator({ rowsPerPage:$rowsperpage}) // Enables pagination 
-    };
-    
-    // DataTable instance
-    var myDataTable = new YAHOO.widget.DataTable("$tag", myColumnDefs, myDataSource, myConfigs);
+
     // Overrite default generateRequest to adjust for parameters used on server side
     // Example taken from datatable.js default implementation
-    myDataTable.setAttributeConfig("generateRequest", {
-        value: function(oState, oSelf) {
+    var myRequestBuilder = function(oState, oSelf) {
             // Set defaults
             oState = oState || {pagination:null, sortedBy:null};
             var sort = (oState.sortedBy) ? oState.sortedBy.key : oSelf.getColumnSet().keys[0].getKey();
@@ -62,9 +44,21 @@ YAHOO.example.DynamicData = function() {
             var params = "input=$input&limit=$rowsperpage&idx=" + idx;
             // Build the request
             return params + "&sort=" + sort + "&dir=" + dir;
-        },
-        validator: YAHOO.lang.isFunction
-    });
+        };
+    // DataTable configuration
+    var myConfigs = {
+        initialRequest: "input=$input&limit=$rowsperpage&idx=0&sort=$title1&dir=desc", // Initial request for first page of data
+        dynamicData: true, // Enables dynamic server-driven data
+        sortedBy : {key:"id", dir:YAHOO.widget.DataTable.CLASS_ASC}, // Sets UI initial sort arrow
+        paginator: new YAHOO.widget.Paginator({ rowsPerPage:$rowsperpage}), // Enables pagination 
+        generateRequest: myRequestBuilder
+    };
+    
+    // DataTable instance
+    var myDataTable = new YAHOO.widget.DataTable("$tag", myColumnDefs, myDataSource, myConfigs);
+
+
+
     // Update totalRecords on the fly with value from server
     myDataTable.handleDataReturnPayload = function(oRequest, oResponse, oPayload) {
         oPayload.totalRecords = oResponse.meta.totalRecords;
