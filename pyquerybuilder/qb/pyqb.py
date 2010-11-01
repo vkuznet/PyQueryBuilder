@@ -228,9 +228,15 @@ class QueryBuilder():
         self.keywords = []
 
     def is_ready(self):
-        """check schema is loaded"""
-        if (self.schema.is_loaded() and self.querybuilder != None):
-            return 1
+        """check schema/mapfile is loaded"""
+        if self.querybuilder != None:
+            if self.schema.is_loaded() :
+                if self.mapper != None :
+                    if self.mapper.is_ready():
+                        return 1
+                print "mapper is not ready"
+                return 0
+            print "schema is not loaded"
         return 0
     
     def set_mapper(self, mapfile='map.yaml'):
