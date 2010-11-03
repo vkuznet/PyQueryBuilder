@@ -6,3 +6,8 @@ Code documentation
 
    qb.rst
    db.rst
+   dbsh.rst
+   parser.rst
+   tools.rst
+   utils.rst
+   web.rst
