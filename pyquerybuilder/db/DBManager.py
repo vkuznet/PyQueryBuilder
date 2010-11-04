@@ -319,8 +319,7 @@ class DBManager(object):
                 if  file_name:
                     l_file.write("%s;\n" % error.statement)
                 else:
-                    if  self.verbose:
-                        print "%s;\n" % error.statement
+                    print "%s;\n" % error.statement
             try:
                 result = self.con.execute("SELECT * FROM %s" % t_name)
                 for item in result:
