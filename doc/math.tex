@@ -14,12 +14,41 @@
 instead of SQL for most of the cases. If we cannot prove that it can be replaced by SQL for
 all the cases we should identify when and why this happens.
 
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+I think you means that ability that QL could replace SQL queries(SELECT query methods) to exploring the RDMS. Not talking other DML or DDL/DCLs operations. Not Sure whether exploring schema definition is including, such as show table definition, constraints.
+
+For exploring the RDMS:
+
+Exploring records:
+
+The completion of the keywords, which means all the attribute user concerns should be covered by keywords. Here comes translation from relation model to object-oriented model. Are there exists a situation like this? there are information lose in this translation. Check materials for this. 
+
+The completion of the operators and constraints, which able to deduce all the expressions that user needed. Here comes, whether we bring all the operator/constraints in our expressions, think about a query with Nest clause. So here might involve a Finite State Machine to proof.
+
+The comparision for performatnce of QL expression.
+
+Exploring schema: as mentioned at upper context if needed.
+
+\setlength{\parindent}{0.25in}
 2. We need to state that it can be used in a system we build for general
 access to RDMS and eventually by web search engines to query data over RDMS.
 You need to clarify that usage of QL provide transparent access to any RDMS.
 
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+
+Yes, the only thing not transparent is to provide a map file, defining how keywords maps to the Table/Columns.
+\setlength{\parindent}{0.25in}
+
 3. Provide use case of web crawler which auto-discover our system, get knowledge
 of data the system can provide and integrate search over our system using QL
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Will address in another document.
+\setlength{\parindent}{0.25in}
 
 \begin{center}
 {\section*{{\normalsize\bf 1.Questions}}}
@@ -73,6 +102,11 @@ Considering a change on DB schema name, what have to update?
 
 {\bf VK comment:} Why do we need step B? We should transparent auto-discovery of the schema.
 
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Yes, discovery of the schema is transparent.
+\setlength{\parindent}{0.25in}
+
 Translate the queries into SQL queries including reorganize the sequence of join orders, which need an external mapping between tables and graph nodes using Dijkstra's shortest path algorithm for finding a solution. Database schema is represented as a weighted directed graph with nodes mapped to tables and edges representing relationships between tables. Dijkstra's shortest path algorithm is used to determine the least-weigh path from one table to another and resolve multi-path ambiguities.
 
 Send the SQL queries to DB back-end, and provide results to user either by programming command-line tools or by web interfaces.
@@ -90,6 +124,15 @@ Send the SQL queries to DB back-end, and provide results to user either by progr
 
 {\bf VK comment:} How tuples are defined, what the tuple means?
 
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+a tuple is a record/row from a table which involed in join operation.
+
+All tuples from same table which were choosed by join operation. denote as $r(R_i)$
+
+A result record are made of tuples, those tuples are come from a connect tree/network which represents the way Tables joined together for this query.
+\setlength{\parindent}{0.25in}
+
   \item $dist(t_i,t_j)$ is defined as the minimum number of connections between tuple $t_i$ and $t_j$
   \item $T(R)$ is the number of tuples in $R$
 
@@ -98,11 +141,21 @@ Send the SQL queries to DB back-end, and provide results to user either by progr
 
 {\bf VK comment:} seems like $B(R)$ is not used anywhere
 
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Yes, need a cleanup
+\setlength{\parindent}{0.25in}
+
   \item $S(R, A)$ is the count of {\it attribute} $A$ on $R$, it equals number of distinct values on {\it attribute} $A$ at relation $R$.
   \item $S(R, [A_1, A_2 ... A_n])$ is when we count $A_1, A_2  ... An$ together as a distinct value.
   \item $R_a(R_i)[X] = n[r(R_i)] / n[R_i]$, is numbers of tuples in $r(R_i)$ divided by numbers of tuples in $R_i$ when operated by the {\it JOIN} operation on $R_i$ and $R_j$ on {\it attribute} $X$. Here $X$ could be multiples attributes.
 
 {\bf VK comment:} seems like no one use it
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Yes, cleanup.
+\setlength{\parindent}{0.25in}
 
   \item JNT is a connected tree of tuples where every two adjacent tuples $t_i \in r(R_i)$ and $t_j \in r(R_j)$ can be joined based on the foreign key reference defined on relational schema $R_i$ and $R_j$ in $G_s(V,E)$ (either $R_i \rightarrow R_j$ or $R_j \rightarrow R_i$)
   \item MTJNT is the minimal total joining network of tuples.
@@ -110,6 +163,11 @@ Send the SQL queries to DB back-end, and provide results to user either by progr
     \item Minimal: a joining network of tuples in not total if any tuple is removed.
 
 {\bf VK comment:} I don't get what do you mean by {\it in not total if any tuple is removed}?
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+A joining network of tuples is not total if any tuple is removed.
+\setlength{\parindent}{0.25in}
 
     \item Total: each keyword in the query must be contained in at least one tuple of the joining network.
     \end{itemize}
@@ -128,6 +186,23 @@ based on shortest path algorithm. The queries may not be optimal but sufficient.
 And you need to demonstrate that with proper weight assignment we can resolve
 ambiguities of different found paths.
 
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+At my first thinking:
+
+For the sufficience comes from the expressing ability of the QL language is as much as SQL queries, or at least as much as User requirements.
+
+Let's assumpt that we got all the Candinate Join Tree, which should have all the possible single SQL solutions. Here remind the Nest SQL queries, currently we don't have nest QL, so there might some expressing are not able to achive in QL. Or if there a proof that all Nest SQL query could conver into one single SQL query, that could make difference.
+
+Next comes the ambiguities, weight assignment is the way to assign a unique id to each path solution(or single SQL solution). 
+
+If that assignments always capable to generate unique id for everyone ? we could do a math proof.
+
+Will those single SQL solutions are getting same result ? if not then we have ambiguities per se, which might only be solved by mulitple SQL query or a Nest SQL query.
+
+
+\setlength{\parindent}{0.25in}
+
 
 \item {\bf To find out the MTJNT, current solution}:
   \begin{enumerate}
@@ -136,6 +211,11 @@ ambiguities of different found paths.
 
 
 {\bf VK comment:} What is BFS?
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Breadth first search
+\setlength{\parindent}{0.25in}
 
   \item For query $Q$:
     \begin{enumerate}
@@ -154,6 +234,11 @@ Given a large schema, it takes time for the experts to assign weight on the Grap
 {\bf VK comment:} Why you can't start from assigning weight by using number of rows in a table.
 If table is big, this gives you a hint that if it is participate in a join the resulting query
 can be slower.
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+Yes, that's a good start
+\setlength{\parindent}{0.25in}
 
   \begin{itemize}
   \item Estimating join operation cost and calculates the weight of each edge based on cost.
@@ -214,6 +299,27 @@ A *     * D
      C
 
 \end{verbatim}
+
+\setlength{\parindent}{0.5in}
+{\bf Dong reply:}
+I feel it quite related with the meaning of the table. Let's check with a example:
+\begin{itemize}
+\item A is Assistant
+\item B is Bank
+\item C is Cafe
+\item D is Doctor
+\item A is working at B/C
+\item D provide service for B/C
+\item Query: list Assistant and his doctor
+\item Situation 1. if an Assistant can only work either B/C, and B/C sign different Doctors. 
+ABD are totally different with ACD.
+\item Situation 2. if an Assistant can work on both B/C, and every B/C has same doctor
+ABD are partly different with ACD
+\item situation 3. if an Assistant must work on both B/C, and B/C must sign same Doctor
+ABD are the same as ACD.
+\end{itemize}
+I think I might move to DBS schema which has complicate situations. And found out some reality examples to play with.
+\setlength{\parindent}{0.25in}
 
 
 \begin{center}
