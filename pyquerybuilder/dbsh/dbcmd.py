@@ -38,25 +38,29 @@ CMDDICT = {
  "schema":"Schema manipulation command",
  "next":"print next set of results",
  "prev":"print previous set of results",
- "execute":"Execute QL expressions",
+ "find":"Execute QL expressions",
  "mapfile":"show and set mapfile",
  "schemafile":"show and set schemafile",
 }
 CMDDICTEXT = {
  "connect":"""
-Invoke connection to DB via the following connector
+Invoke connection to DB via the following connector or db alias.
 
        driver://username:password@host:port/database:owner
 
 The following parameters are optional: host, port, owner. Below you can find 
 all examples.
- MySQL   mysql://user:password@localhost:port/dbname
-         mysql://user:password@localhost/dbname,
- ORACLE  oracle://user:password@dns/dbname (use ORACLE TNS service)
-         oracle://user:password@127.0.0.1:1521/sidname,
- SQLite  sqlite:////absolute/path/to/database.txt
-         sqlite:///relative/path/to/database.txt,
-""",
+ MySQL      mysql://user:password@localhost:port/dbname,
+
+ PostgreSQL postgresql://user:password@localhost:port/dbname,
+
+ ORACLE     oracle://user:password@dns/dbname (use ORACLE TNS service)
+            oracle://user:password@127.0.0.1:1521/sidname,
+
+ SQLite     sqlite:////absolute/path/to/dbname,
+            sqlite:///relative/path/to/dbname,
+            sqlite://dbname or sqlite:///:memory:/dbname (for memory database)
+For full list of known db aliases see mydb command""",
  "close":"""Close connection to DB. Once you connected to DB you may wish to 
          close this connection. The close support both syntax via driver or db 
          alias. For full list of known db aliases see mydb command""",
@@ -75,7 +79,6 @@ Execute select statement, dbsh accepts a full SQL syntax appropriate for given
         GROUP BY expression_list
         HAVING predicates
         ORDER BY expression_list
-
 """,
  "insert":"""
 Execute insert SQL statement, dbsh accepts a full SQL syntax appropriate for 
@@ -191,7 +194,7 @@ and x,y will be plotted for you.
            if page is set-up pagination""",
  "prev":"""print previous set of results for executed SQL statement, 
            if page is set-up pagination""",
- "execute":"""execute <QL expression> 
+ "find":"""execute <QL expression> 
 QueryLanguage is similar in syntax to SQL (Structured Query Language) for 
 databases but is much simpler than SQL. It hides all the complexity of SQL 
 but provides the same flexibility. User just need to be concerned about 
@@ -214,5 +217,5 @@ Here is the basic usage
            mapfile <new map file>
                set mapfile to the new map file""",
  "schemafile":"""schemafile is used by querybuilder when explain a QL
-   expression without db connected""",
+   expression without loading schema from DB-backend""",
 }
