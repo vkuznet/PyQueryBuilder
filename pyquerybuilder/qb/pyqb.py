@@ -234,7 +234,7 @@ class QueryBuilder():
                 if self.mapper != None :
                     if self.mapper.is_ready():
                         return 1
-                print "mapper is not ready"
+                print "map file is not loaded"
                 return 0
             print "schema is not loaded"
         return 0
