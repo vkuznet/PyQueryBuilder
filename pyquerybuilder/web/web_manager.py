@@ -39,7 +39,7 @@ def set_headers(itype, size=0):
         response.headers['Content-Length'] = size
     response.headers['Content-Type'] = itype
     response.headers['Expires'] = 'Sat, 14 Oct 2017 00:59:30 GMT'
-    
+
 def minify(content):
     """
     Remove whitespace in provided content.
@@ -60,9 +60,11 @@ class WebManager(TemplatedPage):
         imgdir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'images')
         cssdir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'css')
         jsdir  = '%s/%s' % (__file__.rsplit('/', 1)[0], 'js')
+        docdir = '%s/%s' % (__file__.rsplit('/', 2)[0], 'doc')
         print "IMG dir", imgdir
         print "CSS dir", cssdir
         print "JS  dir", jsdir
+        print "Document dir", docdir
         self.cssmap   = {
             'main.css': cssdir + '/main.css',
         }
@@ -112,7 +114,7 @@ class WebManager(TemplatedPage):
         """
         Serve static images.
         """
-        mime_types = ['*/*', 'image/gif', 'image/png', 
+        mime_types = ['*/*', 'image/gif', 'image/png',
                       'image/jpg', 'image/jpeg']
         accepts = cherrypy.request.headers.elements('Accept')
         for accept in accepts:
@@ -132,15 +134,15 @@ class WebManager(TemplatedPage):
         Get css by calling: /controllers/css/file1/file2/file3
         """
         mime_types = ['text/css']
-        cherryconf.update({'tools.encode.on': True, 
+        cherryconf.update({'tools.encode.on': True,
                            'tools.gzip.on': True,
                            'tools.gzip.mime_types': mime_types,
                           })
-        
+
         args = list(args)
         scripts = self.check_scripts(args, self.cssmap)
         idx = "-".join(scripts)
-        
+
         if  idx not in self.cache.keys():
             data = '@CHARSET "UTF-8";'
             for script in args:
@@ -153,8 +155,8 @@ class WebManager(TemplatedPage):
                     ifile.close()
             set_headers ("text/css")
             self.cache[idx] = minify(data)
-        return self.cache[idx] 
-        
+        return self.cache[idx]
+
     @exposejs
     @tools.gzip()
     def js(self, *args, **kwargs):
@@ -168,11 +170,11 @@ class WebManager(TemplatedPage):
                            'tools.gzip.mime_types': mime_types,
                            'tools.encode.on': True,
                           })
-        
+
         args = list(args)
         scripts = self.check_scripts(args, self.jsmap)
         idx = "-".join(scripts)
-        
+
         if  idx not in self.cache.keys():
             data = ''
             for script in args:
@@ -182,12 +184,12 @@ class WebManager(TemplatedPage):
                 data = "\n".join ([data, ifile.read()])
                 ifile.close()
             self.cache[idx] = data
-        return self.cache[idx] 
-        
+        return self.cache[idx]
+
     def check_scripts(self, scripts, map):
         """
-        Check a script is known to the map and that the script actually exists   
-        """           
+        Check a script is known to the map and that the script actually exists
+        """
         for script in scripts:
             if script not in map.keys():
                 self.warning("%s not known" % script)
@@ -199,7 +201,7 @@ class WebManager(TemplatedPage):
                     self.warning("%s not found at %s" % (script, path))
                     scripts.remove(script)
         return scripts
-    
+
 class WebServerManager(WebManager):
     """
     WebServerManager interface.
@@ -231,7 +233,7 @@ class WebServerManager(WebManager):
         """
         Serve CLI file download.
         """
-        clifile = os.path.join(os.environ['QB_ROOT'], 
+        clifile = os.path.join(os.environ['QB_ROOT'],
                 'pyquerybuilder/tools/qbcli.py')
         return serve_file(clifile, content_type='text/plain')
 
@@ -287,7 +289,7 @@ class WebServerManager(WebManager):
             for title in t_list:
                 record[title] = ''
             rows.append(record)
-        for res in o_list: 
+        for res in o_list:
             index = 0
             record = {}
             for index in range(0, len(t_list)):
@@ -317,13 +319,13 @@ class WebServerManager(WebManager):
         uinput = kwargs.get('input', '')
         limit  = int(kwargs.get('limit', 5)) # number of shown results
         idx    = int(kwargs.get('idx', 0)) # start with
-        sdir   = kwargs.get('dir', 'asc') 
+        sdir   = kwargs.get('dir', 'asc')
         rows   = self.get_data(uinput, idx, limit, sort, sdir)
         total  = self.get_total(uinput)
         jsondict = {'recordsReturned': len(rows),
-                   'totalRecords': total, 
+                   'totalRecords': total,
                    'startIndex':idx,
-                   'sort':'true', 
+                   'sort':'true',
                    'dir':'asc',
                    'pageSize': limit,
                    'records': rows}
@@ -342,7 +344,7 @@ class WebServerManager(WebManager):
         manager = cherrypy.engine.qbm
         try:
             if cherrypy.engine.qbm.qbs == None:
-                raise Exception, "qbs is None" 
+                raise Exception, "qbs is None"
                 self.log("qbs is None", 1)
             mquery = manager.qbs.build_query(uinput)
             rescot = manager.dbm.execute(mquery.count())
@@ -377,9 +379,9 @@ class WebServerManager(WebManager):
         total   = self.get_total(uinput)
 
         names   = {'title1':titles[0],
-                   'coldefs':coldefs, 
+                   'coldefs':coldefs,
                    'rowsperpage':limit,
-                   'total':total, 
+                   'total':total,
                    'tag':'mytag',
                    'input':urllib.quote(uinput),
                    'fields':myfields}

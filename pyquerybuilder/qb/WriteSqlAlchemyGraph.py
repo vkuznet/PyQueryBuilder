@@ -15,9 +15,9 @@ def write_sql_alchemy_graph(dot, metadata, exclude_tables):
 #        dot.set_name(metadata.name)
 #    else:
 #        dot.set_name("A")
-    dot.set_name("A")    
+    dot.set_name("A")
     for table_name in metadata.tables:
-        if table_name in exclude_tables: 
+        if table_name in exclude_tables:
             continue
         f_keys = metadata.tables[table_name].foreign_keys
         for fk in f_keys:
@@ -25,7 +25,7 @@ def write_sql_alchemy_graph(dot, metadata, exclude_tables):
             if right not in exclude_tables:
                 dot.add_edge(table_name, right)
     dot.finish_output()
-    
+
 
 #class MeasureGraph(object):
 #    """This is a writer that just counts the number of edges in a graph."""
@@ -58,4 +58,4 @@ def write_query_alchemy_graph(dot, query):
     if froms:
         _write_side(dot, froms[0])
     dot.finish_output()
-   
+

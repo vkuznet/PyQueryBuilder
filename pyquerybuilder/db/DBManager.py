@@ -2,14 +2,14 @@
 #-*- coding: ISO-8859-1 -*-
 
 """
-DBManager module 
+DBManager module
 """
 __revision__ = "$Id: $"
 __version__ = "$Revision: $"
 __author__ = "Valentin Kuznetsov"
 
 # system modules
-import sys  
+import sys
 import time
 import types
 import traceback
@@ -42,7 +42,7 @@ def print_list(input_list, msg = None):
 #    print t_list
 #    for idx in xrange(0, len(o_list)):
 #        print o_list[idx]
-    
+
 def get_graph(sorted_tables, table_index, graph):
     """get graph"""
     index = 0
@@ -119,11 +119,11 @@ class DBManager(object):
     """
     def __init__(self, verbose = 0):
         """
-        Constructor. 
+        Constructor.
         """
         self.verbose     = verbose
-        self.members     = ['engine', 'db_tables', 'table_names', 
-                            'db_type', 'db_owner', 'db_schema', 
+        self.members     = ['engine', 'db_tables', 'table_names',
+                            'db_type', 'db_owner', 'db_schema',
                             'meta_dict', 'drivers', 'aliases']
         # for print_table
         self.print_mgr  = PrintOutput()
@@ -151,7 +151,7 @@ class DBManager(object):
         self.drivers     = {}
         self.aliases     = {}
         self.con         = None
-        
+
     def write_graph(self, db_alias, format_l=None):
         """
         Write graph of DB schema to db_alias.dot file
@@ -162,7 +162,7 @@ class DBManager(object):
             print "Writing graph of DB schema to", file_name
         dot = DotGraph(file(file_name, "w"))
         # load all tables before building a graph
-        t_dict = self.load_tables(db_alias) 
+        t_dict = self.load_tables(db_alias)
         if  self.verbose:
             print t_dict
         for key in t_dict.keys():
@@ -188,7 +188,7 @@ class DBManager(object):
                 print "Please verify that you have dot installed on your system"
                 print traceback.print_exc()
 
-  
+
     def dbname(self, arg):
         """
         Generate dbname as corresponding db_type in arg
@@ -197,20 +197,20 @@ class DBManager(object):
             arg = self.drivers[arg]
         db_type, db_name, _, _, host, _, owner, file_name = \
                              self.parse(arg)
-        if db_type.lower() == 'oracle': 
+        if db_type.lower() == 'oracle':
             name = db_name
-            if owner: 
+            if owner:
                 name += "-%s" % owner
             return "%s-%s |\#> " % (db_type, name)
-        if db_type.lower() == 'mysql': 
+        if db_type.lower() == 'mysql':
             return "%s-%s-%s |\#> " % (db_type, db_name, host)
         if db_type.lower() == 'postgresql':
             return "%s-%s-%s |\#> " % (db_type, db_name, host)
-        if db_type.lower() == 'sqlite': 
+        if db_type.lower() == 'sqlite':
             f_name = file_name.split("/")[-1]
             return "%s-%s |\#> " % (db_type, f_name)
         return "%s-%s |\#> " % (db_type, db_name)
-  
+
     def show_table(self, db_alias):
         """
         Print out list of tables in DB
@@ -257,10 +257,10 @@ class DBManager(object):
         pylab.grid(True)
         pylab.show()
 
-        
+
     def desc(self, db_alias, table):
         """
-        Describe a table from DB 
+        Describe a table from DB
         """
         tables = self.load_tables(db_alias, table) # load table from DB
         if  self.verbose:
@@ -274,12 +274,12 @@ class DBManager(object):
         l_list = [len(x) for x in t_list] # column width list
         for col in tab_obj.columns:
             key   = ""
-            if col.unique: 
+            if col.unique:
                 key = "unique"
-            elif col.primary_key: 
+            elif col.primary_key:
                 key = "primary"
             value = "NULL"
-            if col.default: 
+            if col.default:
                 value = col.default
             f_keys = ""
             for f_key in col.foreign_keys:
@@ -287,25 +287,25 @@ class DBManager(object):
             v_list = (col.name, col.type, key, value, col.autoincrement, f_keys)
             o_list.append(v_list)
             for idx in xrange(0, len(v_list)):
-                if l_list[idx] < len(str(v_list[idx])): 
+                if l_list[idx] < len(str(v_list[idx])):
                     l_list[idx] = len(str(v_list[idx]))
-        o_list.sort() 
+        o_list.sort()
 #        if  self.verbose:
         self.print_table(t_list, o_list, l_list)
         return len(o_list)
-  
+
     def dump(self, db_alias, file_name = None):
         """
         Try to create a table and dump results in provided file
         """
-        tables = self.load_tables(db_alias) 
+        tables = self.load_tables(db_alias)
         # load all tables from DB in order to dump DDL
 #        db_type = self.db_type[db_alias]
 #        msg    = "--\n-- Dump %s.\n-- %s\n" % \
 #              (db_alias, makeTIME(time.time()))
         msg = "--\n-- Dump %s.\n-- %s\n" % (db_alias, time.time())
         if  file_name:
-            l_file = open(file_name, 'w') 
+            l_file = open(file_name, 'w')
             l_file.write(msg)
         else:
             if  self.verbose:
@@ -340,7 +340,7 @@ class DBManager(object):
                 raise traceback.print_exc()
         if file_name:
             l_file.close()
-  
+
     def migrate(self, db_alias, arg):
         """
         Migrate schema from db_alias to self.aliases[arg]
@@ -364,7 +364,7 @@ class DBManager(object):
         graph = []
         count = 0
         for table in sorted_tables:
-            name = table.name 
+            name = table.name
             sorted_tb[table.name] = table
             table_index[table.name] = count
             count = count + 1
@@ -401,7 +401,7 @@ class DBManager(object):
                       % (db_alias, new_dbalias)
         self.close(new_dbalias)
 
-            
+
 #
 #        table_names = tables.keys()
 #        table_names.sort()
@@ -431,7 +431,7 @@ class DBManager(object):
 #            print "The content of '%s' has been successfully migrated to '%s'"
 #                        %  (db_alias, new_dbalias)
 #        self.close(new_dbalias)
-  
+
     def create_alias(self, name, params):
         """Update self.aliases"""
         pass
@@ -440,16 +440,16 @@ class DBManager(object):
     def get_alias(self, driver):
         """get db alias"""
         return self.aliases[driver]
-  
+
     def execute(self, query, db_alias = "", list_results = 1):
         """Execute query and print result"""
         self.t_cache = []
         try:
             result = self.con.execute(query)
-            self.results = result            
+            self.results = result
         except Error:
             raise Exception
-        if not list_results: 
+        if not list_results:
             return None
         if self.verbose:
             self.print_result(result, query)
@@ -490,21 +490,21 @@ class DBManager(object):
 
         new_offset = self.offset + self.limit
         if index != None:
-            new_offset = index 
+            new_offset = index
         if len(self.t_cache) > new_offset:
             self.offset = new_offset
             result = self.t_cache[self.offset : self.offset + self.limit]
         else:
             if self.results.closed:
                 result = self.t_cache[self.offset : self.offset + self.limit]
-            else: 
+            else:
                 result = self.results
         return self.print_result(result, self.query, suppress)
 
     def prev(self, suppress=False):
         """
         move to previous page
-        offset decreased by limit if capable, otherwise the first page     
+        offset decreased by limit if capable, otherwise the first page
         """
         new_offset = self.offset - self.limit
         if new_offset > 0:
@@ -512,7 +512,7 @@ class DBManager(object):
         result = self.t_cache[self.offset : self.offset + self.limit]
         return self.print_result(result, self.query, suppress)
 
-  
+
     def print_result(self, result, query, suppress=False):
         """
         Print result and query
@@ -536,12 +536,12 @@ class DBManager(object):
             v_list = item.values()
             o_list.append(v_list)
             for idx in xrange(0, len(v_list)):
-                if l_list[idx] < len(str(v_list[idx])): 
+                if l_list[idx] < len(str(v_list[idx])):
                     l_list[idx] = len(str(v_list[idx]))
         if not suppress:
             self.print_table(t_list, o_list, l_list, query)
         return (query, t_list, o_list)
-  
+
     def drop_db(self, db_alias):
         """
         Drop database
@@ -577,7 +577,7 @@ class DBManager(object):
 #            except Error:
 #                traceback.print_exc()
 #        self.db_tables.pop(db_alias)
-  
+
     def drop_table(self, db_alias, table_name):
         """
         Drop table from provided database
@@ -613,7 +613,7 @@ class DBManager(object):
             self.db_tables = {}
             self.table_names = {}
         self.load_table_names(db_alias)
-  
+
     def close(self, db_alias):
         """
         Close connection to database
@@ -629,9 +629,9 @@ class DBManager(object):
 #        if self.verbose:
         print "database connection %s has been closed" % \
                  db_alias
-        
+
     def parse(self, arg):
-        """ 
+        """
         Parse provided input to make data base connection.
         SQLAlchemy support the following format :
 
@@ -639,7 +639,7 @@ class DBManager(object):
 
             driver://username:password@host:port/database,
 
-        while here we extend it to the following structure 
+        while here we extend it to the following structure
         (suitable for ORACLE):
 
         .. doctest::
@@ -665,7 +665,7 @@ class DBManager(object):
             if  rest.find("/") != -1:
                 host_port, dbrest = rest.split("/")
                 try:
-                    host, port = host_port.split(":") 
+                    host, port = host_port.split(":")
                 except Error:
                     host = host_port
             else:
@@ -681,9 +681,9 @@ class DBManager(object):
                 msg = "'%s' parameter is not supported for driver '%s'" % \
                           (file_name, driver)
                 raise Exception, msg + "\n"
-        return (driver.lower(), db_name, db_user, db_pass, 
+        return (driver.lower(), db_name, db_user, db_pass,
                              host, port, owner, file_name)
-  
+
     def connect(self, driver):
         """Connect to DB"""
         if self.drivers.has_key(driver):
@@ -700,7 +700,7 @@ class DBManager(object):
             db_alias = '%s-%s' % (db_type, db_name)
         else:
             db_alias = db_name
-            if db_type: 
+            if db_type:
 #                db_alias += "-" + db_type
                 db_alias = '%s-%s-%s' % (db_type, db_name, host)
 #            print "db_alias: %s"% db_alias
@@ -712,7 +712,7 @@ class DBManager(object):
         if  self.verbose:
             print "Connecting to %s (%s back-end), please wait ..." % \
                      (db_alias, db_type)
-  
+
         # Initialize SQLAlchemy engines
         if  not self.engine.has_key(db_alias):
             e_name = ""
@@ -724,12 +724,12 @@ class DBManager(object):
                 engine = sqlalchemy.create_engine(e_name)
             elif e_type == 'oracle':
                 e_name = "%s://%s:%s@%s" % (e_type, db_user, db_pass, db_name)
-                engine = sqlalchemy.create_engine(e_name, 
+                engine = sqlalchemy.create_engine(e_name,
                             strategy = 'threadlocal', threaded = True)
             elif e_type == 'mysql':
-                e_name = "%s://%s:%s@%s/%s" % (e_type, db_user, 
+                e_name = "%s://%s:%s@%s/%s" % (e_type, db_user,
                                           db_pass, host, db_name)
-                engine = sqlalchemy.create_engine(e_name, 
+                engine = sqlalchemy.create_engine(e_name,
                                  strategy = 'threadlocal')
             elif e_type == 'postgresql':
                 e_name = "%s://%s:%s@%s/%s" % (e_type, db_user,
@@ -741,20 +741,20 @@ class DBManager(object):
                 print Exception, "Unsupported DB engine back-end"
             self.engine[db_alias] = engine
         self.con = self.engine[db_alias].connect()
-        if  not self.db_type.has_key(db_alias): 
+        if  not self.db_type.has_key(db_alias):
             self.db_type[db_alias] = e_type
-        if  not self.db_owner.has_key(db_alias) : 
+        if  not self.db_owner.has_key(db_alias) :
             self.db_owner[db_alias] = db_owner
-        if  not self.db_schema.has_key(db_alias): 
+        if  not self.db_schema.has_key(db_alias):
             self.db_schema[db_alias] = db_schema
         if  not self.meta_dict.has_key(db_alias):
             db_meta = sqlalchemy.MetaData()
             db_meta.bind = self.engine[db_alias]
             self.meta_dict[db_alias] = db_meta
-        if  not self.table_names.has_key(db_alias): 
+        if  not self.table_names.has_key(db_alias):
             self.table_names[db_alias] = self.load_table_names(db_alias)
         return self.con
-  
+
     def load_table_names(self, db_alias):
         """
         Retrieve table names for provided database name.
@@ -773,7 +773,7 @@ class DBManager(object):
         else:
             table_names = engine.table_names()
         return table_names
-  
+
     def load_tables(self, db_alias, table_name = None):
         """
         Load table objects for provided database. The optional table_name
@@ -789,9 +789,9 @@ class DBManager(object):
         kwargs = {'autoload':True}
         for t_name in self.table_names[db_alias]:
             tab_name = t_name.lower()
-            if  tables.has_key(tab_name): 
+            if  tables.has_key(tab_name):
                 continue
-            if  table_name and tab_name != table_name: 
+            if  table_name and tab_name != table_name:
                 continue
             if  e_type == 'oracle':
                 kwargs['useexisting'] = True
@@ -811,4 +811,4 @@ class DBManager(object):
             self.print_mgr.print_csv(t_list, o_list, l_list, msg)
         else:
             self.print_mgr.print_txt(t_list, o_list, l_list, msg)
- 
+

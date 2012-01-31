@@ -12,6 +12,6 @@ import logging.config
 def configurelog():
     """Log configuration"""
     logging.config.fileConfig("logging.conf")
-    
+
     #create logger
     logger = logging.getLogger("ConstructQuery")

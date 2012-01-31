@@ -93,11 +93,11 @@ class Graph(object):
 
 
     def breadth_first(self, node_index):
-        """Return an iterator whose value is (child,parent) for every edge in 
+        """Return an iterator whose value is (child,parent) for every edge in
         the graph. it's in breadth first order"""
         unexplored = [(node_index, None)]
         #visited    = [False for x in self._graph]
-        visited = [False] * self.__len__()  
+        visited = [False] * self.__len__()
         #starting_node_index = node_index
         ( yield unexplored[0] )
         while unexplored:
@@ -114,7 +114,7 @@ class Graph(object):
         return
 
     def get_edges_including(self, node_set):
-        """Assumes we are working with a spanning tree with single directed 
+        """Assumes we are working with a spanning tree with single directed
         edges. Finds edges including the node_set."""
         reverse = self.get_reverse()
         edges = set()
@@ -132,7 +132,7 @@ class Graph(object):
         return Graph((tuple(x) for x in undirected))
 
     def get_coverage(self):
-        """Coverage returns the set of nodes in the graph. 
+        """Coverage returns the set of nodes in the graph.
         We say a node is in the graph if it is on an edge."""
         if self._coverage:
             return self._coverage
@@ -159,8 +159,8 @@ class Graph(object):
         return self._reverse
 
     def edges_from_node(self, node_index):
-        """Given a node, follow its edges until the end. Return the edges. 
-        Assumes only one edge out of each node. breadth first, 
+        """Given a node, follow its edges until the end. Return the edges.
+        Assumes only one edge out of each node. breadth first,
         (node,next_node)"""
         edges = set()
         next_nodes = self._graph[node_index]
@@ -172,7 +172,7 @@ class Graph(object):
         return edges
 
     def write_graph(self, dot):
-        """create a DotGraph by addin all the edges from graph, 
+        """create a DotGraph by addin all the edges from graph,
         then do the output"""
         dot.set_name("G")
         for start_index in range(0, len(self._graph)):
@@ -214,7 +214,7 @@ class RootedGraph(Graph):
         """Find a subtree of a directed, acyclic graph pruning
         branches which don't contain nodes in the node_set.
         return subtree from node_set"""
-        if not node_set.issubset(self.get_coverage()): 
+        if not node_set.issubset(self.get_coverage()):
             return None
 
         #add_to = [[] for x in self._graph]

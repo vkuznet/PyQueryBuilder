@@ -23,7 +23,7 @@ IP = IPython.ipapi.get()
 
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.dbsh.dbprint import PrintOutput
-from pyquerybuilder.dbsh.dbresults import Results    
+from pyquerybuilder.dbsh.dbresults import Results
 from pyquerybuilder.dbsh.dbcmd import CMDDICT
 from pyquerybuilder.dbsh.dbcmd import CMDDICTEXT
 from pyquerybuilder.qb.pyqb import QueryBuilder
@@ -88,21 +88,21 @@ DB\n checking %s for loading schema from file\n checking %s for load mapfile" %\
                  DBPRINT.msg_green("mapfile"))
         return 1
     return 0
-    
+
 def set_prompt(in1):
     """set prompt as input  """
 
 #    ips = __main__.__dict__['__IP'] 
     ips = IP.user_ns['__IP']
-    prompt = getattr(ips.outputcache, 'prompt1') 
+    prompt = getattr(ips.outputcache, 'prompt1')
     prompt.p_template = in1
-    prompt.set_p_str() 
+    prompt.set_p_str()
 
 def get_prompt():
     """get prompt """
 #    ips = __main__.__dict__['__IP'] 
     ips = IP.user_ns['__IP']
-    prompt = getattr(ips.outputcache, 'prompt1') 
+    prompt = getattr(ips.outputcache, 'prompt1')
     return ips.outputcache.prompt1.p_template
 
 def db_alias():
@@ -137,7 +137,7 @@ def close(self, arg):
     """
     if arg.lower() == 'help':
         return dbhelp(self, 'close')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.close(db_alias())
     set_prompt('dbsh |\#> ')
@@ -162,7 +162,7 @@ def show(self, arg):
     """
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'show')
-    if not db_ready(): 
+    if not db_ready():
         return
     arg = arg.replace(";","")
     if arg == 'tables':
@@ -174,7 +174,7 @@ def desc(self, arg):
     """desc table"""
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'desc')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.desc(db_alias(), arg.replace(";",""))
 
@@ -215,7 +215,7 @@ def migrate(self, arg):
     """migrate destination_url"""
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'migrate')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.migrate(db_alias(), arg)
 
@@ -228,7 +228,7 @@ def mydb(self, arg):
         msg = _msg + "\n" + "-"*len(_msg)
         DBPRINT.print_blue(msg)
         for key in DB.db_type.keys():
-            DBPRINT.print_green("%s (%s back-end)" % (key, DB.db_type[key]))   
+            DBPRINT.print_green("%s (%s back-end)" % (key, DB.db_type[key]))
     else:
         DBPRINT.print_red("No DB connection found.")
 
@@ -256,12 +256,12 @@ def dbhelp(self, arg):
     cmd_list.sort()
     sep = 0
     for i in cmd_list:
-        if sep < len(str(i)): 
+        if sep < len(str(i)):
             sep = len(str(i))
     if  not arg:
         msg = "Available commands:\n"
         for cmd in cmd_list:
-            msg += "%s%s %s\n" % (DBPRINT.msg_green(cmd), 
+            msg += "%s%s %s\n" % (DBPRINT.msg_green(cmd),
                  " "*abs(sep-len(cmd)), CMDDICT[cmd])
     else:
         cmd = arg.strip()
@@ -275,7 +275,7 @@ def source(self, arg):
     """execute the SQL queries in the file"""
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'source')
-    if not db_ready(): 
+    if not db_ready():
         return
     file1 = None
     try:
@@ -286,7 +286,7 @@ def source(self, arg):
     q_list = file1.read().split(';')
     for query1 in q_list:
         query = query1.replace('\n', ' ').replace(";", "")
-        if not query.strip(): 
+        if not query.strip():
             continue
         DBPRINT.print_blue(query)
         DB.execute(query, db_alias())
@@ -295,25 +295,25 @@ def format(self, arg):
     """set format of dbmanager print method"""
     if arg == '':
         DBPRINT.print_blue('Current format is %s' % DB.print_method)
-        return 
+        return
     if arg and arg.lower() == 'help':
         return dbhelp(self, 'format')
-    if not db_ready(): 
+    if not db_ready():
         return
     if not (arg.lower() == "txt" or arg.lower() == "xml" or 
            arg.lower() == "html" or arg.lower() == "csv"):
         raise DBPRINT.msg_red( \
            "ERROR: not supported format, please use txt,xml,html,csv")
     DB.print_method = arg
-    
+
 def plot(self, arg):
     """plot the result of query"""
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'plot')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.plot(db_alias(), arg)
-    
+
 def schema(self, arg):
     """
     1. *schema help* #show help
@@ -323,15 +323,15 @@ def schema(self, arg):
     """
     if arg.lower() == 'help':
         return dbhelp(self, 'schema')
-    if not db_ready(): 
+    if not db_ready():
         return
     if arg == '':
         DB.dump(db_alias())
-        return 
+        return
     a_list = arg.split()
     if a_list[0] == "graph":
         formats = None
-        if len(a_list) > 1: 
+        if len(a_list) > 1:
             formats = a_list[1]
         DB.write_graph(db_alias(), formats)
     elif a_list[0] == ">":
@@ -341,13 +341,13 @@ def schema(self, arg):
 # Immitate SQL statements
 #
 def select(self, arg):
-    """SQL select 
+    """SQL select
     1. *select help*
     2. *select query*, set results
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'select')
-    if not db_ready(): 
+    if not db_ready():
         return
     res = DB.execute("select " + arg.replace(";", ""), db_alias())
     result = DB.print_result(res, "select " + arg)
@@ -359,9 +359,9 @@ def insert(self, arg):
     1. *insert help*
     2. *insert query*
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'insert')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("insert "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -372,7 +372,7 @@ def drop(self, arg):
     3. *drop database*
     4. *drop x* send to database, do reconnect
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'drop')
     if not db_ready(): 
         return
@@ -390,9 +390,9 @@ def drop(self, arg):
 def update(self, arg):
     """SQL update
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'update')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("update "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -401,9 +401,9 @@ def create(self, arg):
     *create help*
     *create x* send to database, do reconnect to force loading schema
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'create')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("create "+arg.replace(";", ""), db_alias(), list_results = 0)
     DB.reconnect(db_alias())
@@ -415,9 +415,9 @@ def alter(self, arg):
     *alter help*
     *alter x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'alter')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("alter "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -426,9 +426,9 @@ def set(self, arg):
     *set help*
     *set x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'set')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("set "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -437,10 +437,10 @@ def rollback(self, arg):
     *rollback help*
     *rollback x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'rollback')
-    if not db_ready(): 
-        return 
+    if not db_ready():
+        return
     DB.execute("rollback "+arg.replace(";", ""), db_alias(), list_results = 0)
 
 def begin(self, arg):
@@ -448,9 +448,9 @@ def begin(self, arg):
     *begin help*
     *begin x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'begin')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("begin "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -459,9 +459,9 @@ def commit(self, arg):
     *commit help*
     *commit x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'commit')
-    if not db_ready(): 
+    if not db_ready():
         return
     DB.execute("commit "+arg.replace(";", ""), db_alias(), list_results = 0)
 
@@ -470,9 +470,9 @@ def explain(self, arg):
     *explain help*
     *explain x* send to database
     """
-    if arg == '' or arg.lower() == 'help': 
+    if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'explain')
-    if not db_ready(): 
+    if not db_ready():
         return
     result = DB.execute("explain "+arg.replace(";", ""), db_alias())
     DB.print_result(result, arg)
@@ -486,41 +486,41 @@ def find(self, arg):
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'find')
     if qb_ready():
-        return 
+        return
     query = "find " + arg.split(';')[0].strip()
     mquery = QB.build_query(query)
     print mquery
     if not db_ready():
-        return 
+        return
     res = DB.execute(mquery, db_alias())
     result = DB.print_result(res, mquery)
 #    RESULTS.set(result)
-    
+
 def mapfile(self, arg):
     """Set map file for QueryBuilder"""
     if arg == '':
         if FILE_DICT['MAP_FILE']:
             DBPRINT.print_blue('Current MAP_FILE is %s' % \
                        FILE_DICT['MAP_FILE'])
-        else: 
+        else:
             DBPRINT.print_red('No map file is loaded')
-        return 
+        return
     if arg.lower() == 'help':
         return dbhelp(self, 'mapfile')
     if os.path.isfile(arg):
         FILE_DICT['MAP_FILE'] = arg
         QB.set_mapper(FILE_DICT['MAP_FILE'])
-        return 
+        return
 
 def schemafile(self, arg):
     """Set schemafile for QueryBuilder"""
-    if arg == '': 
+    if arg == '':
         if FILE_DICT['SCHEMA_FILE']:
             DBPRINT.print_blue('Current SCHEMA_FILE is %s' % \
                           FILE_DICT['SCHEMA_FILE'])
         else:
             DBPRINT.print_red('No schema file is loaded')
-        return 
+        return
     if arg.lower() == 'help':
         return dbhelp(self, 'schemafile')
     if os.path.isfile(arg):
@@ -574,28 +574,28 @@ def main():
     IP.expose_magic('format', format)
     IP.expose_magic('plot', plot)
     IP.expose_magic('schema', schema)
- 
+
     IP.expose_magic('find', find)
     IP.expose_magic('mapfile', mapfile)
     IP.expose_magic('schemafile', schemafile)
 
     # autocall to "full" mode (smart mode is default, I like full mode)
     option.autocall = 2
-    
+
     # Jason Orendorff's path class is handy to have in user namespace
     # if you are doing shell-like stuff
     try:
         IP.ex("from path import path" )
     except ImportError:
         pass
-    
+
     IP.ex('import os')
-        
+
     # Set dbsh prompt
     option.prompt_in1 = 'dbsh |\#> '
     option.prompt_in2 = 'dbsh> '
     option.prompt_out = '<\#| '
-    
+
     # define dbsh banner
 #    ver = "%s.%s" % (dbsh.__version__, dbsh.__revision__)
     ver = "pydbquery_version"
@@ -611,5 +611,5 @@ def main():
     option.separate_in = "0"
     option.separate_out = "0"
     option.separate_out2 = "0"
-    
+
 main()

@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-QueryBuilder
+PyQB
 ============
 
 * **Version**: |version|
@@ -16,8 +16,18 @@ Contents:
    :maxdepth: 2
 
    introduction.rst
+   pyqb_ql.rst
+   pyqb_queries.rst
+   pyqb_cli.rst
+   pyqb_arch.rst
+   pyqb_parser.rst
+   pyqb_mapper.rst
+   pyqb_db.rst
+   pyqb_schema_viewer.rst
    code.rst
+   pyqb_operation.rst
    changelog.rst
+   dependencies.rst
    references.rst
 
 Indices and tables

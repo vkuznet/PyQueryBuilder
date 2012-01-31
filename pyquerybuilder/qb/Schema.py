@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-This class reads sqlalchemy schema metadata in order to construct 
+This class reads sqlalchemy schema metadata in order to construct
 joins for an arbitrary query.
 """
 
@@ -25,9 +25,9 @@ def pull_operator_side(clause, tables_of_concern):
     if clause.__dict__.has_key('left'):
         if issubclass(clause.left.__class__, Column):
             tables_of_concern.add(clause.left.table)
-    if clause.__dict__.has_key('right'):             
+    if clause.__dict__.has_key('right'):
         if issubclass(clause.right.__class__, Column):
-            tables_of_concern.add(clause.right.table) 
+            tables_of_concern.add(clause.right.table)
 
 def find_table_name(schema, name):
     """
@@ -94,7 +94,7 @@ class Schema(object):
         connectivity = self.graph_from_schema(self._schema,
               self.make_foreign_keys(foreign_keys, self._schema), to_exclude)
         self.construct_query = ConstructQuery(connectivity)
-        self.outers = [('seblock.blockid', 'block.id'), 
+        self.outers = [('seblock.blockid', 'block.id'),
                      ('block.id', 'seblock.blockid')]
 
     def build_query(self, query):
@@ -119,8 +119,8 @@ class Schema(object):
         Query is a sqlalchemy query with select elements and where clauses.
         This method:
 
-            - looks through the elements and clauses to determine 
-              which tables need to be joined in order to support the query. 
+            - looks through the elements and clauses to determine
+              which tables need to be joined in order to support the query.
             - adds those joins to the query and returns it.
         '''
 
@@ -147,7 +147,7 @@ class Schema(object):
 
         # No need to calculate joins if there is only one table involved.
         # We actually make mistakes if that single table is Person.
-        if len(tables_of_concern) == 1: 
+        if len(tables_of_concern) == 1:
             return query
 
         # Remove Person table because it is not in any spanning trees.
@@ -160,15 +160,15 @@ class Schema(object):
         #      for SELECT and WHERE.
         # table_indices is the index list of table concerns 
         #      references to self._ordered
-        table_indices = [self._ordered.index(table) 
+        table_indices = [self._ordered.index(table)
                                 for table in tables_of_concern]
 
         subtree = self.construct_query.get_smallest_subtree(table_indices)
         if subtree is None:
             return None
-        _LOGGER.debug("Schema.build_query: query tree length %d" % 
+        _LOGGER.debug("Schema.build_query: query tree length %d" %
                                                (subtree.get_nodes_number(), ))
-        _LOGGER.debug("Schema.build_query: query tree itself %s" % 
+        _LOGGER.debug("Schema.build_query: query tree itself %s" %
                                                            (subtree, ))
 
         # The subtree tells us the order of tables in the join, but it loses
@@ -217,18 +217,18 @@ class Schema(object):
                 foreign_keys[table] = table.foreign_keys
         return foreign_keys
 
-    def graph_from_schema(self, metadata, table_fks, exclude = set()):         
+    def graph_from_schema(self, metadata, table_fks, exclude = set()):
         """
         Build graph with edges for provided SQLAlchemy MetaDta object;
         list of foreign keys and set of exclude tables.
         """
         #_ordered is a list version of metadata.tables.values() 
         #         and we can set exclude table list
-        self._ordered = [metadata.tables[table_name] 
+        self._ordered = [metadata.tables[table_name]
                             for table_name in metadata.tables
                             if metadata.tables[table_name] not in exclude]
         # contains all foreign keys linked table index in ordered_names
-        relations = [] 
+        relations = []
         # ordered_names which is the list version of fullname self._ordered
         # VK, use names rather then compare tables objects
         ordered_names = []
@@ -236,7 +236,7 @@ class Schema(object):
 #            ordered_names.append(item.fullname)
             ordered_names.append(item.name)
         exclude_names_list = []
-        for table in exclude: 
+        for table in exclude:
 #            exclude_names_list.append(table.fullname)       
             exclude_names_list.append(table.name)
         exclude_names = set(exclude_names_list) # set of exclude table name
@@ -259,12 +259,12 @@ class Schema(object):
                 index_set = set()
                 short_tables = {}
                 for f_key in foreign_keys:
-                    if f_key.column.table in exclude: 
+                    if f_key.column.table in exclude:
                         # table linked by foreign keys not in exclude list
                         continue
 
                     search_name = f_key.column.table
-                    if search_name.name in exclude_names: 
+                    if search_name.name in exclude_names:
                         # table.fullname are not in exclude list 
                         continue
 #                    f_key_index = self._ordered.index(search_name)
@@ -273,7 +273,7 @@ class Schema(object):
                     short_tables[f_key_index] = (f_key.parent, f_key.column)
 
                 relations.append(index_set)
-                self._foreign_tables[table_index] = short_tables 
+                self._foreign_tables[table_index] = short_tables
                 # foreign_tables stores 
                 # {table_index:{f_key_index:(f_key.parent,f_key.colum),...},...}
         except ValueError, value_err:
@@ -282,7 +282,7 @@ class Schema(object):
                     Could not find f_key.column.table %s in
                     self._ordered %s. Len(ordered)=%d
                     Len(metadata.tables)=%d""" % (str(value_err),
-                    search_name, self._ordered, len(self._ordered), 
+                    search_name, self._ordered, len(self._ordered),
                     len(metadata.tables)))
             raise Exception(
                 "Could not find the table for a given foreign key constraint.",
@@ -293,7 +293,7 @@ class Schema(object):
 
     def write_graph(self, dot, name = "A"):
         """output the path in connectivity"""
-        connectivity = self.graph_from_schema(self._schema, 
+        connectivity = self.graph_from_schema(self._schema,
                                  self.make_foreign_keys(None, self._schema))
         order = self._ordered
         dot.set_name(name)
@@ -312,11 +312,11 @@ def make_view_without_table(metadata, rid_name, rid_replace):
 
     For example, rid_name='Person', rid_replace='FullName'.
     Input:
- 
+
         - metadata = sqlalchemy.MetaData
         - rid_name = String name of table.
         - rid_replace = String column name of column to use from rid_table
-      
+
     Returns new MetaData object containing only the tables we want.
     '''
 #    new_md = MetaData(metadata.name+"view")
@@ -339,7 +339,7 @@ def make_view_without_table(metadata, rid_name, rid_replace):
     #         f_key.parent == rid_table.alias(
     #                      f_key.parent.fullname).c[f_key.column.name])
     for table_name in metadata.tables:
-        if table_name == rid_name: 
+        if table_name == rid_name:
             continue
         table = metadata.tables[table_name]
 
@@ -353,7 +353,7 @@ def make_view_without_table(metadata, rid_name, rid_replace):
 #                             rid_table.alias(f_key.parent.name), f_key)
                 # rid_table got new alias as rid_table.c[''].fullname
 #       fullname was replaced by name,
-                fullname = "%s_%s" % (f_key.parent.table.name, 
+                fullname = "%s_%s" % (f_key.parent.table.name,
                                       f_key.parent.name)
                 replace_alias[fullname] = (
                             rid_table.alias(fullname), f_key)
@@ -393,10 +393,10 @@ def make_view_without_table(metadata, rid_name, rid_replace):
             view = select(elements, from_obj = [new_join_table],
                                 use_labels = True)
 
-            new_md.tables[table_name + "View"] = view.alias(table_name 
+            new_md.tables[table_name + "View"] = view.alias(table_name
                            + "View")
         else:
-            new_md.tables[table_name + "View"] = table.alias(table_name 
+            new_md.tables[table_name + "View"] = table.alias(table_name
                            + "View")
 #        print "%s elements: \n" % table_name
 #        print [ e.name for e in elements]

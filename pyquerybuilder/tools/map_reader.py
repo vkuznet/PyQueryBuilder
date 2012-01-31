@@ -2,7 +2,7 @@
 """
 perform map between QL key and table.column
 """
-import os, sys 
+import os, sys
 from yaml import load as yamlload
 from logging import getLogger
 from pyquerybuilder.utils.Errors import Error
@@ -37,20 +37,20 @@ class Mapper(object):
                 names = map_yaml[key].split('.')
                 if len(names) != 2:
                     raise Error("table.column format error")
-                else: 
-                    self.tbdict[key] = names[0].lower() 
+                else:
+                    self.tbdict[key] = names[0].lower()
                     self.coldict[key] = names[1]
         self.mapfile = filename
         self.dict = map_yaml
- 
+
     def is_ready(self):
         """Check map file is loaded and mapper is initialized"""
         if self.mapfile != None and self.dict != {} :
             return 1
-        return 0    
-        
+        return 0
+
     def validate_map(self, sorted_tables):
-        """validate loaded map""" 
+        """validate loaded map"""
         tables = {}
         for table in sorted_tables:
             tables[table.name] = table
@@ -64,8 +64,8 @@ class Mapper(object):
                 if not table.columns.has_key(self.coldict[key]):
                     raise Error("column %s doesn't exist in table %s "% \
                           ( self.coldict[key], self.tbdict[key]))
-        return True    
-     
+        return True
+
     def has_key(self, key):
         """verify we have key in mapper"""
         return self.dict.has_key(key)
@@ -75,7 +75,7 @@ class Mapper(object):
         for item in self.dict.items():
             if item[1] == column:
                 return item[0]
- 
+
     def get_column(self, key):
         """get column from key"""
         if self.has_key(key):
@@ -84,7 +84,7 @@ class Mapper(object):
     def list_key(self):
         """list key"""
         return self.dict.keys()
-    
+
     def list_column(self):
         """list column"""
         return self.dict.values()
@@ -123,7 +123,7 @@ def main():
     vmap = None
     sloader = SchemaLoader()
     dbmanager = None
-    source = None 
+    source = None
 
     (options, args) = parser.parse_args()
     if options.mapfile:
@@ -168,7 +168,7 @@ def main():
     if list_column:
         print mapper.list_column()
 
-  
+
 if __name__ == '__main__':
     main()
 

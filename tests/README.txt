@@ -6,7 +6,7 @@ The default DB-backend is SQLite3
 To change to other DB-backend (Oracle/MySQL/PostgreSQL), you can follow 
 this steps:
 
-1. Create two test DB accounts, one of tem for migration test.
+1. Create two test DB accounts, one of them for migration test.
 2. Modify TestDB.cfg according to your accounts
 3. $> sh test.sh
 

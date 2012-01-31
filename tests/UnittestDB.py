@@ -72,17 +72,20 @@ def dfs_visit(graph, node, time, visit, finish):
     
 
 class UnittestDB(object):
-    """create DB for Unittest """
+    """create DataBase for Unittest """
     def __init__(self):
         """ initialize"""
         self._metadata = None
         self.loader = SchemaLoader()
     def create_from(self, input):
-        """create from input """
+        """create database schema from input """
         return self.loader.create_from(input)
 
     def column_count(self, metadata):
-        """count column"""
+        """
+        count total columns of this schema to verify schema is correctly
+        created
+        """
         c_count = 0
         for table in metadata.sorted_tables:
 #            name = table.name
@@ -96,7 +99,7 @@ class UnittestDB(object):
         return self.loader.load_from_file(filename)
 
     def fill_table(self, table, idx):
-        """fill table with our test data"""
+        """fill table with our test data(number)"""
 #        print "fill_table %s %d"%( table.name,idx)
         insert_clause = table.insert()
         c_names = [col.name for col in table.c]
@@ -112,7 +115,10 @@ class UnittestDB(object):
         insert_clause.execute(insert_dict)
     
     def get_graph(self, sorted_tables, table_index, graph):
-        """get graph"""
+        """
+        get graph represents of schema
+        graph is in adjacent table
+        """
         index = 0
         for table in sorted_tables:
             name = table.name
@@ -134,7 +140,10 @@ class UnittestDB(object):
         
 
     def fill_tables(self, metadata, row_cnt):
-        """ fill table by row lines test data
+        """
+        fill table by row lines test data
+        do it in topo sequence of foreignkey links
+        otherwise insert could failed.
         """
         sorted_tables = metadata.sorted_tables
         sorted_tb = {}

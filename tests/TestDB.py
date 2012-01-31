@@ -32,7 +32,11 @@ class TestUnittestDB(unittest.TestCase):
         pass
 
     def test_sample_query(self):
-        """test sample query"""
+        """
+        test sample query with simple table a0/a1
+        table is created by UnittestDB
+        table will be cleaned up after test.
+        """
         db_test = UnittestDB()
 #        class zCol(object):
 #            """z col"""
@@ -50,14 +54,22 @@ class TestUnittestDB(unittest.TestCase):
         
 
     def test_from_yaml(self):
-        """test from yaml"""
+        """
+        test load schema from yaml
+        database schema is laod from starting_db.yaml
+        verify by counting column numbers
+        """
         metadata = load_from_file('starting_db.yaml')
         udb = UnittestDB()
         c_count = udb.column_count(metadata)
         self.assertEqual(c_count, 40)
 
     def test_fill(self):
-        """test fill"""
+        """
+        test fill tables with test data(numbers)
+        the database is created from starting_db.yaml
+        after fill the data will be resistent in database.
+        """
 #        if path.exists('unittest2.db'):
 #            unlink('unittest2.db')
         udb = UnittestDB()
@@ -78,14 +90,20 @@ class TestUnittestDB(unittest.TestCase):
         connection.close()
 
     def test_oracle_write(self):
-        """test oracle write"""
+        """
+        test oracle schema write into dot graph
+        schema is from oracle.sql
+        dot file is oracle.dot
+        """
         udb = UnittestDB()
         metadata = udb.read_from_oracle('oracle.sql')
         dot = DotGraph(file("oracle.dot", "w"))
         write_sql_alchemy_graph(dot, metadata, set(['Person']))
 
     def test_by_sql_file(self):
-        """test by sql file"""
+        """
+        test by sql file
+        """
         udb = UnittestDB()
         metadata = udb.load_from_file('starting_db.yaml')
         connection = self.engine.connect()

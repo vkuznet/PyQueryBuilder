@@ -14,7 +14,7 @@ import time
 from pyquerybuilder.utils.Errors import Error
 
 class PrintOutput:
-    """Print output with color RGB and 
+    """Print output with color RGB and
        print output with format TXT XML HTML CSV"""
     def __init__(self):
         """initialize a internal TerminalController"""
@@ -69,7 +69,7 @@ class PrintOutput:
                 print "%s%s " % (elem, " "*abs(length - len(elem))),
             print
         print sep
-  
+
     def print_xml(self, t_list, o_list, l_list, msg=None):
         """
         print in format of XML file
@@ -132,15 +132,15 @@ class PrintOutput:
         """
         for title in t_list:
             if title != t_list[:-1]:
-                print "%s," % title 
-            else: 
+                print "%s," % title
+            else:
                 print title
         print
         for item in o_list:
             for value in item:
-                if value != o_list[:-1]: 
+                if value != o_list[:-1]:
                     print "%s," % value
-                else: 
+                else:
                     print value
 
 #
@@ -149,8 +149,8 @@ class PrintOutput:
 class TerminalController:
     """
     A class that can be used to portably generate formatted output to
-    a terminal.  
-    
+    a terminal.
+
     `TerminalController` defines a set of instance variables whose
     values are initialized to the control sequence necessary to
     perform a given action.  These can be simply included in normal
@@ -210,11 +210,11 @@ class TerminalController:
 
     # Foreground colors:
     BLACK = BLUE = GREEN = CYAN = RED = MAGENTA = YELLOW = WHITE = ''
-    
+
     # Background colors:
     BG_BLACK = BG_BLUE = BG_GREEN = BG_CYAN = ''
     BG_RED = BG_MAGENTA = BG_YELLOW = BG_WHITE = ''
-    
+
     _STRING_CAPABILITIES = """
     BOL=cr UP=cuu1 DOWN=cud1 LEFT=cub1 RIGHT=cuf1
     CLEAR_SCREEN=clear CLEAR_EOL=el CLEAR_BOL=el1 CLEAR_EOS=ed BOLD=bold
@@ -232,20 +232,20 @@ class TerminalController:
         assumed to be a dumb terminal (i.e., have no capabilities).
         """
         # Curses isn't available on all platforms
-        try: 
+        try:
             import curses
-        except Error: 
+        except Error:
             return
 
         # If the stream isn't a tty, then assume it has no capabilities.
-        if not term_stream.isatty(): 
+        if not term_stream.isatty():
             return
 
         # Check the terminal type.  If we fail, then assume that the
         # terminal has no capabilities.
-        try: 
+        try:
             curses.setupterm()
-        except Error: 
+        except Error:
             return
 
         # Look up numeric capabilities. 
@@ -253,7 +253,7 @@ class TerminalController:
         # return -1 if it is canceled or absent from terminal description
         self.COLS = curses.tigetnum('cols')
         self.LINES = curses.tigetnum('lines')
-        
+
         # Look up string capabilities.
         for capability in self._STRING_CAPABILITIES:
             (attrib, cap_name) = capability.split('=')
@@ -270,7 +270,7 @@ class TerminalController:
                 setattr(self, color, curses.tparm(set_fg, index) or '')
         set_fg_ansi = self._tigetstr('setaf')
         if set_fg_ansi:
-            for index, color in zip(range(len(self._ANSICOLORS)), 
+            for index, color in zip(range(len(self._ANSICOLORS)),
                                                self._ANSICOLORS):
                 setattr(self, color, curses.tparm(set_fg_ansi, index) or '')
         set_bg = self._tigetstr('setb')
@@ -279,9 +279,9 @@ class TerminalController:
                 setattr(self, 'BG_'+color, curses.tparm(set_bg, index) or '')
         set_bg_ansi = self._tigetstr('setab')
         if set_bg_ansi:
-            for index, color in zip(range(len(self._ANSICOLORS)), 
+            for index, color in zip(range(len(self._ANSICOLORS)),
                                                self._ANSICOLORS):
-                setattr(self, 'BG_'+color, 
+                setattr(self, 'BG_'+color,
                         curses.tparm(set_bg_ansi, index) or '')
 
     def _tigetstr(self, cap_name):
@@ -310,9 +310,9 @@ class TerminalController:
         if it is $$ just return $$
         """
         rep = match.group()
-        if rep == '$$': 
+        if rep == '$$':
             return rep
-        else: 
+        else:
             return getattr(self, rep[2:-1])
 
 #######################################################################
@@ -322,7 +322,7 @@ class TerminalController:
 class ProgressBar:
     """
     A 3-line progress bar, which looks like::
-    
+
                                 Header
         20% [===========----------------------------------]
                            progress message
@@ -332,7 +332,7 @@ class ProgressBar:
     """
     BAR = '%3d%% ${GREEN}[${BOLD}%s%s${NORMAL}${GREEN}]${NORMAL}\n'
     HEADER = '${BOLD}${CYAN}%s${NORMAL}\n\n'
-        
+
     def __init__(self, term, header):
         """initialize term, in case Terminal is capable:
            set width bar header

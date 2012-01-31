@@ -1,13 +1,13 @@
 Code documentation
-******************
+==================
 
 .. toctree::
    :maxdepth: 4
 
-   qb.rst
-   db.rst
-   dbsh.rst
-   parser.rst
-   tools.rst
-   utils.rst
-   web.rst
+   code/qb.rst
+   code/db.rst
+   code/dbsh.rst
+   code/parser.rst
+   code/tools.rst
+   code/utils.rst
+   code/web.rst

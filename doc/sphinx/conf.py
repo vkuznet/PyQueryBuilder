@@ -43,7 +43,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'PyQueryBuilder'
+project = u'PyQB'
 copyright = u'2010, Valentin Kuznetsov'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -110,7 +110,7 @@ html_theme = 'sphinxdoc'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = "PyQueryBuilder, version development"
+html_title = "PyQB, version development"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -165,7 +165,7 @@ html_last_updated_fmt = '%b %d, %Y'
 #html_file_suffix = ''
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PyQueryBuilderdoc'
+htmlhelp_basename = 'PyQBdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -179,7 +179,7 @@ htmlhelp_basename = 'PyQueryBuilderdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'PyQueryBuilder.tex', u'PyQueryBuilder Documentation',
+  ('index', 'PyQB.tex', u'PyQB Documentation',
    u'Valentin Kuznetsov', 'manual'),
 ]
 

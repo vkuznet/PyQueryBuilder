@@ -1,10 +1,10 @@
 digraph A {
-	Files -> ProcessedDataset;
-	Files -> Block;
-	ProcAlgo -> AlgorithmConfig;
-	ProcAlgo -> ProcessedDataset;
-	ProcDSTier -> DataTier;
-	ProcDSTier -> ProcessedDataset;
-	ProcessedDataset -> PrimaryDataset;
-	Block -> ProcessedDataset;
+	files -> processeddataset;
+	files -> block;
+	procalgo -> algorithmconfig;
+	procalgo -> processeddataset;
+	procdstier -> datatier;
+	procdstier -> processeddataset;
+	processeddataset -> primarydataset;
+	block -> processeddataset;
 }

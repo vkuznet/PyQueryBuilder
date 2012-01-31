@@ -1,10 +1,10 @@
 PyQB CLI tools
 =================
 
-PyQB Command Line Interface(CLI) tool provides a interactive shell for 
+PyQB Command Line Interface(CLI) tool provides a interactive shell for
 execute PyQB QL query and other DB operation on database.
-It sources from [dbsh]_ project, which is an interactive 
-shell for DB back-end. 
+It sources from [dbsh]_ project, which is an interactive
+shell for DB back-end.
 
 Original [dbsh]_ aims to achieve a common, interactive, programmable environment and simple
 shell to connect and manipulate your favorite DB content.
@@ -16,7 +16,7 @@ naturally a syntax of DB you use to, for example, while you connect to
 MySQL dbsh supports full syntax of MySQL, but when you connect to ORACLE
 it supports ORALCE SQL and commands.
 
-It is based on two components: 
+It is based on two components:
    - interactive python [IPython]_
    - [SQLAlchemy]_
 
@@ -29,7 +29,7 @@ Merged into PyQB project, it supports keyword search ability vis PyQB QL
 format.
 
 .. doctest::
-    
+
     [liangd@localhost:doc]$ dbsh
     Welcome to dbsh pydbquery_version!
     [python 2.6.4 (r264:75706, Jan 22 2010, 10:55:09) , ipython 0.10]
@@ -67,22 +67,19 @@ format.
     source     Execute SQL from external file
     update     Execute update SQL statement
     dbsh |1> find help
-    
+
     find: execute <QL expression> 
     QueryLanguage is similar in syntax to SQL (Structured Query Language)
-    for 
-    databases but is much simpler than SQL. It hides all the complexity of
-    SQL 
-    but provides the same flexibility. User just need to be concerned about 
-    what they want to search and what is the criteria for searching. 
+    for databases but is much simpler than SQL. It hides all the complexity of
+    SQL but provides the same flexibility. User just need to be concerned about
+    what they want to search and what is the criteria for searching.
     Here is the basic usage
-    
-    
+
+
        find keywords where constraints ;
-    
-       keywords is the combination of one or many 'entity' | 'entity.attr' 
+
+       keywords is the combination of one or many 'entity' | 'entity.attr'
                 seperated by ','
-       constraints is a expression which consist of one of more unit
-    expression 
+       constraints is a expression which consist of one of more unit expression
                 'keyword ops value' joined with logical operation AND|OR 
        ops are comparable operations: like > < >= <= 

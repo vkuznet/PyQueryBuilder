@@ -10,11 +10,11 @@ major tasks:
 Load schema
 -----------
    - load table names
-      - oracle  
+      - oracle
          - *SELECT table_name FROM all_tables WHERE owner='%s'*
          - *SELECT view_name FROM all_views WHERE owner='%s'*
       - others
-         - load by sqlalchemy engine 
+         - load by sqlalchemy engine
    - load table as sqlalchemy object by table_name
    - foreign key links are attached in table objects.
 

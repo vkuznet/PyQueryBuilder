@@ -3,7 +3,7 @@
 perform parse on lexer
 """
 
-import ply.lex as lex 
+import ply.lex as lex
 
 tokens = [
    'GE',
@@ -40,9 +40,9 @@ t_EQUALS = r'\='
 t_COMMA = r'\,'
 t_LB = r'\('
 t_RB = r'\)'
-    
+
 def t_DATE(tok):
-    r'\d{4}-\d{2}-\d{2}($|\s+\d{2}:\d{2}($|:\d{2}))' 
+    r'\d{4}-\d{2}-\d{2}($|\s+\d{2}:\d{2}($|:\d{2}))'
     tok.type = 'DATE'
     return tok
 
@@ -56,12 +56,12 @@ def t_ID(tok):
 def t_newline(tok):
     r'\n+'
     tok.lexer.lineno += len(tok.value)
-    
+
 # A string containing ignored characters (spaces and tabs)
 t_ignore  = ' \t\n\r\f\v'
 
 def t_error(tok):
-    
+
     print "Illegal character '%s'" % tok.value[0]
     # t.value attribute contains the rest of the input string 
     # that has not been tokenized.
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 # Tokenize
     while True:
         TOK = LEXER.token()
-        if not TOK: 
+        if not TOK:
             break      # No more input
         print TOK
 

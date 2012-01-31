@@ -8,8 +8,9 @@ PyQB architecture is basd on the following component:
       - Mapper
       - QueryBuilder
       - DBManager
+      - Schema Viewer
    - web server
-   - CLI tool 
+   - CLI tool
 
 .. figure:: _images/qb_arch1.png
    :align: center

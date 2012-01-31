@@ -64,7 +64,7 @@ class ConstructQuery(object):
         edge_sets = []
         min_len = len(self._spanning)
         min_index = -1
-        for node_index in range(0, len(self._spanning)):             
+        for node_index in range(0, len(self._spanning)):
             subs = self._spanning[node_index].get_edges_including(query_set)
             if len(subs) < min_len:
                 min_len = len(subs)

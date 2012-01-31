@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-App for testing QueryBuilder 
+App for testing QueryBuilder
 """
 
 
@@ -32,14 +32,14 @@ def get_table_column(metadata, keyword):
         table = find_table(metadata, entity)
         if table:
             return table.columns[attr]
-        else: 
+        else:
             raise Error("ERROR can't find table %s" % str(entity))
     else:
         entity = keyword
         table = find_table(metadata, entity)
         if table:
             return table
-        else: 
+        else:
             raise Error("ERROR can't find table %s" % str(entity))
 
 
@@ -66,7 +66,7 @@ def generate_query(metadata, query):
             constraint = stack.pop()
         else:
             return  select(key_list, whereclause)
-        # sort out the sequence by using a stack a queue        
+        # sort out the sequence by using a stack a queue
         while constraint:
             if type(constraint) is type([]):
                 if len(constraint) == 1:
@@ -133,25 +133,25 @@ def generate_query(metadata, query):
                     right = whereclause
                     if extra:
                         left = right
-                        right = extra 
+                        right = extra
                         extra = None
             if len(queue) == 0:
                 break
-            constraint = queue.popleft() 
+            constraint = queue.popleft()
 #                print whereclause
 #        print "type whereclause is ", type(whereclause)
-        return  select(key_list, whereclause)                            
+        return  select(key_list, whereclause)
 
 
 
 def query_parser(mapper, in_put):
-    """input query ==parse==> output dictionary 
+    """input query ==parse==> output dictionary
        ==mapper==> select sentences"""
     presult = qparse.parse(in_put)
     if presult == None:
         raise Error("parse result is empty")
-#    print "parse result: ", presult 
-    # construct a query 
+#    print "parse result: ", presult
+    # construct a query
     keywords =  presult['keywords']
     for keyword in keywords:
         if mapper.has_key(keyword[0]):
@@ -161,11 +161,11 @@ def query_parser(mapper, in_put):
             keyword.insert(0, key)
 
         else:
-            _LOGGER.error("""keyword not in mapper %s""", 
+            _LOGGER.error("""keyword not in mapper %s""",
                        str(keyword[0]))
             raise Error(\
               "ERROR: keyword not in mapper %s" % str(keyword[0]))
-            
+
     constraint = None
     if presult.has_key('constraints'):
         constraint = presult['constraints']
@@ -184,7 +184,7 @@ def query_parser(mapper, in_put):
                 key = mapper.get_column(keyword[0])
                 cons['keyword'] = [key]
 #                print "%s ==map==> %s"% (keyword[0], key)
-            else: 
+            else:
                 _LOGGER.error("""keyword not in mapper %s""",
                        str(keyword[0]))
                 raise Error("ERROR: keyword not in mapper %s"\
@@ -226,19 +226,19 @@ class App():
         """set manager"""
         self.manager = DBManager()
         self.url = url
-        
+
     def get_db_connection(self):
         """get db connection"""
         print "get connection to %s " % self.url
-        connection = self.manager.connect(self.url)    
+        connection = self.manager.connect(self.url)
         self.db_name = self.manager.get_alias(self.url)
-        return connection 
+        return connection
 
     def close_db_connection(self):
         """close db connection"""
         print "close connection to %s" % self.url
         return self.manager.close(self.db_name)
-    
+
     def set_mapper(self, mapfile='map.yaml'):
         """set mapper"""
         self.mapper = Mapper()
@@ -252,21 +252,21 @@ class App():
             metadata = load_from_file(schema_file)
             tables = metadata.tables
             self.schema = metadata
-        else: 
+        else:
             tables = self.manager.load_tables(self.db_name)
             self.schema.set_tables(tables)
         self.querybuilder = Schema(tables)
-           
+
     def parse_input(self, in_puts):
         """parse input"""
         return query_parser(self.mapper, in_puts)
-    
+
     def generate_sqlalchemy_query(self, query):
         """generate sqlalcemy query"""
 #    print type(process_dataset.c.Name)
 #    print type(process_dataset.columns['Name'])
         return generate_query(self.schema, query)
-    
+
     def build_query(self, query):
         """build query"""
 #    print "query._raw_columns is ", select_test._raw_columns
@@ -286,17 +286,17 @@ class App():
 def main():
     """main"""
 
-#    inputs = """find dataset, file, file.block  where dataset 
-#               like names and primds.startdate > 20100501 or 
+#    inputs = """find dataset, file, file.block  where dataset
+#               like names and primds.startdate > 20100501 or
 #                block.size < 250"""
-#    inputs = """find block, file where (dataset like names and 
+#    inputs = """find block, file where (dataset like names and
 #               primds.startdate > 20100501) or block.size < 250"""
-#    inputs = """find dataset, count(file), max(block.size) 
-#               where dataset like cosmic and (dataset.createdate>2010 
-#               or (block.size > 200 and file.createdate > 
+#    inputs = """find dataset, count(file), max(block.size)
+#               where dataset like cosmic and (dataset.createdate>2010
+#               or (block.size > 200 and file.createdate >
 #               2010-01-01 02:30:30 CST) or block.size < 500)"""
-#    inputs = """find  file where dataset.createdate > 0 
-#               or (block.size > 0 and file.createdate > 0) 
+#    inputs = """find  file where dataset.createdate > 0
+#               or (block.size > 0 and file.createdate > 0)
 #               or block.size < 0"""
     usage = "usage: %prog  -q query \n"
     usage += "  optional:  -d database -m mapfile \n"
@@ -327,7 +327,7 @@ def main():
     app.get_db_connection()
     app.set_querybuilder()
     app.set_mapper(mapfile)
-    
+
     if options.query:
         querys = options.query.split('\n')
         for query in querys:
@@ -350,7 +350,7 @@ def main():
 #    query = app.generate_sqlalchemy_query(query)
 #    result = app.execute(query)
 #    print_list(result)
-    
+
 #    test_single_query(manager,result)
     while True:
         try:
@@ -367,7 +367,7 @@ def main():
             mquery = app.build_query(mquery)
             print mquery
             result = app.execute_query(mquery)
-            if result: 
+            if result:
                 print_list(result)
         except Error:
             traceback.print_exc()

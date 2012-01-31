@@ -32,14 +32,14 @@ def get_table_column(metadata, keyword):
         table = find_table(metadata, entity)
         if table:
             return table.columns[attr]
-        else: 
+        else:
             raise Error("ERROR can't find table %s" % str(entity))
     else:
         entity = keyword
         table = find_table(metadata, entity)
         if table:
             return table
-        else: 
+        else:
             raise Error("ERROR can't find table %s" % str(entity))
 
 
@@ -133,19 +133,19 @@ def generate_query(metadata, query):
                     right = whereclause
                     if extra:
                         left = right
-                        right = extra 
+                        right = extra
                         extra = None
             if len(queue) == 0:
                 break
-            constraint = queue.popleft() 
+            constraint = queue.popleft()
 #                print whereclause
 #        print "type whereclause is ", type(whereclause)
-        return  select(key_list, whereclause)                            
+        return  select(key_list, whereclause)
 
 
 
 def test_query_parser(mapper, in_put):
-    """input query ==parse==> output dictionary 
+    """input query ==parse==> output dictionary
        ==mapper==> select sentences"""
     presult = qparse.parse(in_put)
     if presult == None:
@@ -161,11 +161,11 @@ def test_query_parser(mapper, in_put):
             keyword.insert(0, key)
 
         else:
-            _LOGGER.error("""keyword not in mapper %s""", 
+            _LOGGER.error("""keyword not in mapper %s""",
                        str(keyword[0]))
             raise Error(\
               "ERROR: keyword not in mapper %s" % str(keyword[0]))
-            
+
     constraint = None
     if presult.has_key('constraints'):
         constraint = presult['constraints']
@@ -184,7 +184,7 @@ def test_query_parser(mapper, in_put):
                 key = mapper.get_column(keyword[0])
                 cons['keyword'] = [key]
 #                print "%s ==map==> %s"% (keyword[0], key)
-            else: 
+            else:
                 _LOGGER.error("""keyword not in mapper %s""",
                        str(keyword[0]))
                 raise Error("ERROR: keyword not in mapper %s"\
@@ -238,7 +238,7 @@ class QueryBuilder():
                 return 0
             print "schema is not loaded"
         return 0
-    
+
     def set_mapper(self, mapfile='map.yaml'):
         """set mapper"""
         self.mapper = Mapper()
@@ -258,17 +258,17 @@ class QueryBuilder():
 #        self.schema = metadata
         self.schema.set_tables(tables)
         self.querybuilder = Schema(tables)
-           
+
     def parse_input(self, in_puts):
         """parse input"""
         return test_query_parser(self.mapper, in_puts)
-    
+
     def generate_sqlalchemy_query(self, query):
         """generate sqlalcemy query"""
 #    print type(process_dataset.c.Name)
 #    print type(process_dataset.columns['Name'])
         return generate_query(self.schema, query)
-    
+
     def build_query(self, query):
         """build query"""
 #    print "query._raw_columns is ", select_test._raw_columns

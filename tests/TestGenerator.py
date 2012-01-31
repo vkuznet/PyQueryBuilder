@@ -48,7 +48,7 @@ def get_connect_string():
             (_DICT['type'], _DICT['account'], _DICT['password'], \
              _DICT['host'],  _DICT['port'], _DICT['database'])
         elif _DICT['type'].lower() == 'sqlite':
-            connect_string = "sqlite://%s" % _DICT['database']
+            connect_string = "sqlite:///%s" % _DICT['database']
     else: 
         print "type error"
     if _DICT.has_key('mdatabase') :
@@ -61,7 +61,7 @@ def get_connect_string():
             (_DICT['type'], _DICT['maccount'], _DICT['mpassword'], \
              _DICT['mhost'],  _DICT['mport'], _DICT['mdatabase'])
         elif _DICT['type'].lower() == 'sqlite':
-            migrate_string = "sqlite://%s" % _DICT['mdatabase']
+            migrate_string = "sqlite:///%s" % _DICT['mdatabase']
     return connect_string, migrate_string
 
 def gen_dbmanager_test(connect_string, migrate_string ):

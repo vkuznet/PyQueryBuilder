@@ -16,7 +16,7 @@ def fetchsome(cursor, arraysize=10):
     """A generator that simplifies the use of fetchmany"""
     while True:
         results = cursor.fetchmany(arraysize)
-        if not results: 
+        if not results:
             break
         for result in results:
             yield result
@@ -27,7 +27,7 @@ def fetch_from_to(cursor, i_limit=10, i_offset=0):
 #       for i in xrange(0,i_offset):
 #           cursor.next()
     results = cursor.fetchmany(i_limit)
-    if not results: 
+    if not results:
         return
     for result in results:
         yield result
@@ -51,7 +51,7 @@ def elementwise(function):
 
 @elementwise
 def item_len(item):
-    """return length of the string format of item""" 
+    """return length of the string format of item"""
     return len(str(item))
 
 def make_time(intime):

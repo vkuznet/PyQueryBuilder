@@ -7,8 +7,8 @@ class TestDBManager(unittest.TestCase):
     def setUp(self):
         """default"""
         self.manager = DBManager()
-        self.url = 'sqlite://test.db'
-        self.murl = 'sqlite://migrate.db'
+        self.url = 'sqlite:///test.db'
+        self.murl = 'sqlite:///migrate.db'
         self.pname = 'sqlite-test.db |\#> '
         self.name = 'sqlite-test.db'
         self.mname = 'sqlite-migrate.db'

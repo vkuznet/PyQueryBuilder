@@ -24,9 +24,9 @@ IP = IPython.ipapi.get()
 # You probably want to uncomment this if you did %upgrade -nolegacy
 # import ipy_defaults    
 
-import os   
+import os
 
-def main():   
+def main():
     """main function """
     # uncomment if you want to get ipython -p sh behaviour
     # without having to use command line switches  
@@ -36,24 +36,24 @@ def main():
     # Good idea e.g. for %edit os.path.isfile
 
     #import ipy_editors
-    
+
     # Choose one of these:
-    
+
     #ipy_editors.scite()
     #ipy_editors.scite('c:/opt/scite/scite.exe')
     #ipy_editors.komodo()
     #ipy_editors.idle()
     # ... or many others, try 'ipy_editors??' after import to see them
-    
+
     # Or roll your own:
     #ipy_editors.install_editor("c:/opt/jed +$line $file")
-    
-    
+
+
     option = IP.options
     # An example on how to set options
     #o.autocall = 1
     option.system_verbose = 0
-    
+
     #import_all("os sys")
     #execf('~/_ipython/ns.py')
 
@@ -66,41 +66,41 @@ def main():
     #      r'\C_LightBlue[\C_LightCyan\Y2\C_LightBlue]\C_Normal\n\C_Green|\#>'
     #o.prompt_in2 = r'.\D: '
     #o.prompt_out = r'[\#] '
-    
+
     # Try one of these color settings if you can't read the text easily
     # autoexec is a list of IPython commands to execute on startup
     #o.autoexec.append('%colors LightBG')
     #o.autoexec.append('%colors NoColor')
     #o.autoexec.append('%colors Linux')
-    
+
     # for sane integer division that converts to float (1/2 == 0.5)
     #o.autoexec.append('from __future__ import division')
-    
+
     # For %tasks and %kill
     #import jobctrl 
-    
+
     # For autoreloading of modules (%autoreload, %aimport)    
     #import ipy_autoreload
-    
+
     # For winpdb support (%wdb)
     #import ipy_winpdb
-    
+
     # For bzr completer, requires bzrlib (the python installation of bzr)
     #ip.load('ipy_bzr')
-    
+
     # Tab completer that is not quite so picky (i.e. 
     # "foo".<TAB> and str(2).<TAB> will work). Complete 
     # at your own risk!
     #import ipy_greedycompleter
-    
-    
-    
+
+
+
 # some config helper functions you can use 
 def import_all(modules):
-    """ Usage: import_all("os sys") """ 
+    """ Usage: import_all("os sys") """
     for module in modules.split():
         IP.ex("from %s import *" % module)
-        
+
 def execf(fname):
     """ Execute a file in user namespace """
     IP.ex('execfile("%s")' % os.path.expanduser(fname))

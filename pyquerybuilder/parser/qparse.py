@@ -100,7 +100,7 @@ def p_constraint(pattern):
         pattern[0]['keyword'] = pattern[1]
         pattern[0]['sign'] = pattern[2:4]
         pattern[0]['value'] = pattern[4]
-     
+
 
 #### Catastrophic error handler
 def p_error(pattern):
@@ -114,7 +114,7 @@ def parse(data, debug=0):
     """parse """
     QPARSER.error = 0
     result = QPARSER.parse(data, debug=debug)
-    if QPARSER.error: 
+    if QPARSER.error:
         return None
     return result
 
@@ -132,7 +132,7 @@ if __name__ == '__main__':
             QUERY = raw_input('calc > ')
         except EOFError:
             break
-        if not QUERY: 
+        if not QUERY:
             continue
         RESULT = parse(QUERY)
         print RESULT

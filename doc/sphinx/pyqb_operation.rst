@@ -28,10 +28,10 @@ it's structure is as following example.
 .. doctest::
 
    [server]
-   verbose = 0                                # verbosity level, lowest is 0 
-   server_port = 8310                         # web server port 
+   verbose = 0                                # verbosity level, lowest is 0
+   server_port = 8310                         # web server port
    logdir = /tmp                              # log file directory
-   db_url = tests/test.db                     # database URL 
+   db_url = tests/test.db                     # database URL
    map_file = pyquerybuilder/config/map.yaml  # schema mapping file
 
 
@@ -39,7 +39,7 @@ replace db_url with the your database one.
 
 .. doctest::
 
-   driver://user:passwd@host:port             # for Mysql 
+   driver://user:passwd@host:port             # for Mysql
    driver://user:passwd@host:port:db_owner    # for oracle
 
 Running PyQB server
@@ -49,13 +49,11 @@ Commandline tools:
 
 .. doctest::
 
-    $> sh pyquerybuilder/dbsh.sh 
+    $> sh pyquerybuilder/dbsh.sh
 
 WebServer:
 
 .. doctest::
-
+    $> export QB_ROOT=`pwd`
     $> python pyquerybuilder/web/web_server.py
-
-
 

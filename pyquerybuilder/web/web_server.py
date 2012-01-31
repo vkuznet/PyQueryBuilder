@@ -14,7 +14,7 @@ __author__ = "Valentin Kuznetsov"
 #import os
 #import sys
 import yaml
-import logging 
+import logging
 from optparse import OptionParser
 
 # CherryPy modules
@@ -33,9 +33,9 @@ from cherrypy.process import plugins
 
 class QueryBuilderBus(plugins.SimplePlugin):
     """
-    A WSPBus plugin that controls 
+    A WSPBus plugin that controls
       1. a SQLAlchemy engine/connection pool.
-      2. a QueryBuilder 
+      2. a QueryBuilder
     """
     def __init__(self, bus, url=None, map_file=None):
         plugins.SimplePlugin.__init__(self, bus)
@@ -66,7 +66,7 @@ class Root(object):
     def __init__(self, config):
         self.config = config
         self.app    = "Root"
-        
+
     def configure(self):
         """Configure server, CherryPy and the rest."""
         try:
@@ -91,28 +91,28 @@ class Root(object):
         except:
             cpconfig.update ({"server.socket_host": '0.0.0.0'})
         try:
-            cpconfig.update ({'tools.expires.secs': 
+            cpconfig.update ({'tools.expires.secs':
                                 int(self.config['expires'])})
         except:
             cpconfig.update ({'tools.expires.secs': 300})
         try:
-            cpconfig.update ({'log.screen': 
+            cpconfig.update ({'log.screen':
                                 bool(self.config['log_screen'])})
         except:
             cpconfig.update ({'log.screen': True})
         try:
-            cpconfig.update ({'log.access_file': 
+            cpconfig.update ({'log.access_file':
                                 self.config['access_log_file']})
         except:
             cpconfig.update ({'log.access_file': None})
         try:
-            cpconfig.update ({'log.error_file': 
+            cpconfig.update ({'log.error_file':
                                 self.config['error_log_file']})
         except:
             cpconfig.update ({'log.error_file': None})
         try:
             log.error_log.setLevel(self.config['error_log_level'])
-        except:     
+        except:
             log.error_log.setLevel(logging.DEBUG)
         try:
             log.access_log.setLevel(self.config['access_log_level'])
@@ -132,28 +132,28 @@ class Root(object):
         #cpconfig.update ({'proxy.tool.base': '%s:%s' 
 #                                % (socket.gethostname(), opts.port)})
 
-        log("loading config: %s" % cpconfig, 
-                                   context=self.app, 
-                                   severity=logging.DEBUG, 
+        log("loading config: %s" % cpconfig,
+                                   context=self.app,
+                                   severity=logging.DEBUG,
                                    traceback=False)
 
     def start(self, blocking=True):
         """Configure and start the server."""
         self.configure()
         config = {'db_url':self.config['db_url'],
-                  'map_file':self.config['map_file']} 
+                  'map_file':self.config['map_file']}
         # can be something to consider
         obj = WebServerManager(config) # mount the web server manager
         tree.mount(obj, '/')
         engine.start()
         if  blocking:
             engine.block()
-            
+
     def stop(self):
         """Stop the server."""
         engine.exit()
         engine.stop()
-        
+
 def main():
     """
     Start-up web server.
