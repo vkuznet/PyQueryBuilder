@@ -7,11 +7,11 @@ class TestDBManager(unittest.TestCase):
     def setUp(self):
         """default"""
         self.manager = DBManager()
-        self.url = 'sqlite:///test.db'
-        self.murl = 'sqlite:///migrate.db'
-        self.pname = 'sqlite-test.db |\#> '
-        self.name = 'sqlite-test.db'
-        self.mname = 'sqlite-migrate.db'
+        self.url = 'mysql://dbs:cmsdbs@liangd.ihep.ac.cn:3316/CMS_DBS'
+        self.murl = 'mysql://cms:passcms@localhost:3306/migrate'
+        self.pname = 'mysql-test-localhost |\#> '
+        self.name = 'mysql-test-localhost'
+        self.mname = 'mysql-migrate-localhost'
 
     def test_get_dbname(self):
         """test execute query on sqlite DB"""
@@ -59,7 +59,7 @@ class TestDBManager(unittest.TestCase):
         rows = results.fetchall()
         self.assertEqual(10, rows[0][0])
         self.manager.close(self.mname)
-        
+
         self.manager.connect(self.murl)
         self.manager.drop_table(self.mname, 'PrimaryDataset')
         self.manager.drop_db(self.mname)

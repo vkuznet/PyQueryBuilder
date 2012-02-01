@@ -18,7 +18,7 @@ class TestMapper(unittest.TestCase):
         self.mapper.load_mapfile(self.mapfile)
         self.mapper.validate_map(metadata.sorted_tables)
         self.assertEqual(12, len(self.mapper.dict))
-        
+
     def test_get_key(self):
         """test get_key"""
         self.assertTrue('dataset' == self.mapper.get_key('Files.Path'))
@@ -26,7 +26,7 @@ class TestMapper(unittest.TestCase):
         self.assertFalse('dataset' == self.mapper.get_key('files.path'))
 
     def test_get_column(self):
-        """test get_column""" 
+        """test get_column"""
         self.assertTrue( \
           'ProcessedDataset.PhysicsGroup' == self.mapper.get_column('phygrp'))
         self.assertFalse( \

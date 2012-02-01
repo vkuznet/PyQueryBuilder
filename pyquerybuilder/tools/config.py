@@ -3,11 +3,12 @@
 
 """
 Config utilities
+get idea from DAS by Valentin
 """
 
-__revision__ = "$Id: das_config.py,v 1.33 2010/03/10 01:19:56 valya Exp $"
-__version__ = "$Revision: 1.33 $"
-__author__ = "Valentin Kuznetsov"
+__revision__ = "$Id: pyqb_config $"
+__version__ = "$Revision: $"
+__author__ = "Dong"
 
 import os
 import ConfigParser
@@ -24,7 +25,7 @@ def configfile():
 
 def readconfig():
     """
-    Read configuration file and store DAS parameters into returning
+    Read configuration file and store parameters into returning
     dictionary.
     """
     config = ConfigParser.ConfigParser()
@@ -41,7 +42,13 @@ def readconfig():
         configdict['db_url'] = db_url
 #    configdict['db_alias'] = config.get('server', 'db_alias')
     configdict['map_file'] = os.path.join(os.environ['QB_ROOT'], \
-                                         config.get('server', 'map_file'))
+                            config.get('server', 'map_file', ''))
+    configdict['alias_mapfile'] = os.path.join(os.environ['QB_ROOT'], \
+                            config.get('server', 'alias_mapfile', ''))
+    configdict['split_file'] = os.path.join(os.environ['QB_ROOT'], \
+                            config.get('server', 'split_file', ''))
+    configdict['logconfig'] = os.path.join(os.environ['QB_ROOT'], \
+                            config.get('server', 'logconfig', ''))
     return configdict
 
 def writeconfig():
@@ -53,7 +60,12 @@ def writeconfig():
     config.set('server', 'verbose', 0)
     config.set('server', 'logdir', '/tmp')
     config.set('server', 'server_port', 8310)
+    config.set('server', 'map_file', 'map.yaml')
+    config.set('server', 'alias_mapfile', 'map2.yaml')
+    config.set('server', 'split_file', 'split.yaml')
+    config.set('server', 'logconfig', 'logconfig')
     config.write(open(configfile(), 'wb'))
 
 if  __name__ == '__main__':
-    writeconfig()
+#    writeconfig()
+    print readconfig()

@@ -5,7 +5,7 @@ Utils module
    :maxdepth: 4
 
 Errors
----------
+------
 .. automodule:: pyquerybuilder.utils.Errors
    :members:
 

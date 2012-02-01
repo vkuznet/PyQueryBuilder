@@ -8,10 +8,22 @@ __revision__ = "$Revision: 1.1 $"
 
 import logging
 import logging.config
+from pyquerybuilder.tools.config import readconfig
+import imp
+import os
 
 def configurelog():
     """Log configuration"""
-    logging.config.fileConfig("logging.conf")
+    logfile = None
+    try:
+        config = readconfig()
+        logfile = config['logfile']['logconfig']
+    except:
+        basedir = imp.find_module('pyquerybuilder')[1]
+        logfile = os.path.join(basedir, 'config/logging.conf')
+
+    logging.config.fileConfig(logfile)
 
     #create logger
     logger = logging.getLogger("ConstructQuery")
+    logger.setLevel(logging.DEBUG)

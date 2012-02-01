@@ -24,7 +24,7 @@ class TestUnittestDB(unittest.TestCase):
                           { "member" : "who", "foreignKey" : "a0"}
                          ]
                 }
-        self.url = 'sqlite:///test.db'
+        self.url = 'mysql://cms:passcms@localhost:3306/test'
         self.engine = create_engine(self.url)
 
     def tearDown(self):
@@ -32,11 +32,7 @@ class TestUnittestDB(unittest.TestCase):
         pass
 
     def test_sample_query(self):
-        """
-        test sample query with simple table a0/a1
-        table is created by UnittestDB
-        table will be cleaned up after test.
-        """
+        """test sample query"""
         db_test = UnittestDB()
 #        class zCol(object):
 #            """z col"""
@@ -54,22 +50,14 @@ class TestUnittestDB(unittest.TestCase):
         
 
     def test_from_yaml(self):
-        """
-        test load schema from yaml
-        database schema is laod from starting_db.yaml
-        verify by counting column numbers
-        """
+        """test from yaml"""
         metadata = load_from_file('starting_db.yaml')
         udb = UnittestDB()
         c_count = udb.column_count(metadata)
         self.assertEqual(c_count, 40)
 
     def test_fill(self):
-        """
-        test fill tables with test data(numbers)
-        the database is created from starting_db.yaml
-        after fill the data will be resistent in database.
-        """
+        """test fill"""
 #        if path.exists('unittest2.db'):
 #            unlink('unittest2.db')
         udb = UnittestDB()
@@ -90,20 +78,14 @@ class TestUnittestDB(unittest.TestCase):
         connection.close()
 
     def test_oracle_write(self):
-        """
-        test oracle schema write into dot graph
-        schema is from oracle.sql
-        dot file is oracle.dot
-        """
+        """test oracle write"""
         udb = UnittestDB()
         metadata = udb.read_from_oracle('oracle.sql')
         dot = DotGraph(file("oracle.dot", "w"))
         write_sql_alchemy_graph(dot, metadata, set(['Person']))
 
     def test_by_sql_file(self):
-        """
-        test by sql file
-        """
+        """test by sql file"""
         udb = UnittestDB()
         metadata = udb.load_from_file('starting_db.yaml')
         connection = self.engine.connect()

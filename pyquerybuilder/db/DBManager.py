@@ -127,21 +127,23 @@ class DBManager(object):
                             'db_type', 'db_owner', 'db_schema',
                             'meta_dict', 'drivers', 'aliases']
         # for print_table
-        self.print_mgr  = PrintOutput()
+        self.print_mgr   = PrintOutput()
         self.print_method = "txt"
         # for plot
-        self.formats   = ['jpg', 'png', 'gif', 'svg', 'ps']
+        self.formats     = ['jpg', 'png', 'gif', 'svg', 'ps']
         # for fetch_from_to
-        self.limit     = None
-        self.offset    = None
-        self.results   = ""
-        self.query     = ""
-        self.new_paged     = 0
+        self.limit       = None
+        self.offset      = None
+        self.results     = None
+        self.query       = ""
+        self.new_paged   = 0
         # for web dynamic table 
         self.t_result = [] # titles of current result
         self.l_result = 0 # total length of current reuslt
         # all parameters below are defined at run time
         self.t_cache     = []
+        self.total_cache = {}
+        self.query_cache = {}
         self.engine      = {}
         self.db_tables   = {}
         self.table_names = {}
@@ -402,37 +404,6 @@ class DBManager(object):
                       % (db_alias, new_dbalias)
         self.close(new_dbalias)
 
-
-#
-#        table_names = tables.keys()
-#        table_names.sort()
-#        con = remote_engine.connect()
-#        for table in table_names:
-#            if  self.verbose:
-#                print table
-#            new_table = tables[table].tometadata(meta)
-##            tables[table].create(bind = remote_engine, checkfirst=True)
-#            new_table.create(bind = remote_engine, checkfirst=True)
-#            query = "select * from %s" % table
-#            try:
-#                result = db_con.execute(query)
-#            except Error:
-#                raise traceback.print_exc()
-#            for item in result:
-#                if type(item) is types.StringType:
-#                    raise item + "\n"
-#                ins = new_table.insert(values = item.values())
-#
-#                try:
-#                    con.execute(ins)
-#                except Error:
-#                    raise traceback.print_exc()
-#        con.close()
-#        if  self.verbose:
-#            print "The content of '%s' has been successfully migrated to '%s'"
-#                        %  (db_alias, new_dbalias)
-#        self.close(new_dbalias)
-
     def create_alias(self, name, params):
         """Update self.aliases"""
         pass
@@ -442,7 +413,7 @@ class DBManager(object):
         """get db alias"""
         return self.aliases[driver]
 
-    def execute(self, query, db_alias = "", list_results = 1):
+    def execute(self, query, db_alias="", list_results=1):
         """Execute query and print result"""
         self.t_cache = []
         try:
@@ -803,6 +774,10 @@ class DBManager(object):
         # Initialize SQLAlchemy engines
         if  not self.engine.has_key(db_alias):
             e_name = ""
+            if port != None:
+                host_port = "%s:%s" % (host, port)
+            else:
+                host_port = host
             if e_type == 'sqlite':
                 e_name = "%s://%s?check_same_thread=False" % (e_type, file_name)
                 if not file_name.startswith('/'):
@@ -815,16 +790,15 @@ class DBManager(object):
                             strategy = 'threadlocal', threaded = True)
             elif e_type == 'mysql':
                 e_name = "%s://%s:%s@%s/%s" % (e_type, db_user,
-                                          db_pass, host, db_name)
+                                          db_pass, host_port, db_name)
                 engine = sqlalchemy.create_engine(e_name,
                                  strategy = 'threadlocal')
             elif e_type == 'postgresql':
                 e_name = "%s://%s:%s@%s/%s" % (e_type, db_user,
-                                           db_pass, host, db_name)
+                                           db_pass, host_port, db_name)
                 engine = sqlalchemy.create_engine(e_name,
                                  strategy = 'threadlocal')
             else:
-                # printExcept("Unsupported DB engine back-end")
                 print Exception, "Unsupported DB engine back-end"
             self.engine[db_alias] = engine
         self.con = self.engine[db_alias].connect()
@@ -876,6 +850,8 @@ class DBManager(object):
         kwargs = {'autoload':True}
         for t_name in self.table_names[db_alias]:
             tab_name = t_name.lower()
+            if e_type == "mysql":
+                tab_name = t_name
             if  tables.has_key(tab_name):
                 continue
             if  table_name and tab_name != table_name:

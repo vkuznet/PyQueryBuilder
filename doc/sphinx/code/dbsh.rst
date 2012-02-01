@@ -5,7 +5,7 @@ DBshell module
    :maxdepth: 4
 
 dbprint
----------
+-------
 .. automodule:: pyquerybuilder.dbsh.dbprint
    :members:
 
@@ -15,7 +15,7 @@ dbresults
    :members:
 
 utils
----------
+-----
 .. automodule:: pyquerybuilder.dbsh.utils
    :members:
 

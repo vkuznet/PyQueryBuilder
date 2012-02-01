@@ -4,168 +4,50 @@ QueryBuilder
 """
 
 
-import traceback
-from collections import deque
+#import traceback
 from logging import getLogger
 import time
 
-from sqlalchemy import select, MetaData
-#from sqlalchemy.sql import and_, or_, not_
-from sqlalchemy.sql.expression import func
+from sqlalchemy import MetaData
 
-from pyquerybuilder.qb.Schema import Schema, find_table
-from pyquerybuilder.db.DBManager import DBManager, print_list
-from pyquerybuilder.utils.Errors import Error
+from pyquerybuilder.qb.SchemaHandler import SchemaHandler
+#from pyquerybuilder.db.DBManager import DBManager, print_list
+#from pyquerybuilder.utils.Errors import Error
 from pyquerybuilder.tools.map_reader import Mapper
 from pyquerybuilder.parser import qparse
-from  pyquerybuilder.tools.schema_loader import load_from_file
-#from pyquerybuilder.qb.ConstructQuery import ConstructQuery
-
-
+from pyquerybuilder.tools.schema_loader import load_from_file
 
 _LOGGER = getLogger("ConstructQuery")
 
-def get_table_column(metadata, keyword):
-    """get table or column object from schema"""
-    if keyword.count('.'):
-        (entity, attr) = keyword.split('.')
-        table = find_table(metadata, entity)
-        if table:
-            return table.columns[attr]
-        else:
-            raise Error("ERROR can't find table %s" % str(entity))
-    else:
-        entity = keyword
-        table = find_table(metadata, entity)
-        if table:
-            return table
-        else:
-            raise Error("ERROR can't find table %s" % str(entity))
-
-
-def generate_query(metadata, query):
-    """generate query from parse result"""
-    if query:
-        key_list = []
-        for keyword in query['keywords']:
-            if len (keyword) == 1:
-                key_list.append(get_table_column(metadata, keyword[0]))
-            elif keyword[1] in ('count', 'max', 'min', 'sum'):
-                key_list.append( \
-        getattr(func, keyword[1])(get_table_column(metadata, keyword[0])))
-            else:
-                raise Error(\
-                "ERROR: invalid keyword format %s" % str(keyword))
-
-        whereclause = None
-        stack = []
-        queue = deque([])
-        constraint = None
-        if query.has_key('constraints'):
-            stack.append(query['constraints'])
-            constraint = stack.pop()
-        else:
-            return  select(key_list, whereclause)
-        # sort out the sequence by using a stack and a queue        
-        while constraint:
-            if type(constraint) is type([]):
-                if len(constraint) == 1:
-                    # operate miss
-                    constraint = constraint[0]
-                    stack.append(constraint)
-                else:
-                    multiple = False
-                    for index in range(0, len(constraint)):
-                        cons = constraint[index]
-                        if type(cons) is type('str'):
-                            if multiple == True:
-                                stack.pop()
-                            stack.append(cons)
-                            stack.append(constraint[index-1])
-                            stack.append(constraint[index+1])
-                            multiple = True
-            elif type(constraint) is type({}):
-                queue.append(constraint)
-            elif type(constraint) is type('str'):
-                queue.append(constraint)
-            if len(stack) == 0:
-                break
-            constraint = stack.pop()
-        # Now we have correct sequence in queue
-#        print queue
-        constraint = queue.popleft()
-        if len(queue) == 0:
-            column = get_table_column(metadata, constraint['keyword'][0])
-            whereclause = column.op(constraint['sign'])(constraint['value'])
-            return  select(key_list, whereclause)
-        # right use as right hand to hold constraint
-        right = None
-        # left use as left hand to hold constraint
-        left = None
-        # extra use as A B C or and in queue
-        extra = None
-        while constraint:
-            if type(constraint) is type({}):
-                if right is None :
-                    right = constraint
-                elif left is None:
-                    left = constraint
-                elif extra is None:
-                    extra = right
-                    right = left
-                    left = constraint
-                else:
-                    raise Error("ERROR: consecutive constraint >3 in queue")
-            elif type(constraint) is type('str'):
-                if right and left :
-                    # construct whereclause
-                    if type(right) == type({}):
-                        column = get_table_column(metadata, right['keyword'][0])
-                        right = column.op(right['sign'])(right['value'])
-                    if type(left) == type({}):
-                        column =  get_table_column(metadata, left['keyword'][0])
-                        left = column.op(left['sign'])(left['value'])
-                    if constraint == 'and':
-                        whereclause = (left & right)
-                    elif constraint == 'or':
-                        whereclause = (left | right)
-                    left = None
-                    right = whereclause
-                    if extra:
-                        left = right
-                        right = extra
-                        extra = None
-            if len(queue) == 0:
-                break
-            constraint = queue.popleft()
-#                print whereclause
-#        print "type whereclause is ", type(whereclause)
-        return  select(key_list, whereclause)
-
-
-
-def test_query_parser(mapper, in_put):
-    """input query ==parse==> output dictionary
-       ==mapper==> select sentences"""
+def query_parser(mapper, in_put):
+    """
+    1.perform parser on input query
+    2.perform keyword to table[.column] mapping
+    3.return mapped query dictionary
+        {'keywords':{}, 'constraints':{}}
+      keylist also return to be used in
+                appending attribute link
+                titles?
+    """
+    keylist = {'keywords':[], 'constraints':[]}
     presult = qparse.parse(in_put)
     if presult == None:
-        raise Error("parse result is empty")
-#    print "parse result: ", presult 
-    # construct a query 
+        _LOGGER.error("parser result is empty")
+        return None, None
+    _LOGGER.debug("""query dictionary before mapping %s""" % \
+                            str(presult))
+    # do mapping
     keywords =  presult['keywords']
     for keyword in keywords:
         if mapper.has_key(keyword[0]):
             keylist['keywords'].append(keyword)
-            key = mapper.get_column(keyword[0])
-#            print "%s ==map==> %s"% (keyword[0], key)
             keyword.remove(keyword[0])
             keyword.insert(0, key)
 
         else:
             _LOGGER.error("""keyword not in mapper %s""",
                        str(keyword[0]))
-            raise Error(\
-              "ERROR: keyword not in mapper %s" % str(keyword[0]))
+            return None, None
 
     constraint = None
     if presult.has_key('constraints'):
@@ -182,14 +64,13 @@ def test_query_parser(mapper, in_put):
         if type(cons) is type({}):
             keyword = cons['keyword']
             if mapper.has_key(keyword[0]):
+                keylist['constraints'].append(keyword[0])
                 key = mapper.get_column(keyword[0])
                 cons['keyword'] = [key]
-#                print "%s ==map==> %s"% (keyword[0], key)
             else:
-                _LOGGER.error("""keyword not in mapper %s""",
+                _LOGGER.error("""keyword %s not in mapper """,
                        str(keyword[0]))
-                raise Error("ERROR: keyword not in mapper %s"\
-                         % str(keyword[0]))
+                return None, None
             # we finished the last element in stack
             if len(stack) == 0:
                 break
@@ -200,8 +81,7 @@ def test_query_parser(mapper, in_put):
 
     _LOGGER.debug("""user input is: %s""" % str(in_put))
     _LOGGER.debug("""parse result is: %s""" % str(presult))
-#    print presult
-    return presult
+    return presult, keylist
 
 class QueryBuilder():
     """Application QueryBuilder"""
@@ -248,7 +128,7 @@ class QueryBuilder():
     def set_from_tables(self, tables):
         """set querybuilder from tables"""
         self.schema.set_tables(tables)
-        self.querybuilder = Schema(tables)
+        self.querybuilder = SchemaHandler(tables)
 
     def set_from_files(self, schema_file):
         """set querybuilder from schema file"""
@@ -258,15 +138,22 @@ class QueryBuilder():
         tables = metadata.tables
 #        self.schema = metadata
         self.schema.set_tables(tables)
-        self.querybuilder = Schema(tables)
+        self.querybuilder = SchemaHandler(tables)
+
+    def recognize_schema(self, dbmanager, alias):
+        """recognize schema"""
+        self.querybuilder.recognize_schema(self.mapper, dbmanager, alias)
 
     def parse_input(self, in_puts):
         """parse input"""
-        return test_query_parser(self.mapper, in_puts)
+        return query_parser(self.mapper, in_puts)
 
     def generate_sqlalchemy_clauses(self, query):
         """generate sqlalcemy query"""
         return self.querybuilder.gen_clauses(query)
+        if query is None:
+            return None
+        return self.querybuilder.primary_query(query)
 
     def build_query(self, query):
         """
@@ -276,4 +163,20 @@ class QueryBuilder():
         whereclause = self.generate_sqlalchemy_clauses(query)
         query = self.querybuilder.build_query(whereclause, keylist)
         return query
+        mquery = self.generate_sqlalchemy_query(query)
+        if mquery is None:
+            return None
+        return  self.querybuilder.build_query(mquery, keylist)
+
+    def get_query_keywords(self, query):
+        """
+        build query for web server
+        return keywords list for Table titles
+        """
+        query, keylist = self.parse_input(query)
+        mquery = self.generate_sqlalchemy_query(query)
+        if mquery is None:
+            return None
+        return  self.querybuilder.build_query(mquery, keylist), \
+                keylist['keywords']
 

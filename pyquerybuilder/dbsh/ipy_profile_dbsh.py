@@ -6,7 +6,7 @@
 #  Distributed under the terms of the BSD License.  The full license is in
 #  the file doc/LICENSE, distributed as part of this software.
 ##########################################################################
-"""ipython profile for db shell"""
+"""ipython profile for pyqb sources from db shell"""
 # system modules
 import os
 import sys
@@ -15,12 +15,14 @@ import sys
 #import string
 #import popen2
 import traceback
+from logging import getLogger
 
 # ipython modules
 from IPython import Release
 import IPython.ipapi
 IP = IPython.ipapi.get()
 
+from pyquerybuilder.qb.ConfigureLog import configurelog
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.dbsh.dbprint import PrintOutput
 from pyquerybuilder.dbsh.dbresults import Results
@@ -34,6 +36,7 @@ __alias_table__ = {}
 FILE_DICT = {'MAP_FILE':None, 'SCHEMA_FILE':None}
 
 try:
+    configurelog()
     DB = DBManager()
     DBPRINT = PrintOutput()
     QB = QueryBuilder()
@@ -43,6 +46,7 @@ except:
     traceback.print_exc()
     raise Exception, DBPRINT.msg_red("ERROR: fail to load DBManager")
 
+_LOGGER = getLogger("ConstructQuery")
 
 def db_ready(supressed=False):
     """Check whether db is connected"""
@@ -71,19 +75,19 @@ def qb_ready():
        DB is connected or closed, QueryBuilder can do translation.
     2. It can be loaded from Schema file.
     Check mapper is ready:
-    1. mapfile is loaded 
+    1. mapfile is loaded
     2. mapper initialized without error
     """
     if not QB.is_ready():
         DBPRINT.print_red("QueryBuilder is not avaliable")
         print "To work with QueryBuilder, schema and map file are both needed."
-        if db_ready(supressed=True):    
+        if db_ready(supressed=True):
             print "DB is connected\n please check map file with Command %s\n \
 for more help check %s" % (DBPRINT.msg_green("mapfile"),
                 DBPRINT.msg_green("dbhelp mapfile"))
         else:
             print "No DB conncetion \n checking %s for loading schema from \
-DB\n checking %s for loading schema from file\n checking %s for load mapfile" %\
+DB\n checking %s for loading schema from file\n checking %s for load mapfile" % \
           (DBPRINT.msg_green("connect"), DBPRINT.msg_green("schemafile"), \
                  DBPRINT.msg_green("mapfile"))
         return 1
@@ -129,6 +133,8 @@ def connect(self, arg):
     set_prompt(DB.dbname(arg))
     tables = DB.load_tables(db_alias())
     QB.set_from_tables(tables)
+    if QB.mapper:
+        QB.recognize_schema(DB, alias)
 
 def close(self, arg):
     """
@@ -300,7 +306,7 @@ def format(self, arg):
         return dbhelp(self, 'format')
     if not db_ready():
         return
-    if not (arg.lower() == "txt" or arg.lower() == "xml" or 
+    if not (arg.lower() == "txt" or arg.lower() == "xml" or
            arg.lower() == "html" or arg.lower() == "csv"):
         raise DBPRINT.msg_red( \
            "ERROR: not supported format, please use txt,xml,html,csv")
@@ -374,7 +380,7 @@ def drop(self, arg):
     """
     if arg == '' or arg.lower() == 'help':
         return dbhelp(self, 'drop')
-    if not db_ready(): 
+    if not db_ready():
         return
     params = arg.replace(";", "").split()
     if params[0].lower() == "table":
@@ -489,7 +495,10 @@ def find(self, arg):
         return
     query = "find " + arg.split(';')[0].strip()
     mquery = QB.build_query(query)
-    print mquery
+    if mquery == None:
+        _LOGGER.debug("failed to build query %s" % query)
+        return
+    _LOGGER.info(mquery)
     if not db_ready():
         return
     res = DB.execute(mquery, db_alias())
@@ -510,6 +519,8 @@ def mapfile(self, arg):
     if os.path.isfile(arg):
         FILE_DICT['MAP_FILE'] = arg
         QB.set_mapper(FILE_DICT['MAP_FILE'])
+        if db_ready:
+            QB.recognize_schema(DB, db_alias)
         return
 
 def schemafile(self, arg):

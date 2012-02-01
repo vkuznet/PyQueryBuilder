@@ -68,8 +68,8 @@ def dfs_visit(graph, node, time, visit, finish):
     time[0] = time[0] + 1
     finish[node] = time[0]
 
-    
-    
+
+
 
 class UnittestDB(object):
     """create DataBase for Unittest """
@@ -113,7 +113,7 @@ class UnittestDB(object):
                 insert_dict[col_name] = idx + 100
 #            _LOGGER.debug("insert %s %s" % (table.name, insert_dict))
         insert_clause.execute(insert_dict)
-    
+
     def get_graph(self, sorted_tables, table_index, graph):
         """
         get graph represents of schema
@@ -135,9 +135,9 @@ class UnittestDB(object):
                     if index in graph[table_index[fk_tbname]]:
                         continue
                     graph[table_index[fk_tbname]].append(index)
-            index = index + 1 
+            index = index + 1
 #        print "graph is ", graph
-        
+
 
     def fill_tables(self, metadata, row_cnt):
         """
@@ -154,7 +154,7 @@ class UnittestDB(object):
             sorted_tb[table.name] = table
             table_index[table.name] = count
             count = count + 1
-            graph.append([])  
+            graph.append([])
 #            print "  ", table.name
         self.get_graph(sorted_tables, table_index, graph)
 #        self.get_graph(sorted_tables, sorted_tb, table_index, graph)
@@ -169,7 +169,7 @@ class UnittestDB(object):
         for idx in range(0, row_cnt):
             for index in sequence:
                 self.fill_table(sorted_tables[index], idx+1)
- 
+
 
 
     def load_with_fake_data(self, filename, dbname):

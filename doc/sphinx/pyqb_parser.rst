@@ -19,3 +19,25 @@ will be parsed as:
                       'keyword': ['file'],
                       'sign': '='}]}
 
+And it will support bracket operation.
+
+.. doctest::
+   find table where (a >1 and b <2) and (a>3 or d <4)
+
+will be parsed as:
+
+.. doctest::
+
+   {'keywords'   : [ ['table'] ],
+    'constraints': [
+                     [ {'value': '1', 'keyword': ['a'], 'sign': '>'},
+                       'and',
+                       {'value': '2', 'keyword': ['b'], 'sign': '<'}],
+                     'and', 
+                     [ {'value': '3', 'keyword': ['a'], 'sign': '>'},
+                       'or',
+                       {'value': '4', 'keyword': ['d'], 'sign': '<'}
+                     ]
+                   ]
+   }
+

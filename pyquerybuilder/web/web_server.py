@@ -52,6 +52,8 @@ class QueryBuilderBus(plugins.SimplePlugin):
         self.con = self.dbm.connect(self.url)
         self.qbs.set_from_tables(self.dbm.load_tables( \
                  self.dbm.get_alias(self.url)))
+        self.qbs.recognize_schema(self.dbm, \
+                self.dbm.get_alias(self.url))
 
     def stop(self):
         """close db connection"""

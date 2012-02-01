@@ -221,7 +221,6 @@ class WebServerManager(WebManager):
 #            traceback.print_exc()
 #        self.db_result = Results()
         self.c_titles = []
-        self.c_length = 0
 
     @expose
     def index(self, *args, **kwargs):
@@ -276,7 +275,7 @@ class WebServerManager(WebManager):
         page += self.templatepage('bottom', ctime=ctime, timestamp=timestamp)
         return page
 
-    def get_data(self, uinput, idx, limit, sort, sdir):
+    def get_data(self, uinput, limit, idx):
         """
         Retrieves data from the back-end
         """
@@ -311,7 +310,7 @@ class WebServerManager(WebManager):
 
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
-        return self.c_length
+        return cherrypy.engine.qbm.dbm.get_total(uinput)
 
     @exposejson
     def yuijson(self, **kwargs):
@@ -323,7 +322,7 @@ class WebServerManager(WebManager):
 #        print "\n###call yuijson", kwargs
         sort   = kwargs.get('sort', 'id')
         uinput = kwargs.get('input', '')
-        limit  = int(kwargs.get('limit', 5)) # number of shown results
+        limit  = int(kwargs.get('limit', 50)) # number of shown results
         idx    = int(kwargs.get('idx', 0)) # start with
         sdir   = kwargs.get('dir', 'asc')
         rows   = self.get_data(uinput, idx, limit, sort, sdir)
@@ -332,7 +331,7 @@ class WebServerManager(WebManager):
         jsondict = {'recordsReturned': len(rows),
                    'totalRecords': total,
                    'startIndex':idx,
-                   'sort':'true',
+                   'sort':'false',
                    'dir':'asc',
                    'pageSize': limit,
                    'records': rows}
@@ -349,16 +348,11 @@ class WebServerManager(WebManager):
         if  not uinput:
             return self.error
         manager = cherrypy.engine.qbm
+        keywords = []
         try:
             if cherrypy.engine.qbm.qbs == None:
                 raise Exception, "qbs is None"
                 self.log("qbs is None", 1)
-            mquery = manager.qbs.build_query(uinput)
-            rescot = manager.dbm.execute(mquery.count())
-            self.c_length = rescot.fetchall()[0][0]
-            print mquery
-            res = manager.dbm.execute(mquery)
-
         except Error:
             traceback.print_exc()
         limit = 50

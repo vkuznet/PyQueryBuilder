@@ -6,11 +6,11 @@ SQLAlchemy Graph writer
 """
 
 # system modules
-from sqlalchemy import sql
 from sqlalchemy.sql.expression import Join
 
 def write_sql_alchemy_graph(dot, metadata, exclude_tables):
-    """This shows how tables relate through foreign keys in a sqlalchemy schema."""
+    """This shows how tables relate through foreign keys
+    in a sqlalchemy schema."""
 #    if metadata.name:
 #        dot.set_name(metadata.name)
 #    else:
@@ -20,8 +20,8 @@ def write_sql_alchemy_graph(dot, metadata, exclude_tables):
         if table_name in exclude_tables:
             continue
         f_keys = metadata.tables[table_name].foreign_keys
-        for fk in f_keys:
-            right = fk.column.table.name
+        for fkey in f_keys:
+            right = fkey.column.table.name
             if right not in exclude_tables:
                 dot.add_edge(table_name, right)
     dot.finish_output()
@@ -43,6 +43,7 @@ def write_sql_alchemy_graph(dot, metadata, exclude_tables):
 #        pass
 #    
 def _write_side(dot, join):
+    """write join"""
     onclause = join.onclause
     dot.add_edge(onclause.left.table.name, onclause.right.table.name)
     if isinstance(join.left, Join):

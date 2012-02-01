@@ -21,7 +21,7 @@ readme       = open('doc/README', 'r').read()
 name         = "PyQB"
 desc         = "A general purpose Query Builder over RDMS system"
 keywords     = ["Query Language", "SQL", "RDMS", "databases"]
-#scriptfiles  = filter(os.path.isfile, ['etc/web_service'])
+scriptfiles  = filter(os.path.isfile, ['bin/dbsh'])
 data_files = [('config',['pyquerybuilder/config/ipythonrc']),
               ('map',['pyquerybuilder/tools/map.yaml'])],
 packages     = find_packages()
@@ -30,7 +30,7 @@ packages     = find_packages()
 #    ('src/doc', ['LICENSE', 'README']),
 #]
 package_data = {
-    'pyquerybuilder': ['web/templates/*.tmpl', 'web/css/*.css', 
+    'pyquerybuilder': ['web/templates/*.tmpl', 'web/css/*.css',
             'web/images/*', 'web/js/*.js','doc/*'],
 }
 classifiers = [
@@ -73,7 +73,7 @@ def main():
 #      data_files           = data_files,
       include_package_data = True,
       install_requires     = requirements,
-#      scripts              = scriptfiles,
+      scripts              = scriptfiles,
       classifiers          = classifiers,
       author               = author,
       author_email         = author_email,

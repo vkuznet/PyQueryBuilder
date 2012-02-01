@@ -13,7 +13,6 @@ digraph A {
 	Files -> FileStatus;
 	Files -> ProcessedDataset;
 	Files -> FileType;
-	Files -> FileValidStatus;
 	ProcDSRuns -> ProcessedDataset;
 	ProcDSRuns -> Runs;
 	FileParentage -> Files;
@@ -46,10 +45,10 @@ digraph A {
 	AnalysisDataset -> AnalysisDSDef;
 	AnalysisDataset -> AnalysisDSType;
 	AnalysisDataset -> AnalysisDataset;
+	AnalysisDataset -> AnalysisDSDef;
 	AnalysisDataset -> PhysicsGroup;
 	AlgorithmConfig -> AppVersion;
 	AlgorithmConfig -> AppExecutable;
-	AlgorithmConfig -> AppVersion;
-	AlgorithmConfig -> AppFamily;
 	AlgorithmConfig -> QueryableParameterSet;
+	AlgorithmConfig -> AppFamily;
 }

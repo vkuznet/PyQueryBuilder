@@ -13,7 +13,7 @@ class Graph(object):
     def __init__(self, graph):
         """The graph is a tuple, where each tuple memeber represents a node and
         the node contains a list of the other nodes to which it points. For
-        instance, ((1,2),(3,),(),()) means node () points to node 1 and 2, node 
+        instance, ((1,2),(3,),(),()) means node () points to node 1 and 2, node
         1 points to 3, and nodes 3 and 4 have no edges leaving them"""
         self._graph = tuple([tuple(x) for x in graph])
         self._coverage = None
@@ -66,7 +66,7 @@ class Graph(object):
         return len(filter(lambda x: x is True, visited))
 
     def breadth_first_search(self, node_index):
-        """Find a breadth first spanning tree of the graph. The return value 
+        """Find a breadth first spanning tree of the graph. The return value
         is another graph."""
         unexplored = [node_index]
         #visited    = [False for x in self._graph]
@@ -78,7 +78,7 @@ class Graph(object):
         while unexplored:
             node_index = unexplored[0]
             if node_index >= len(visited) or node_index < 0:
-                _LOGGER.debug("graph %s node_index %d start %d" % 
+                _LOGGER.debug("graph %s node_index %d start %d" %
                  (repr(self._graph), node_index, starting_node_index))
             visited[node_index] = True
 
@@ -180,6 +180,112 @@ class Graph(object):
             for end_index in end:
                 dot.add_edge(repr(start_index), repr(end_index))
         dot.finish_output()
+
+    def get_subgraph(self, node_list):
+        """clear out the unused edge"""
+        graph = []
+        for node_index in range(len(self._graph)):
+            if node_index not in node_list:
+                graph.append([])
+                continue
+            newnode = []
+            node = self._graph[node_index]
+            for end_node in node:
+                if end_node in node_list:
+                    newnode.append(end_node)
+            graph.append(newnode)
+#        print "==========rem unsused edge afte split union external ========"
+#        print graph
+#        print "======end remove from split union external============"
+        return Graph((tuple(x) for x in graph))
+
+    def get_extendgraph(self, node_list):
+        """clear out the unused edge"""
+        graph = []
+        for node_index in range(len(self._graph)):
+            if node_index not in node_list:
+                graph.append([])
+                continue
+            newnode = []
+            node = self._graph[node_index]
+            graph.append(node)
+#        print "==========extend graph============"
+#        print graph
+#        print "======end extend graph============"
+        return Graph((tuple(x) for x in graph))
+
+
+
+    def detect_connection(self, root):
+        """dfs approach to find the branch of a graph"""
+        ugraph = self.get_undirected()._graph
+        visited = set([])
+        queue = [root]
+
+        while queue:
+            top = queue.pop()
+            visited.add(top)
+            for node in ugraph[top]:
+                if node not in visited:
+                    queue.insert(0, node)
+                    visited.add(node)
+#        print "========get the spanning tree from root=============="
+#        print ugraph
+#        print root
+#        print visited
+#        print "========end of geting spanning tree from root=============="
+        return self.get_extendgraph(visited)
+
+    def get_inlinks(self, snode):
+        """get the inlinks to a node"""
+        inlinks = []
+        for index in range(len(self._graph)):
+            for node in self._graph[index]:
+                if node == snode:
+                    inlinks.append(index)
+        return inlinks
+
+    def get_expanding(self, node_list, excludes):
+        """get expanding graph, following the direction of the edges"""
+#        print excludes
+        visited = set([])
+        queue = node_list[:]
+        graph = [ [] for x in range(len(self._graph)) ]
+
+        while queue:
+            top = queue[0]
+            queue.remove(top)
+            visited.add(top)
+            for node in self._graph[top]:
+                if node in excludes:
+                    continue
+                if node in visited:
+                    if top in node_list or node in node_list:
+                        graph[top].append(node)
+                    continue
+                graph[top].append(node)
+                if queue.count(node) == 0:
+                    queue.append(node)
+
+        for node in node_list:
+            for innode in self.get_inlinks(node):
+                if innode not in excludes:
+                    queue.append(innode)
+#        print "inlinks"
+#        print queue
+        while queue:
+            top = queue[0]
+            queue.remove(top)
+            if top in visited:
+                continue
+            visited.add(top)
+            for node in self._graph[top]:
+                graph[top].append(node)
+                if queue.count(node) == 0:
+                    queue.append(node)
+
+        return Graph((tuple(x) for x in graph))
+
 
 class RootedGraph(Graph):
     """a graph generated from (nodes, root_node)"""

@@ -16,4 +16,5 @@ __author__ = "Valentin Kuznetsov"
 #          'DotGraph',
 #          'Graph',
 #          'Schema',
+#          'NewSchema',
 #          'WriteSqlAlchemyGraph']

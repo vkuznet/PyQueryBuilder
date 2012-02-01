@@ -73,7 +73,7 @@ class PrintOutput:
     def print_xml(self, t_list, o_list, l_list, msg=None):
         """
         print in format of XML file
-        <query> <sql>msg</sql> 
+        <query> <sql>msg</sql>
         <table>
              <row>
                  <title>value</title>
