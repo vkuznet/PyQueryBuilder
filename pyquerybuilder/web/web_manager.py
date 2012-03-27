@@ -280,9 +280,15 @@ class WebServerManager(WebManager):
         """
         Retrieves data from the back-end
         """
-        result = cherrypy.engine.qbm.dbm.next(index=idx, suppress=True)
-        t_list = result[1]
-        o_list = result[2]
+        keywords = [ keys.strip().replace('(', '').replace(')', \
+                    '').replace('.', '') for keys in \
+                    uinput.split('where')[0].split('find')[1].split(',')]
+        query = cherrypy.engine.qbm.dbm.explain_query(uinput)
+        result = cherrypy.engine.qbm.dbm.execute_with_slice(\
+                    query, limit, idx, keywords.index(sort), sdir)
+
+        t_list = keywords
+        o_list = result[1]
         rows = []
         if o_list == {}:
             record = {}
@@ -321,6 +327,7 @@ class WebServerManager(WebManager):
         idx    = int(kwargs.get('idx', 0)) # start with
         sdir   = kwargs.get('dir', 'asc')
         rows   = self.get_data(uinput, idx, limit, sort, sdir)
+#        rows   = self.get_data(uinput, limit, idx)
         total  = self.get_total(uinput)
         jsondict = {'recordsReturned': len(rows),
                    'totalRecords': total,
@@ -354,22 +361,26 @@ class WebServerManager(WebManager):
 
         except Error:
             traceback.print_exc()
-        self.c_titles = res.keys
-        keywords = manager.qbs.keywords
-        if res.rowcount != -1:
-            self.c_length = res.rowcount
-
-        result = manager.dbm.print_result(res, mquery, suppress=True)
-
-        titles = self.c_titles
-        limit   = 5
+        limit = 50
+        try:
+            mquery = manager.dbm.explain_query(uinput)
+            if mquery == None:
+                mquery = manager.qbs.build_query(uinput)
+                manager.dbm.set_query_explain(uinput, mquery)
+                manager.dbm.set_total(uinput, mquery)
+        except Error:
+            traceback.print_exc()
+        keywords = [ keys.strip().replace(')', '').replace('(', \
+                    '').replace('.', '') for keys in \
+                    uinput.split('where')[0].split('find')[1].split(',')]
+        titles = keywords
         cherrypy.engine.qbm.dbm.page('%d' % limit)
         coldefs = ""
         myfields = ""
         for t_index in range(0, len(titles)):
-            coldefs += '{key:"%s",label:"%s",sortable:true,resizeable:true},' \
+            coldefs += "{key:'%s',label:'%s',sortable:true,resizeable:true}," \
                         % (titles[t_index], keywords[t_index])
-            myfields += '{key:"%s"},' % titles[t_index]
+            myfields += "{key:'%s'}," % titles[t_index]
 
         coldefs = "[%s]" % coldefs[:-1] # remove last comma
         myfields = "[%s]" % myfields[:-1]

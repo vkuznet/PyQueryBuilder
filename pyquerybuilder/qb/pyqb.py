@@ -7,7 +7,7 @@ QueryBuilder
 import traceback
 from collections import deque
 from logging import getLogger
-from optparse import OptionParser
+import time
 
 from sqlalchemy import select, MetaData
 #from sqlalchemy.sql import and_, or_, not_
@@ -155,6 +155,7 @@ def test_query_parser(mapper, in_put):
     keywords =  presult['keywords']
     for keyword in keywords:
         if mapper.has_key(keyword[0]):
+            keylist['keywords'].append(keyword)
             key = mapper.get_column(keyword[0])
 #            print "%s ==map==> %s"% (keyword[0], key)
             keyword.remove(keyword[0])
@@ -263,22 +264,16 @@ class QueryBuilder():
         """parse input"""
         return test_query_parser(self.mapper, in_puts)
 
-    def generate_sqlalchemy_query(self, query):
+    def generate_sqlalchemy_clauses(self, query):
         """generate sqlalcemy query"""
-#    print type(process_dataset.c.Name)
-#    print type(process_dataset.columns['Name'])
-        return generate_query(self.schema, query)
+        return self.querybuilder.gen_clauses(query)
 
     def build_query(self, query):
-        """build query"""
-#    print "query._raw_columns is ", select_test._raw_columns
-#    print "query.inner_columns is ", [col for col in select_test.inner_columns]
-#    print "query.froms is ", select_test.froms
-#    print dir(select_test)
-        keys = query.split('find')[1].split('where')[0].split(',')
-        keywords = [x.strip() for x in keys ]
-        mquery = test_query_parser(self.mapper, query)
-        self.keywords = keywords
-        mquery = generate_query(self.schema, mquery)
-        return  self.querybuilder.build_query(mquery)
+        """
+        build query for dbsh
+        """
+        query, keylist = self.parse_input(query)
+        whereclause = self.generate_sqlalchemy_clauses(query)
+        query = self.querybuilder.build_query(whereclause, keylist)
+        return query
 

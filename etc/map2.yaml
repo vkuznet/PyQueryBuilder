@@ -1,0 +1,12 @@
+dataset :
+  - parent : ProcessedDataset_ItsParent.Name
+  - child : ProcessedDataset_ThisDataset.Name
+
+block :
+  - parent : Block_ItsParent.Name
+  - child : Block_ThisBlock.Name
+
+file :
+  - parent : Files_ItsParent.LogicalFileName
+  - child : Files_ThisFile.LogicalFileName
+

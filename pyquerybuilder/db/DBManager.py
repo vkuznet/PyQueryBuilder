@@ -19,6 +19,7 @@ import thread
 
 # SQLAlchemy modules
 import sqlalchemy
+from sqlalchemy import asc, desc
 
 # local modules
 from pyquerybuilder.qb.DotGraph import DotGraph
@@ -456,6 +457,69 @@ class DBManager(object):
 #        self.print_result(result, query)
         return result
 
+    def execute_with_slice(self, query, limit, offset, sort_idx, sdir):
+        """
+        execute query with explicit limit and offset
+        """
+        query._limit = limit
+        query._offset = offset
+        if sdir == 'asc':
+            query = query.apply_labels()
+            query = query.order_by(\
+                asc(query.columns[query.c.keys()[sort_idx]]))
+        elif sdir == 'desc':
+            query = query.apply_labels()
+            query = query.order_by(\
+                desc(query.columns[query.c.keys()[sort_idx]]))
+        try:
+            result = self.con.execute(query)
+            return self.pack_result(result)
+        except Error:
+            raise Exception
+
+    def explain_query(self, input):
+        """
+        explain input to SQL query from dictionary
+        """
+        qid = hash(input)
+        if self.query_cache.has_key(qid):
+            return self.query_cache[qid]
+        return None
+
+    def set_query_explain(self, input, query):
+        """
+        record SQL query for input
+        """
+        qid = hash(input)
+        if not self.query_cache.has_key(qid):
+            self.query_cache[qid] = query
+
+    def get_total(self, query):
+        """
+        check the total rows of given query
+        execute ensure updating of get_total
+        """
+        qid = hash(str(query))
+        if self.total_cache.has_key(qid):
+            return self.total_cache[qid]
+        else:
+            total = self.execute(\
+                query.apply_labels().alias().count()).fetchall()[0][0]
+            self.total_cache[qid] = total
+            return self.total_cache[qid]
+
+    def set_total(self, qinput, query):
+        """
+        update the total rows of given query
+        incase never cache results
+        """
+        total = self.execute(\
+                query.apply_labels().alias().count()).fetchall()[0][0]
+        qid = hash(str(qinput))
+        if total:
+            self.total_cache[qid] = total
+        return self.total_cache[qid]
+
     def page(self, arg):
         """page by inputing offset and limit per page
            page(offset,limit)
@@ -512,6 +576,29 @@ class DBManager(object):
         result = self.t_cache[self.offset : self.offset + self.limit]
         return self.print_result(result, self.query, suppress)
 
+    def pack_result(self, result):
+        """
+        pack result with limit length
+        handle format, int and string acceptable
+        return title list and values list
+        """
+        o_list  = []
+        t_list  = []
+        l_list  = []
+        for item in result:
+            if type(item) is types.StringType:
+                raise Exception, item + "\n"
+            if not (type(result) is types.ListType):
+                self.t_cache.append(item)
+            if not t_list:
+                t_list = list(item.keys())
+                l_list = [len(x) for x in t_list]
+            v_list = item.values()
+            o_list.append(v_list)
+            for idx in xrange(0, len(v_list)):
+                if l_list[idx] < len(str(v_list[idx])):
+                    l_list[idx] = len(str(v_list[idx]))
+        return (t_list, o_list)
 
     def print_result(self, result, query, suppress=False):
         """

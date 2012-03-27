@@ -8,9 +8,10 @@ digraph A {
 	ParameterBinding -> QueryableParameterSet;
 	ProcDSParent -> ProcessedDataset;
 	ProcDSParent -> ProcessedDataset;
-	Files -> ProcessedDataset;
 	Files -> Block;
+	Files -> FileValidStatus;
 	Files -> FileStatus;
+	Files -> ProcessedDataset;
 	Files -> FileType;
 	Files -> FileValidStatus;
 	ProcDSRuns -> ProcessedDataset;
@@ -44,9 +45,9 @@ digraph A {
 	AnalysisDataset -> ProcessedDataset;
 	AnalysisDataset -> AnalysisDSDef;
 	AnalysisDataset -> AnalysisDSType;
-	AnalysisDataset -> AnalysisDSStatus;
 	AnalysisDataset -> AnalysisDataset;
 	AnalysisDataset -> PhysicsGroup;
+	AlgorithmConfig -> AppVersion;
 	AlgorithmConfig -> AppExecutable;
 	AlgorithmConfig -> AppVersion;
 	AlgorithmConfig -> AppFamily;
