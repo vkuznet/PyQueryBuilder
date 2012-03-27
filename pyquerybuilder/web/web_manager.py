@@ -275,7 +275,7 @@ class WebServerManager(WebManager):
         page += self.templatepage('bottom', ctime=ctime, timestamp=timestamp)
         return page
 
-    def get_data(self, uinput, limit, idx):
+    def get_data(self, uinput, idx, limit, sort, sdir):
         """
         Retrieves data from the back-end
         """

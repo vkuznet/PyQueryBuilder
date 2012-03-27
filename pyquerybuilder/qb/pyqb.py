@@ -41,6 +41,7 @@ def query_parser(mapper, in_put):
     for keyword in keywords:
         if mapper.has_key(keyword[0]):
             keylist['keywords'].append(keyword)
+            key = mapper.get_column(keyword[0])
             keyword.remove(keyword[0])
             keyword.insert(0, key)
 
