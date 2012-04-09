@@ -16,14 +16,14 @@ class TestMapper(unittest.TestCase):
         udb = UnittestDB()
         metadata = udb.load_from_file('starting_db.yaml')
         self.mapper.load_mapfile(self.mapfile)
-        self.mapper.validate_map(metadata.sorted_tables)
-        self.assertEqual(12, len(self.mapper.dict))
+        self.mapper.validate_map(metadata.tables)
+        self.assertEqual(19, len(self.mapper.dict))
 
     def test_get_key(self):
         """test get_key"""
-        self.assertTrue('dataset' == self.mapper.get_key('Files.Path'))
-        self.assertFalse('Dataset' == self.mapper.get_key('Files.Path'))
-        self.assertFalse('dataset' == self.mapper.get_key('files.path'))
+        self.assertTrue('dataset.name' == self.mapper.get_key('Files.Path'))
+        self.assertFalse('Dataset.name' == self.mapper.get_key('Files.Path'))
+        self.assertFalse('dataset.name' == self.mapper.get_key('files.path'))
 
     def test_get_column(self):
         """test get_column"""
@@ -35,6 +35,11 @@ class TestMapper(unittest.TestCase):
           'FILES.Path' == self.mapper.get_column('dataset'))
         self.assertFalse( \
           'files.block' == self.mapper.get_column('file.block'))
+
+    def test_get_table(self):
+        """test get_table"""
+        self.assertTrue( \
+            'ProcessedDataset'.lower() ==  self.mapper.get_table('dataset'))
 
 def suite():
     """suite of unittest"""

@@ -24,7 +24,7 @@ class TestUnittestDB(unittest.TestCase):
                           { "member" : "who", "foreignKey" : "a0"}
                          ]
                 }
-        self.url = 'mysql://cms:passcms@localhost:3306/test'
+        self.url = 'sqlite:///test.db'
         self.engine = create_engine(self.url)
 
     def tearDown(self):
@@ -54,7 +54,7 @@ class TestUnittestDB(unittest.TestCase):
         metadata = load_from_file('starting_db.yaml')
         udb = UnittestDB()
         c_count = udb.column_count(metadata)
-        self.assertEqual(c_count, 40)
+        self.assertEqual(c_count, 41)
 
     def test_fill(self):
         """test fill"""

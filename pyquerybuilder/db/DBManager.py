@@ -19,7 +19,7 @@ import thread
 
 # SQLAlchemy modules
 import sqlalchemy
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, text
 
 # local modules
 from pyquerybuilder.qb.DotGraph import DotGraph
@@ -53,16 +53,19 @@ def get_graph(sorted_tables, table_index, graph):
         c_names = [col.name for col in table.c]
         for col_name in c_names:
             if table.c[col_name].foreign_keys:
-                fk_table = table.c[col_name].foreign_keys[0]
-                fk_name = fk_table.target_fullname
-                fk_tbname = fk_name.split('.')[0]
-                # 1. fk to him self
-                if fk_tbname == name:
-                    continue
-                # 2. duplicate fk to a table
-                if index in graph[table_index[fk_tbname]]:
-                    continue
-                graph[table_index[fk_tbname]].append(index)
+                for fk_table in table.c[col_name].foreign_keys:
+                    fk_name = fk_table.target_fullname
+                    fk_tbname = fk_name.split('.')[0]
+                    # 1. fk to him self
+                    if fk_tbname == name:
+                        continue
+                    # 1-1. for dropped table
+                    if not table_index.has_key(fk_tbname):
+                        continue
+                    # 2. duplicate fk to a table
+                    if index in graph[table_index[fk_tbname]]:
+                        continue
+                    graph[table_index[fk_tbname]].append(index)
         index = index + 1
 
 def topo_sort(graph):
@@ -359,6 +362,13 @@ class DBManager(object):
 # add topo sort for migrate table
 #        sorted_tables = self.meta_dict[db_alias].sorted_tables
         sorted_tables = tables.values()
+# fix table.tometadata(meta) error on passing parameters
+# in format of unicode string
+        for table in sorted_tables:
+            kwargs = {}
+            for arg, val in table.kwargs.items():
+                kwargs[str(arg)] = val
+            table.kwargs = kwargs
         if self.verbose:
             print "sorted_tables is ", sorted_tables
             print tables.keys()
@@ -381,14 +391,18 @@ class DBManager(object):
             print "sequence is ", sequence
         for index in sequence:
             new_table = sorted_tables[index].tometadata(meta)
+            try:
+                new_table.create(bind = remote_engine, checkfirst=True)
+            except Exception:
+                raise traceback.print_exc()
             if self.verbose:
                 print new_table
-            new_table.create(bind = remote_engine, checkfirst=True)
             query = "select * from %s" % sorted_tables[index].name
             print "migrating table %s" % sorted_tables[index].name
             try:
                 result = db_con.execute(query)
             except Error:
+                print "failed to select %s" % str(query)
                 raise traceback.print_exc()
             for item in result:
                 if type(item) is types.StringType:
@@ -396,8 +410,9 @@ class DBManager(object):
                 ins = new_table.insert(values = item.values())
                 try:
                     con.execute(ins)
-                except Error:
-                    raise traceback.print_exc()
+                except sqlalchemy.exc.OperationalError:
+                    print "failed to insert %s" % str(ins)
+                    con.execute(ins)
         con.close()
         if  self.verbose:
             print "The content of '%s' has been successfully migrated to '%s'" \
@@ -423,8 +438,8 @@ class DBManager(object):
             raise Exception
         if not list_results:
             return None
-        if self.verbose:
-            self.print_result(result, query)
+#        if self.verbose:
+#            self.print_result(result, query)
 #        self.print_result(result, query)
         return result
 
@@ -625,7 +640,17 @@ class DBManager(object):
             try:
                 sorted_tables[index].drop()
             except Error:
-                traceback.print_exc()
+                query = ""
+                if self.db_type[db_alias] == 'oracle':
+                    query = text("DROP TABLE " + sorted_tables[index].name \
+                        + " CASCADE constraints")
+                elif self.db_type[db_alias] == 'posgresql':
+                    query = text("DROP TABLE " + sorted_tables[index].name \
+                        + " CASCADE ")
+                else:
+                    traceback.print_exc()
+                self.con.execute(query)
+
         self.db_tables.pop(db_alias)
 
 #        for t_name in tables.keys():
@@ -646,7 +671,16 @@ class DBManager(object):
             try:
                 tab_obj.drop()
             except :
-                traceback.print_exc()
+                query = ""
+                if self.db_type[db_alias] == 'oracle':
+                    query = text("DROP TABLE " + tab_obj.name \
+                        + " CASCADE constraints")
+                elif self.db_type[db_alias] == 'posgresql':
+                    query = text("DROP TABLE " + tab_obj.name \
+                        + " CASCADE ")
+                else:
+                    traceback.print_exc()
+                self.con.execute(query)
             try:
                 tables.pop(table_name)
             except :
@@ -857,7 +891,9 @@ class DBManager(object):
             if  table_name and tab_name != table_name:
                 continue
             if  e_type == 'oracle':
-                kwargs['useexisting'] = True
+#                kwargs['useexisting'] = True
+# SQLAlchemy 0.7.5
+                kwargs['extend_existing'] = True
             tables[tab_name] = sqlalchemy.Table(tab_name, db_meta, **kwargs)
         self.db_tables[db_alias] = tables
         return tables

@@ -59,9 +59,8 @@ class TestDBManager(unittest.TestCase):
         rows = results.fetchall()
         self.assertEqual(10, rows[0][0])
         self.manager.close(self.mname)
-        
         self.manager.connect(self.murl)
-        self.manager.drop_table(self.mname, 'PrimaryDataset')
+        self.manager.drop_table(self.mname, 'primarydataset')
         self.manager.drop_db(self.mname)
         self.manager.close(self.mname)
 

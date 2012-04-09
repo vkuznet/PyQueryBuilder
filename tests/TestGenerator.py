@@ -35,8 +35,8 @@ def get_connect_string():
                 _DICT[params[0]] = params[2].lower()
             elif len(params) >= 1:
                 _DICT[params[0]] = None
-    cfg_file.close()          
-    
+    cfg_file.close()
+
     if _DICT.has_key('type'):
         mtype = _DICT['type']
         if mtype == 'oracle':
@@ -49,7 +49,7 @@ def get_connect_string():
              _DICT['host'],  _DICT['port'], _DICT['database'])
         elif _DICT['type'].lower() == 'sqlite':
             connect_string = "sqlite:///%s" % _DICT['database']
-    else: 
+    else:
         print "type error"
     if _DICT.has_key('mdatabase') :
         if mtype == 'oracle':
@@ -97,7 +97,7 @@ def gen_dbmanager_test(connect_string, migrate_string ):
         f_mname = _DICT['mdatabase'].split("/")[-1]
 #        mname_r = "%s-sqlite" % f_mname 
         mname_r = "sqlite-%s" % f_mname
-    else: 
+    else:
         pname_r = "%s-%s-%s |\#> " % (_DICT['type'], _DICT['database'], \
                _DICT['host'])
 #        name_r = "%s-%s" % (_DICT['database'], _DICT['type'])
@@ -106,7 +106,7 @@ def gen_dbmanager_test(connect_string, migrate_string ):
                _DICT['host'])
         mname_r = "%s-%s-%s" % (_DICT['type'], _DICT['mdatabase'], \
                _DICT['mhost'])
-               
+
 
     temp = url.sub(connect_string, temp)
     temp =  murl.sub(migrate_string, temp)

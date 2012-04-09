@@ -1,0 +1,177 @@
+file :
+  - name : Files.LogicalFileName
+  - size : Files.FileSize
+  - id : Files.ID
+  - checksum : Files.Checksum
+  - numevents : Files.NumberOfEvents
+  - createdate : Files.CreationDate
+  - moddate : Files.LastModificationDate
+  - createby : Person.DistinguishedName
+  - modby : Person.DistinguishedName
+
+tier :
+  -  name : DataTier.Name
+  -  moddate : DataTier.LastModificationDate
+  -  createdate : DataTier.CreationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+procds :
+  -  name : ProcessedDataset.Name
+  -  id : ProcessedDataset.ID
+  -  createdate : ProcessedDataset.CreationDate
+  -  moddate : ProcessedDataset.LastModificationDate
+#  -  tag : ProcessedDataset.GlobalTag
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+dataset :
+  -  name : ProcessedDataset.Name
+  -  id : ProcessedDataset.ID
+  -  createdate : ProcessedDataset.CreationDate
+  -  moddate : ProcessedDataset.LastModificationDate
+#  -  parent : Block.Path
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+  -  parent :
+  -  child :
+
+primds :
+  -  name : PrimaryDataset.Name
+  -  annotation : PrimaryDataset.Annotation
+  -  id : PrimaryDataset.ID
+  -  createdate : PrimaryDataset.CreationDate
+  -  moddate : PrimaryDataset.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+block :
+  -  name : Block.Name
+  -  id : Block.ID
+  -  size : Block.BlockSize
+  -  dataset : Block.Path
+  -  numevents : Block.NumberOfEvents
+  -  numfiles : Block.NumberOfFiles
+  -  status : Block.OpenForWriting
+  -  createdate : Block.CreationDate
+  -  moddate : Block.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+run :
+  -  number : Runs.RunNumber
+  -  id : Runs.ID
+  -  numevents : Runs.NumberOfEvents
+  -  numlss : Runs.NumberOfLumiSections
+  -  totlumi : Runs.TotalLuminosity
+  -  store : Runs.StoreNumber
+  -  starttime : Runs.StartOfRun
+  -  endtime : Runs.EndOfRun
+  -  createdate : Runs.CreationDate
+  -  moddate : Runs.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+lumi :
+  -  number : LumiSection.LumiSectionNumber
+  -  startevnum : LumiSection.StartEventNumber
+  -  id : LumiSection.ID
+  -  endevnum : LumiSection.EndEventNumber
+  -  starttime : LumiSection.LumiStartTime
+  -  endtime : LumiSection.LumiEndTime
+  -  createdate : LumiSection.CreationDate
+  -  moddate : LumiSection.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+    #branch.name : Branch.Name
+    #branch.id : Branch.ID
+    #branch.createdate : Branch.CreationDate
+    #branch.moddate : Branch.LastModificationDate
+    #branch.createby : [ Branch.CreatedBy, Person.DistinguishedName 
+    #branch.modby : [ Branch.ModifiedBy, Person.DistinguishedName 
+
+ads :
+  -  name : AnalysisDataset.Name
+  -  id : AnalysisDataset.ID
+#  -  version : AnalysisDataset.Version
+#  -  dataset : AnalysisDataset.Path
+  -  procds : AnalysisDataset.ProcessedDS
+  -  createdate : AnalysisDataset.CreationDate
+  -  moddate : AnalysisDataset.LastModificationDate
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+phygrp :
+  -  name : PhysicsGroup.PhysicsGroupName
+  -  id : PhysicsGroup.ID
+  -  createdate : PhysicsGroup.CreationDate
+  -  moddate : PhysicsGroup.LastModificationDate
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+algo :
+  -  id : AlgorithmConfig.ID
+  -  version : AppVersion.Version
+  -  family : AppFamily.FamilyName
+  -  exe : AppExecutable.ExecutableName
+  -  createdate : AlgorithmConfig.CreationDate
+  -  moddate : AlgorithmConfig.LastModificationDate
+#  -  content : 
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+release :
+#  -  version : AppVersion.Version
+  -  id : AppVersion.ID
+  -  createddate : AppVersion.CreationDate
+  -  moddate : AppVersion.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+datatype :
+  -  id : PrimaryDSType.ID
+  -  type : PrimaryDSType.Type
+  -  createdate : PrimaryDSType.CreationDate
+  -  moddate : PrimaryDSType.LastModificationDate
+  -  createby : Person.DistinguishedName
+  -  modby : Person.DistinguishedName
+
+mcdesc :
+  -  id : MCDescription.ID
+  -  name : MCDescription.MCChannelDescription
+  -  def : MCDescription.MCProduction
+  -  parent : MCDescription.MCDecayChain
+  -  createdate : MCDescription.CreationDate
+  -  moddate : MCDescription.LastModificationDate
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+trigdesc :
+  -  id : TriggerPathDescription.ID
+  -  name : TriggerPathDescription.TriggerPathDescription
+  -  createdate : TriggerPathDescription.CreationDate
+  -  moddate : TriggerPathDescription.LastModificationDate
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+config :
+  -  id : QueryableParameterSet.ID
+  -  name : QueryableParameterSet.Name
+  -  hash : QueryableParameterSet.Hash
+  -  version : QueryableParameterSet.Version
+  -  type : QueryableParameterSet.Type
+  -  annotation : QueryableParameterSet.Annotation
+  -  content : QueryableParameterSet.Content
+  -  createdate : QueryableParameterSet.CreationDate
+  -  moddate : QueryableParameterSet.LastModificationDate
+  -  createby : Person.DistinguishedName 
+  -  modby : Person.DistinguishedName 
+
+site :
+  -  name : StorageElement.SEName
+
+   #dq : Runs #TIB_DCS|Tracker_Global|TIB_Local
+   #pset : QueryableParameterSet #Don't understand the format
+   #ilumi : 
+

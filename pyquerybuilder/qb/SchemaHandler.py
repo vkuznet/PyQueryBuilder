@@ -51,7 +51,7 @@ class SchemaHandler(object):
         self.subnodes = [] # calculate coverage
         self.attr_table = set([])
 
-    def recognize_schema(self, mapper, dbmanager, alias):
+    def recognize_schema(self, mapper, dbmanager=None, alias=None):
         """
         # Step 1. Recognize three types of tables and links.
         # Step 2. Detect recursive cases, and create Alias table to
@@ -85,9 +85,11 @@ class SchemaHandler(object):
         #       . attr table point to itself
 
         self._schema.handle_alias()
-        self.load_statistics(dbmanager, alias)
-        config = readconfig()
-        self.further_map(mapper, config['alias_mapfile'])
+        config = {'alias_mapfile':None, 'split_file':None}
+        if dbmanager != None and alias != None:
+            self.load_statistics(dbmanager, alias)
+            config = readconfig()
+            self.further_map(mapper, config['alias_mapfile'])
 
         # Step 3. Generate lookup table for Entity -> Attribute link.
         #         This will resolve the issue such as person table.
@@ -106,7 +108,9 @@ class SchemaHandler(object):
 
         # Step 5. Detect dividings and accept input from administrator.
         #         Load split.yaml file
-        splition = load_split(config['split_file'])
+        splition = False
+        if dbmanager != None and alias != None:
+            splition = load_split(config['split_file'])
         if splition:
             subgraphs, subnodes = simschema.gen_subgraph(splition)
         # Step 6. Generate sub graphs from each sub sets.
@@ -565,7 +569,7 @@ class SchemaHandler(object):
                     _LOGGER.error("consecutive constraint > 3 in queue")
                     return None
             elif type(constraint) is type('str'):
-                if right and left:
+                if right is not None and left is not None:
                     # construct whereclause
                     if type(right) == type({}):
                         try:

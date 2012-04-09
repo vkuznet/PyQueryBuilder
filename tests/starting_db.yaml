@@ -54,6 +54,8 @@ Files:
   - member: CreateDate
   - member: Path
   - member: Name
+  - member: Parent
+    foreignKey : Files
 
 ProcAlgo:
   - member: ID

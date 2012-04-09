@@ -134,6 +134,9 @@ def connect(self, arg):
     tables = DB.load_tables(db_alias())
     QB.set_from_tables(tables)
     if QB.mapper:
+        if DB.db_type[db_alias()] == 'mysql':# for mysql case sensitive
+            DBPRINT.print_blue('mysql case sensitive')
+            QB.mapper.set_sens(True)
         QB.recognize_schema(DB, alias)
 
 def close(self, arg):
@@ -520,6 +523,9 @@ def mapfile(self, arg):
         FILE_DICT['MAP_FILE'] = arg
         QB.set_mapper(FILE_DICT['MAP_FILE'])
         if db_ready:
+            if DB.db_type[db_alias()] == 'mysql':# for mysql case sensitive
+                DBPRINT.print_blue('mysql case sensitive')
+                QB.mapper.set_sens(True)
             QB.recognize_schema(DB, db_alias)
         return
 

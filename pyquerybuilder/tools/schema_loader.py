@@ -49,12 +49,14 @@ class SchemaLoader(object):
                 if d_col.has_key('foreignKey'):
                     s_col.append(Column(d_colname, Integer,
                                  ForeignKey(d_col["foreignKey"].lower()+".ID")))
+#                                 ForeignKey(d_col["foreignKey"]+".ID")))
                 elif d_col.has_key("primaryKey"):
                     s_col.append(Column(d_colname, Integer, primary_key=True))
                 else:
                     s_col.append(Column(d_colname, Integer))
                 s_vals[d_colname] = 0
             apply(Table, [d_tablename.lower(), metadata] + s_col)
+#            apply(Table, [d_tablename, metadata] + s_col)
         return metadata
 
     def load_from_file(self, filename):
@@ -88,12 +90,12 @@ class SchemaLoader(object):
                 table_match = self.ma_table.match(line)
                 constraint_match = self.ma_constraint.match(line)
                 if table_match:
-                    current_table = table_match.group(1)
+                    current_table = table_match.group(1).lower()
                     tables[current_table] = []
                     f_keys[current_table] = {}
                     state = _create
                 elif constraint_match:
-                    current_table = constraint_match.group(1)
+                    current_table = constraint_match.group(1).lower()
                     state = _constraint
             elif state is _create:
                 col_match = self.ma_column.match(line)
@@ -107,7 +109,7 @@ class SchemaLoader(object):
                 foreign_match = self.ma_foreign.search(line)
                 if foreign_match:
                     l_col = foreign_match.group(1)
-                    right_table = foreign_match.group(2)
+                    right_table = foreign_match.group(2).lower()
                     f_keys[current_table][l_col] = right_table
                 state = _begin
             line = file_local.readline()

@@ -18,9 +18,11 @@ class Mapper(object):
         """initialize mapper"""
         self.dict = {}
         self.tbdict = {}
+        self.tbdict_sen = {} # sensitive one
         self.coldict = {}
         self.entdict = {}
         self.mapfile = None
+        self.sens = False
         self.pp = pprint.PrettyPrinter(indent=4)
 
     def load_mapfile(self, filename):
@@ -39,7 +41,8 @@ class Mapper(object):
                 raise Error("Entity has none attribute.")
             for tempdict in map_yaml[key]:
                 if len(tempdict) != 1:
-                    raise Error("Format error when specify a attribute")
+                    raise Error("Format error when specify attribute %s" \
+                                % str(tempdict))
                 attr = tempdict.keys()[0]
                 if tempdict[attr] is None:
                     continue
@@ -51,11 +54,13 @@ class Mapper(object):
                 else:
                     self.dict[full_keyword] = tempdict[attr]
                     #self.tbdict[key] = names[0].lower()
-                    self.tbdict[full_keyword] = names[0]
+                    self.tbdict[full_keyword] = names[0].lower()
+                    self.tbdict_sen[full_keyword] = names[0]
                     self.coldict[full_keyword] = names[1]
                 if not self.dict.has_key(key):
                     self.dict[key] = tempdict[attr]
-                    self.tbdict[key] = names[0]
+                    self.tbdict[key] = names[0].lower()
+                    self.tbdict_sen[key] = names[0]
                     self.coldict[key] = names[1]
                     self.entdict[key] = tempdict[attr]
         self.mapfile = filename
@@ -71,7 +76,9 @@ class Mapper(object):
 #        tables = {}
 #        for table in sorted_tables:
 #            tables[table.name] = table
-        tables = sorted_tables
+        tables = {}
+        for table in sorted_tables:
+            tables[table.lower()] = sorted_tables[table]
         for key in self.tbdict.keys():
             if not tables.has_key(self.tbdict[key]):
                 raise Error("table %s doesn't exist" % self.tbdict[key])
@@ -99,8 +106,14 @@ class Mapper(object):
 
     def get_table(self, key):
         """get table for a given key"""
+        if self.sens and self.has_key(key):
+            return self.tbdict_sen[key]
         if self.has_key(key):
             return self.tbdict[key]
+
+    def set_sens(self, sens):
+        """set sensitive"""
+        self.sens = sens
 
     def list_key(self):
         """list key"""

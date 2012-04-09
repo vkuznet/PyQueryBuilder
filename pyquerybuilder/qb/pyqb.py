@@ -141,7 +141,7 @@ class QueryBuilder():
         self.schema.set_tables(tables)
         self.querybuilder = SchemaHandler(tables)
 
-    def recognize_schema(self, dbmanager, alias):
+    def recognize_schema(self, dbmanager=None, alias=None):
         """recognize schema"""
         self.querybuilder.recognize_schema(self.mapper, dbmanager, alias)
 
@@ -151,10 +151,9 @@ class QueryBuilder():
 
     def generate_sqlalchemy_clauses(self, query):
         """generate sqlalcemy query"""
-        return self.querybuilder.gen_clauses(query)
         if query is None:
             return None
-        return self.querybuilder.primary_query(query)
+        return self.querybuilder.gen_clauses(query)
 
     def build_query(self, query):
         """

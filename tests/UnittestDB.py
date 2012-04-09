@@ -125,16 +125,16 @@ class UnittestDB(object):
             c_names = [col.name for col in table.c]
             for col_name in c_names:
                 if table.c[col_name].foreign_keys:
-                    fk_table = table.c[col_name].foreign_keys[0]
-                    fk_name = fk_table.target_fullname
-                    fk_tbname = fk_name.split('.')[0]
-                    # 1. fk to him self 
-                    if fk_tbname == name:
-                        continue
-                    # 2. duplicate fk to a table
-                    if index in graph[table_index[fk_tbname]]:
-                        continue
-                    graph[table_index[fk_tbname]].append(index)
+                    for fk_table in table.c[col_name].foreign_keys:
+                        fk_name = fk_table.target_fullname
+                        fk_tbname = fk_name.split('.')[0]
+                        # 1. fk to him self 
+                        if fk_tbname == name:
+                            continue
+                        # 2. duplicate fk to a table
+                        if index in graph[table_index[fk_tbname]]:
+                            continue
+                        graph[table_index[fk_tbname]].append(index)
             index = index + 1
 #        print "graph is ", graph
 

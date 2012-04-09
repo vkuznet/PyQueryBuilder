@@ -328,6 +328,8 @@ class OriginSchema(TSchema):
         for table in self.tables.values():
             for cons in table.constraints:
                 if isinstance(cons, ForeignKeyConstraint):
+                    if cons.name == None:
+                        cons.name = self.name_link(cons)
                     self.links[cons.name] = CLinkObj(cons.elements, cons.name)
         if alias_table:
             self.alias_table = alias_table
@@ -462,7 +464,7 @@ class OriginSchema(TSchema):
 #            nodes = [ ordered.index(nodelist[table]) for table in tables ]
             subtree = constructor.get_smallest_subtree(nodes)
             for node, parent in subtree.breadth_first():
-                if parent:
+                if parent != None:
                     yield (ordered[node], ordered[parent])
                 else:
                     yield (ordered[node], None)
@@ -475,9 +477,9 @@ class OriginSchema(TSchema):
         we need a function mapper.get_table(column)
         """
         relation = self.get_graph_from_schema()
-        for a_table in self.v_attr:
-            if self.ordered.count(a_table) != 0:
-                self.v_attr.add(self.ordered.index(a_table))
+#        for a_table in self.v_attr:
+#            if self.ordered.count(a_table) != 0:
+#                self.v_attr.add(self.ordered.index(a_table))
 
         constructor = ConstructQuery(relation)
 
@@ -550,9 +552,22 @@ class OriginSchema(TSchema):
         links = []
         for cons in table.constraints:
             if isinstance(cons, ForeignKeyConstraint):
+                if cons.name == None:
+                    cons.name = self.name_link(cons)
                 links.append(self.links[cons.name])
         return links
 
+    def name_link(self, cons):
+        """
+        naming a constraints without name as table.colname_ftable.colname
+        """
+        name = cons.table.name
+        for idx in range(len(cons.columns)):
+            col = cons.columns[idx]
+            element = cons.elements[idx]
+            name = name + '.' + col.name + "_" + \
+                element.target_fullname
+        return name
 
     def check_connective(self):
         """check the connective of the schema"""
@@ -713,6 +728,11 @@ class OriginSchema(TSchema):
         get sqlalchemy table object
         handle alias if any, return the real table with alias
         """
+        if self.tables.has_key(tname):
+            return self.tables[tname]
+        elif self.alias_table.has_key(tname):
+            return self.atables[tname]
+        tname = tname.lower()
         if self.tables.has_key(tname):
             return self.tables[tname]
         elif self.alias_table.has_key(tname):

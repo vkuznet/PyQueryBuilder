@@ -1,13 +1,26 @@
-file : Files.Name
-file.block : Files.Block
-file.createdate : Files.CreateDate
-dataset : Files.Path
-dataset.createdate : ProcessedDataset.CreateDate
-primds.startdate : PrimaryDataset.StartDate
-primds : PrimaryDataset.Name
-procds : ProcessedDataset.Name
-block : Block.Name
-block.size : Block.BlockSize
-algo : ProcAlgo.Algorithm
-phygrp : ProcessedDataset.PhysicsGroup
+file : 
+  - name : Files.Name
+  - block : Files.Block
+  - createdate : Files.CreateDate
+
+dataset :
+  - createdate : ProcessedDataset.CreateDate
+  - name : Files.Path
+
+primds : 
+  - name : PrimaryDataset.Name
+  - startdate : PrimaryDataset.StartDate
+
+procds :
+  - name : ProcessedDataset.Name
+
+block :
+  - name : Block.Name
+  - size : Block.BlockSize
+
+algo :
+  - name : ProcAlgo.Algorithm
+
+phygrp :
+  - name : ProcessedDataset.PhysicsGroup
 
