@@ -60,11 +60,11 @@ class WebManager(TemplatedPage):
         imgdir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'images')
         cssdir = '%s/%s' % (__file__.rsplit('/', 1)[0], 'css')
         jsdir  = '%s/%s' % (__file__.rsplit('/', 1)[0], 'js')
-        docdir = '%s/%s' % (__file__.rsplit('/', 2)[0], 'doc')
+#        docdir = '%s/%s' % (__file__.rsplit('/', 2)[0], 'doc')
         print "IMG dir", imgdir
         print "CSS dir", cssdir
         print "JS  dir", jsdir
-        print "Document dir", docdir
+#        print "Document dir", docdir
         self.cssmap   = {
             'main.css': cssdir + '/main.css',
         }

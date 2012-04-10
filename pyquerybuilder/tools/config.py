@@ -49,6 +49,8 @@ def readconfig():
                             config.get('server', 'split_file', ''))
     configdict['logconfig'] = os.path.join(os.environ['QB_ROOT'], \
                             config.get('server', 'logconfig', ''))
+    configdict['doc_dir'] = os.path.join(os.environ['QB_ROOT'], \
+                            config.get('server', 'doc_dir', ''))
     return configdict
 
 def writeconfig():

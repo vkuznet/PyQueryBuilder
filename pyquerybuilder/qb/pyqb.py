@@ -163,20 +163,4 @@ class QueryBuilder():
         whereclause = self.generate_sqlalchemy_clauses(query)
         query = self.querybuilder.build_query(whereclause, keylist)
         return query
-        mquery = self.generate_sqlalchemy_query(query)
-        if mquery is None:
-            return None
-        return  self.querybuilder.build_query(mquery, keylist)
-
-    def get_query_keywords(self, query):
-        """
-        build query for web server
-        return keywords list for Table titles
-        """
-        query, keylist = self.parse_input(query)
-        mquery = self.generate_sqlalchemy_query(query)
-        if mquery is None:
-            return None
-        return  self.querybuilder.build_query(mquery, keylist), \
-                keylist['keywords']
 

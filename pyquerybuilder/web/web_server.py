@@ -100,6 +100,11 @@ class Root(object):
         except:
             cpconfig.update ({'tools.expires.secs': 300})
         try:
+            cpconfig.update ({'tools.staticdir.on': True})
+            cpconfig.update ({'tools.staticdir.dir': self.config['doc_dir']})
+        except:
+            cpconfig.update ({'tools.staticdir.on': False})
+        try:
             cpconfig.update ({'log.screen':
                                 bool(self.config['log_screen'])})
         except:
@@ -149,6 +154,13 @@ class Root(object):
         # can be something to consider
         obj = WebServerManager(config) # mount the web server manager
         tree.mount(obj, '/')
+        # mount static document directory
+        dirs = self.config['doc_dir'].split('/html')
+        doc_config = {'/':
+                       { 'tools.staticdir.root': dirs[0],
+                         'tools.staticdir.dir': 'html',
+                         'tools.staticdir.on': True,}}
+        tree.mount(None, '/doc', doc_config)
         engine.start()
         if  blocking:
             engine.block()
@@ -174,8 +186,8 @@ def main():
         fdesc  = open(conf_file, 'r')
         config = yaml.load(fdesc.read())
         fdesc.close()
-
-    config = readconfig()
+    else:
+        config = readconfig()
     config['port'] = config['server_port']
     print config
 

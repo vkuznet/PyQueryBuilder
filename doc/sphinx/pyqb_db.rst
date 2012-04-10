@@ -3,12 +3,14 @@ PyQB DBManager
 
 DBManager provides the communication with Database. There are three
 major tasks:
+
    - Load database schema information
    - Execute SQL query
    - Return results
 
 Load schema
 -----------
+
    - load table names
       - oracle
          - *SELECT table_name FROM all_tables WHERE owner='%s'*

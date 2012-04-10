@@ -196,7 +196,7 @@ def main():
     usage += "      --view_origin \n"
     usage += "      --view_simulate \n"
     usage += "      --alias_mapfile=<mapfile with alias tables> \n"
-    usage += "      --view_basics_cycles \n"
+    usage += "      --view_basic_cycles \n"
     usage += "      --view_core_graph \n"
     usage += "      --divide_by=<file specify the splition of core graph> \n"
     usage += "      --view_splition \n"
@@ -227,36 +227,42 @@ def main():
     splition_file = None
 
     (options, _) = parser.parse_args()
-    if not options.url or not options.mapfile:
-        parser.error("database url and mapfile is needed to do schema review")
-    url = options.url
-    mapfile = options.mapfile
 
-    mapper.load_mapfile(mapfile)
+    if not options.url:
+        parser.error("database url is needed to do schema review")
+    url = options.url
     dbmanager = DBManager()
     dbmanager.connect(url)
     dbalias = dbmanager.get_alias(url)
     tables = dbmanager.load_tables(dbalias)
     originschema = None
     simschema = None
-
-    if not mapper.validate_map(tables):
-        raise Exception("conflicts between map file and schema")
-
     originschema = OriginSchema(dbmanager.db_tables[dbalias])
 
     if not originschema.check_connective():
         raise Exception('Schema graph is not connective')
 
-    originschema.recognize_type(mapper)
-    originschema.handle_alias()
-    originschema.gen_attr_links(mapper)
-    load_statistics(dbmanager, dbalias, originschema)
-
     if options.view_origin:
         write_original_schema_graph(originschema, "original_schema")
         check_call(['dot', '-Tpng', 'original_schema.dot', '-o', \
             'original_schema.png'])
+
+    if not options.mapfile:
+        print "further review need mapfile"
+        return
+
+    mapfile = options.mapfile
+    mapper.load_mapfile(mapfile)
+    if dbmanager.db_type[dbalias] == 'mysql':# for mysql case sensitive
+        mapper.set_sens(True)
+
+    if not mapper.validate_map(tables):
+        raise Exception("conflicts between map file and schema")
+
+    originschema.recognize_type(mapper)
+    originschema.handle_alias()
+    originschema.gen_attr_links(mapper)
+    load_statistics(dbmanager, dbalias, originschema)
 
     if options.alias_mapfile:
         mapper.load_mapfile(options.alias_mapfile)

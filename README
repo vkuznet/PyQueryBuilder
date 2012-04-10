@@ -49,7 +49,8 @@ for more information
 Usage:
 --------
 Commandline tools:
-       $> sh pyquerybuilder/dbsh.sh 
+       $> export  QB_ROOT=/<path>/PyQueryBuilder
+       $> dbsh
 WebServer:$
        $> cd PyQueryBuilder
        $> export QB_ROOT=$PWD
