@@ -25,6 +25,6 @@ For example:
 
 .. doctest::
 
-    file where dataset = /a/b/c
-    count(file) where dataset = /a/b/*
+    find file where dataset = /a/b/c
+    find count(file) where dataset = /a/b/*
 
