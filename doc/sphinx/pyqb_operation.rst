@@ -13,6 +13,58 @@ After verify the dependencies are already installed.
     $> cd /<path>/QueryBuilder
     $> python setup.py install
 
+Unittest
+--------
+For PyQB is designed to support different DB backends, unittest are
+needed for each DB backend. For test a DB backend, two databases
+instance is needed, and there is a configuration file to specify these
+two url for testing, **tests/TestDB.cfg**:
+
+.. doctest::
+
+   # type: <DataSource TYPE: oracle postgresql mysql sqlite ...>
+   # account : <UserAccount> 
+   # password : <Password> 
+   # host : <DataSource host>
+   # port : <DataSource Port>
+   # database : <DataBase name> 
+   # dbowner : <DataBase Schema onwer>  
+   
+   # maccount : <UserAccount for Migrate DB>
+   # mpassword : <Password name for Migrate DB>
+   # mdatabase : <DataBase name for Migrate DB>
+   # mdbowner : <for Migrate DB> , ORACLE ONLY 
+   
+   # default sqlite section
+   type : sqlite
+   account : 
+   password : 
+   host : 
+   port : 
+   database : test.db 
+   dbowner : 
+   ## for migration test
+   maccount : 
+   mpassword :
+   mhost :
+   mport :
+   mdatabase : migrate.db
+   mdbowner :
+
+To run the unittest, there are two ways:
+
+.. doctest::
+
+   $> cd /<path>/PyQueryBuilder/tests/
+   $> sh test.sh
+
+or 
+
+.. doctest::
+
+   $> cd /<path>/PyQueryBuilder/
+   $> python setup.py test
+
 Publish a database
 ------------------
 To publish a database a configuration file is need to map between
