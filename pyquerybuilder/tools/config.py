@@ -19,7 +19,11 @@ def configfile():
     """
     if  os.environ.has_key('QB_ROOT'):
         config_file = os.path.join(os.environ['QB_ROOT'], 'etc/main.cfg')
-        return config_file
+        if os.path.isfile(config_file):
+            return config_file
+        else:
+            raise EnvironmentError('Configuration file %s not found' % \
+                config_file)
     else:
         raise EnvironmentError('QB_ROOT environment is not set up')
 
