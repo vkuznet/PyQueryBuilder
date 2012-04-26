@@ -55,6 +55,20 @@ def readconfig():
                             config.get('server', 'logconfig', ''))
     configdict['doc_dir'] = os.path.join(os.environ['QB_ROOT'], \
                             config.get('server', 'doc_dir', ''))
+
+    configdict['environment'] = config.get('server', 'environment', 'production')
+    configdict['threadpool'] = int(config.get('server', 'thread_pool', 30))
+    configdict['socket_queue_size'] = int(config.get('server', 'socket_queue_size', 15))
+    configdict['expires'] = int(config.get('server', 'expires', 300))
+    configdict['log_screen'] = bool(config.get('server', 'log_screen', True))
+    configdict['access_log_file'] = config.get('server', 'access_log_file', \
+    '/tmp/access_log.log')
+    configdict['error_log_file'] = config.get('server', 'error_log_file', \
+    '/tmp/error_log.log')
+    configdict['access_log_level'] = int(config.get('server', 'access_log_level', 0))
+    configdict['error_log_level'] = int(config.get('server', 'error_log_level', 0))
+    configdict['algo'] = config.get('server', 'algo', 'MIS')
+
     return configdict
 
 def writeconfig():

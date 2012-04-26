@@ -17,8 +17,9 @@ def configurelog():
     logfile = None
     try:
         config = readconfig()
-        logfile = config['logfile']['logconfig']
+        logfile = config['logconfig']
     except:
+        print "taking default log config"
         basedir = imp.find_module('pyquerybuilder')[1]
         logfile = os.path.join(basedir, 'config/logging.conf')
 

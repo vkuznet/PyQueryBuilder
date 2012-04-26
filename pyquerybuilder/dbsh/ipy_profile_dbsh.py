@@ -23,6 +23,12 @@ import IPython.ipapi
 IP = IPython.ipapi.get()
 
 from pyquerybuilder.qb.ConfigureLog import configurelog
+try:
+    configurelog()
+except:
+    traceback.print_exc()
+    raise Exception, DBPRINT.msg_red("ERROR: fail to configure log")
+
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.dbsh.dbprint import PrintOutput
 from pyquerybuilder.dbsh.dbresults import Results
@@ -36,7 +42,6 @@ __alias_table__ = {}
 FILE_DICT = {'MAP_FILE':None, 'SCHEMA_FILE':None}
 
 try:
-    configurelog()
     DB = DBManager()
     DBPRINT = PrintOutput()
     QB = QueryBuilder()
@@ -501,7 +506,8 @@ def find(self, arg):
     if mquery == None:
         _LOGGER.debug("failed to build query %s" % query)
         return
-    _LOGGER.info(mquery)
+    print mquery
+    _LOGGER.debug(mquery)
     if not db_ready():
         return
     res = DB.execute(mquery, db_alias())

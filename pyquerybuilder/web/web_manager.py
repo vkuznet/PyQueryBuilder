@@ -352,7 +352,7 @@ class WebServerManager(WebManager):
         try:
             if cherrypy.engine.qbm.qbs == None:
                 raise Exception, "qbs is None"
-                self.log("qbs is None", 1)
+                self.log("qbs is None", 2)
         except Error:
             traceback.print_exc()
         limit = 50
@@ -360,6 +360,9 @@ class WebServerManager(WebManager):
             mquery = manager.dbm.explain_query(uinput)
             if mquery == None:
                 mquery = manager.qbs.build_query(uinput)
+                if mquery == None:
+                    self.log('invalid query', 2)
+                    return self.page("invalid query")
                 manager.dbm.set_query_explain(uinput, mquery)
                 manager.dbm.set_total(uinput, mquery)
         except Error:

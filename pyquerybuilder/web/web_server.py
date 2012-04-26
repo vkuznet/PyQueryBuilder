@@ -23,11 +23,27 @@ from cherrypy import config as cpconfig
 import cherrypy
 
 # local modules
+
+#create logger
+logger = logging.getLogger("ConstructQuery")
+logger.setLevel(logging.DEBUG)
+#create console handler and set level to debug
+fh = logging.FileHandler('/tmp/pyqb.log')
+fh.setLevel(logging.DEBUG)
+#create formatter
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+#add formatter to fh
+fh.setFormatter(formatter)
+#add fh to logger
+logger.addHandler(fh)
+
+
 from pyquerybuilder.tools.config import readconfig
 from pyquerybuilder.web.web_manager import WebServerManager
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.qb.pyqb import QueryBuilder
 from pyquerybuilder.dbsh.dbresults import Results
+
 
 from cherrypy.process import plugins
 
@@ -154,6 +170,7 @@ class Root(object):
         # can be something to consider
         obj = WebServerManager(config) # mount the web server manager
         tree.mount(obj, '/')
+
         # mount static document directory
         dirs = self.config['doc_dir'].split('/html')
         doc_config = {'/':
@@ -161,6 +178,7 @@ class Root(object):
                          'tools.staticdir.dir': 'html',
                          'tools.staticdir.on': True,}}
         tree.mount(None, '/doc', doc_config)
+
         engine.start()
         if  blocking:
             engine.block()
@@ -189,7 +207,6 @@ def main():
     else:
         config = readconfig()
     config['port'] = config['server_port']
-    print config
 
     root = Root(config)
     print root.config
@@ -199,7 +216,8 @@ def main():
 
     cherrypy.engine.qbm.subscribe()
 
-    # Start DAS server
+
+    # Start PyQB server
     root.start()
 
 

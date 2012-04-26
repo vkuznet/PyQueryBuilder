@@ -32,7 +32,7 @@ def query_parser(mapper, in_put):
     keylist = {'keywords':[], 'constraints':[]}
     presult = qparse.parse(in_put)
     if presult == None:
-        _LOGGER.error("parser result is empty")
+        _LOGGER.error("query is not accepted due to syntax reason")
         return None, None
     _LOGGER.debug("""query dictionary before mapping %s""" % \
                             str(presult))
@@ -46,7 +46,7 @@ def query_parser(mapper, in_put):
             keyword.insert(0, key)
 
         else:
-            _LOGGER.error("""keyword not in mapper %s""",
+            _LOGGER.error("""keyword %s is not known""",
                        str(keyword[0]))
             return None, None
 
@@ -82,6 +82,7 @@ def query_parser(mapper, in_put):
 
     _LOGGER.debug("""user input is: %s""" % str(in_put))
     _LOGGER.debug("""parse result is: %s""" % str(presult))
+    _LOGGER.debug("""keylist is: %s""" % str(keylist))
     return presult, keylist
 
 class QueryBuilder():
@@ -160,7 +161,11 @@ class QueryBuilder():
         build query for dbsh
         """
         query, keylist = self.parse_input(query)
+        if query is None:
+            _LOGGER.debug("""query is not valid""")
+            return None
         whereclause = self.generate_sqlalchemy_clauses(query)
         query = self.querybuilder.build_query(whereclause, keylist)
+        _LOGGER.debug("""query is: %s""" % str(query))
         return query
 

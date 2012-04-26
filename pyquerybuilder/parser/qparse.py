@@ -24,7 +24,7 @@ def p_query_error(pattern):
     '''query : error'''
     pattern[0] = None
     lexpos = 0
-    print "format error at ", pattern[1]
+    print "SYNTAX ERROR AT ", pattern[1]
 
 
 def p_keywords(pattern):
