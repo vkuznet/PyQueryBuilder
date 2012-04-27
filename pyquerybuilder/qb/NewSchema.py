@@ -126,6 +126,19 @@ class TSchema(object):
                 dot.add_edge(order[index], order[end_index])
         dot.finish_output()
 
+    def write_wgraph(self, dot, name="A"):
+        """
+        output dot graph for this schema, with table name as nodename
+        """
+        relations = self.get_wgraph_from_schema()
+        order = self.ordered
+        dot.set_name(name)
+        for index in range(len(relations)):
+            start_node = relations[index]
+            for end_index in start_node:
+                dot.add_edge(order[index], order[end_index[0]], end_index[1])
+        dot.finish_output()
+
     def write_cyclic_graph(self, bdot, name="C"):
         """
         output dot graph with core cyclic component

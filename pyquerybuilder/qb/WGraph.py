@@ -151,6 +151,42 @@ class WGraph(object):
                             edge_end[1]))
         return WGraph((tuple(x) for x in undirected))
 
+    def get_core_graph(self):
+        """
+        get the core cyclic graph by cutting out leafs
+        """
+        uwgraph = self.get_undirected()._graph
+#        print "tuple", uwgraph
+        wgraph = [ [ idy for idy in idx ] for idx in uwgraph ]
+#        print "list", wgraph
+        existing_leaf = True
+        remove_set = set([])
+        while existing_leaf:
+            existing_leaf = False
+            for index in range(len(wgraph)):
+                end_nodes = wgraph[index]
+                if len(end_nodes) == 0:
+                # removed node
+                    if index not in remove_set:
+                        remove_set.add(index)
+                        existing_leaf = True
+                    continue
+                if len(end_nodes) == 1:
+                # need to be removed
+                    wgraph[index] = []
+                    existing_leaf = True
+                    if index not in remove_set:
+                        remove_set.add(index)
+                    continue
+                for end_node in end_nodes:
+                    if end_node[0] in remove_set:
+                        end_nodes.remove(end_node)
+                        existing_leaf = True
+                wgraph[index] = end_nodes
+#        print "core", wgraph
+        return wgraph
+
+
     def get_coverage(self):
         """Coverage returns the set of nodes in the graph.
         We say a node is in the graph if it is on an edge."""

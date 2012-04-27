@@ -52,5 +52,5 @@ class DotGraph(object):
             if len(edge) == 2:
                 print >> self.out, "	%s -> %s;" % (edge)
             if len(edge) == 3:
-                print >> self.out, '    %s -> %s[label = "%.3f"];' % (edge)
+                print >> self.out, '    %s -> %s[label = "%.5f"];' % (edge)
         print >> self.out, "}"

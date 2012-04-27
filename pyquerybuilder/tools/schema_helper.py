@@ -24,6 +24,7 @@ from pyquerybuilder.qb.NewSchema import OriginSchema
 from pyquerybuilder.utils.Utils import load_file
 from pyquerybuilder.tools.map_reader import Mapper
 from pyquerybuilder.qb.Graph import Graph
+from pyquerybuilder.qb.WGraph import WGraph
 
 
 def check_indexed(columns, indexes):
@@ -108,6 +109,7 @@ def load_statistics(dbmanager, alias, originschema):
         sums = table_size[link.ltable] + \
             table_size[link.rtable] * select_info[lname] + 4
         link.weight = 1 - (1/log(sums, 2)) + (1 - link.indexed) * ieffects
+#        print link.ltable, '-->', link.rtable, link.weight
 
 def load_split(filename=None):
     """
@@ -152,7 +154,7 @@ def write_simulate_schema_graph(simschema, filename="simschema"):
     fns = filename + '.dot'
     fls = open(fns, 'w')
     dot = DotGraph(fls)
-    simschema.write_graph(dot, filename)
+    simschema.write_wgraph(dot, filename)
 
 def write_basics_cycles(simschema, filename="basic_cycle"):
     """view basics cycles in simulate schema graph"""
@@ -178,7 +180,29 @@ def write_core_graph(simschema, filename="coreschema"):
         start_node = relations[node]
         for end_node in start_node:
             if end_node in nodes:
-                dot.add_edge(order[node], order[end_node])
+                dot.add_edge(order[node], order[end_node[0]], end_node[1])
+    dot.finish_output()
+
+def write_core_wgraph(simschema, filename="coreschema"):
+    """view core graph on simulate schema graph"""
+    fns = filename + '.dot'
+    fls = open(fns, 'w')
+    dot = DotGraph(fls)
+    relations = simschema.get_wgraph_from_schema()
+    wgraph = WGraph(relations)
+    core = wgraph.get_core_graph()
+    order = simschema.ordered
+    nodes = set([])
+    for node in range(len(core)):
+        if core[node] != []:
+            nodes.add(node)
+#            for end_node in core[node]:
+#                dot.add_edge(order[node], order[end_node[0]], end_node[1])
+    for node in nodes:
+        start_node = relations[node]
+        for end_node in start_node:
+            if end_node[0] in nodes:
+                dot.add_edge(order[node], order[end_node[0]], end_node[1])
     dot.finish_output()
 
 def main():
@@ -286,7 +310,7 @@ def main():
         output = p3.communicate()[0]
 
     if options.view_core:
-        write_core_graph(simschema)
+        write_core_wgraph(simschema)
         check_call(['dot', '-Tpng', 'coreschema.dot', '-o', \
             'coreschema.png'])
 
