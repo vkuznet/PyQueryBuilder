@@ -22,6 +22,7 @@ will be parsed as:
 And it will support bracket operation.
 
 .. doctest::
+
    find table where (a >1 and b <2) and (a>3 or d <4)
 
 will be parsed as:

@@ -46,7 +46,7 @@ will be mapped into
     {'keywords'   : [ ['Files.FileSize', 'count'],
                       ['Files.LogicalFilename']],
      'constraints': [ {'value': '/a/b/c#d*',
-                       'keyword': ['File.LogicalFilename'],
+                       'keyword': ['File.LogicalFilename', 'file'],
                        'sign': '='}]}
 
 alias mapping

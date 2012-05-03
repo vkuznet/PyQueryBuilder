@@ -332,8 +332,10 @@ class SchemaHandler(object):
 #                            str(tables_of_concern))
 
         # no need to take a join if there is only one table involved
-        if len(tables_of_concern) == 1:
+        if len(keylist['keyset']) == 1:
             return None
+
+        lens = len(tables_of_concern)
         # find the best candidate spanning tree
         # table_indices is the index list of tables_of_concern
         # referencing self.ordered
@@ -359,6 +361,10 @@ class SchemaHandler(object):
         core_tables = core_tables.union(set(return_jtables.keys()))
         core_tables = core_tables.union(set(cons_jtables.keys()))
         _LOGGER.debug("merged core tables are %s " % str(core_tables))
+        if len(core_tables) == 1 and lens == 1 and \
+            core_tables.issubset(set(tnames_of_concern)):
+            return None
+
         core_indices = [self._simschema.ordered.index(\
                 self._simschema.nodelist[tname]) \
                 for tname in core_tables]
