@@ -29,7 +29,10 @@ def query_parser(mapper, in_put):
                 appending attribute link
                 titles?
     """
-    keylist = {'keywords':[], 'constraints':[]}
+    keylist = {'keywords':[], 'constraints':[], 'keyset':[],
+               'mkeywords':[]}
+    # keyset is needed to log down the table concerned.
+    keyset = keylist['keyset']
     presult = qparse.parse(in_put)
     if presult == None:
         _LOGGER.error("query is not accepted due to syntax reason")
@@ -40,10 +43,12 @@ def query_parser(mapper, in_put):
     keywords =  presult['keywords']
     for keyword in keywords:
         if mapper.has_key(keyword[0]):
-            keylist['keywords'].append(keyword)
+            keylist['keywords'].append(keyword[0])
             key = mapper.get_column(keyword[0])
+            keyset.append(key)
             keyword.remove(keyword[0])
             keyword.insert(0, key)
+            keylist['mkeywords'].append(keyword)
 
         else:
             _LOGGER.error("""keyword %s is not known""",
@@ -67,7 +72,8 @@ def query_parser(mapper, in_put):
             if mapper.has_key(keyword[0]):
                 keylist['constraints'].append(keyword[0])
                 key = mapper.get_column(keyword[0])
-                cons['keyword'] = [key]
+                keyset.append(key)
+                cons['keyword'] = [key, keyword[0]]
             else:
                 _LOGGER.error("""keyword %s not in mapper """,
                        str(keyword[0]))
@@ -150,11 +156,11 @@ class QueryBuilder():
         """parse input"""
         return query_parser(self.mapper, in_puts)
 
-    def generate_sqlalchemy_clauses(self, query):
+    def generate_sqlalchemy_clauses(self, query, keylist):
         """generate sqlalcemy query"""
         if query is None:
             return None
-        return self.querybuilder.gen_clauses(query)
+        return self.querybuilder.gen_clauses(query, keylist)
 
     def build_query(self, query):
         """
@@ -164,8 +170,9 @@ class QueryBuilder():
         if query is None:
             _LOGGER.debug("""query is not valid""")
             return None
-        whereclause = self.generate_sqlalchemy_clauses(query)
+        whereclause = self.generate_sqlalchemy_clauses(query, keylist)
+        _LOGGER.debug("""clause is: %s""" % str(whereclause))
         query = self.querybuilder.build_query(whereclause, keylist)
-        _LOGGER.debug("""query is: %s""" % str(query))
+        _LOGGER.debug("""build query is: %s""" % str(query))
         return query
 

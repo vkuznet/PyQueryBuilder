@@ -51,10 +51,15 @@ class TestSchemaHandler(unittest.TestCase):
         """
         test clause generation
         """
+        keylist = {'keywords':['dataset.createdate', 'dataset.name'],
+                   'constraints':['file.name'],
+                   'keyset':['ProcessedDataset.CreateDate',
+                        'Files.Path', 'Files.Name']}
         mquery = {'keywords':[['ProcessedDataset.CreateDate'], ['Files.Path']],
-                    'constraints': [{'value': '123', 'keyword': ['Files.Name'],
+                    'constraints': [{'value': '123', 'keyword':
+                                ['Files.Name', 'file.name'],
                                     'sign': '='}]}
-        clause = self.handler.gen_clauses(mquery)
+        clause = self.handler.gen_clauses(mquery, keylist)
         self.assertEqual(str(clause.left).lower(), 'Files.Name'.lower())
 
     def test_gen_clauses_comp(self):
@@ -64,13 +69,15 @@ class TestSchemaHandler(unittest.TestCase):
         ("Files"."Path" = :Path_2))
         """
         mquery = {'keywords': [['Files.Path']],
-        'constraints': [{'value': '123', 'keyword': ['Files.Name'], 'sign': '='},
+        'constraints': [{'value': '123', 'keyword': ['Files.Name', 'file.name'], 'sign': '='},
                         'and',
-                        [{'value': '456', 'keyword': ['Files.Path'], 'sign': '='},
+                        [{'value': '456', 'keyword': ['Files.Path', 'dataset'], 'sign': '='},
                             'or',
-                         {'value': '789', 'keyword': ['Files.Path'], 'sign': '='}]]}
-
-        clause = self.handler.gen_clauses(mquery)
+                         {'value': '789', 'keyword': ['Files.Path', 'dataset'], 'sign': '='}]]}
+        keylist = {'keywords':['dataset'],
+                    'constraints':['file.name', 'dataset', 'dataset'],
+                    'keyset':['Files.Name','Files.Path','Files.Path']}
+        clause = self.handler.gen_clauses(mquery, keylist)
         self.assertEqual(str(clause.clauses[0].left).lower(), \
         'Files.Name'.lower())
 
@@ -78,7 +85,10 @@ class TestSchemaHandler(unittest.TestCase):
         """
         test single query without constaints
         """
-        keylist = {'keywords':[['ProcessedDataset.CreateDate']]}
+        keylist = {'keywords':['dataset.createdate'],
+                    'constraints':None,
+                    'keyset':['ProcessedDataset.CreateDate'],
+                    'mkeywords':['ProcessedDataset.CreateDate']}
         whereclause = None
         query = self.handler.build_query(whereclause, keylist)
         print query
@@ -88,15 +98,16 @@ class TestSchemaHandler(unittest.TestCase):
         test single query with constraints
         """
         mquery = {'keywords': [['Files.Path']],
-        'constraints': [{'value': '123', 'keyword': ['Files.Name'], 'sign': '='},
+        'constraints': [{'value': '123', 'keyword': ['Files.Name', 'file.name'], 'sign': '='},
                         'and',
-                        [{'value': '456', 'keyword': ['Files.Path'], 'sign': '='},
+                        [{'value': '456', 'keyword': ['Files.Path', 'dataset'], 'sign': '='},
                             'or',
-                         {'value': '789', 'keyword': ['Files.Path'], 'sign': '='}]]}
-        keylist = {'keywords': [['Files.Path']],
-                    'constraints':[['file.name'],['dataset.name'],
-                    ['dataset.name']]}
-        clause = self.handler.gen_clauses(mquery)
+                         {'value': '789', 'keyword': ['Files.Path', 'dataset'], 'sign': '='}]]}
+        keylist = {'keywords':['dataset'],
+                    'constraints':['file.name', 'dataset', 'dataset'],
+                    'keyset':['Files.Path','Files.Name','Files.Path','Files.Path'],
+                    'mkeywords':[['Files.Path']]}
+        clause = self.handler.gen_clauses(mquery,keylist)
         query = self.handler.build_query(clause, keylist)
         print query
 
@@ -104,25 +115,30 @@ class TestSchemaHandler(unittest.TestCase):
         """test query with multiple tables"""
         mquery = {'keywords': [['Files.Path'], ['ProcAlgo.Algorithm'],
         ['PrimaryDataset.Name']]}
-        keylist = {'keywords': [['Files.Path'], ['ProcAlgo.Algorithm'],
-                        ['PrimaryDataset.Name']], 'constraints': []}
+        keylist = {'keywords': ['dataset', 'algo', 'primds'],
+                    'constraints': [],
+                    'mkeywords':[['Files.Path'],['ProcAlgo.Algorithm'],['PrimaryDataset.Name']],
+                    'keyset':['Files.Path','ProcAlgo.Algorithm','PrimaryDataset.Name']}
 
-        clause = self.handler.gen_clauses(mquery)
+        clause = self.handler.gen_clauses(mquery,keylist)
         query = self.handler.build_query(clause, keylist)
         print query
         mquery = {'keywords': [['Files.Path'], ['ProcAlgo.Algorithm'],
                                 ['PrimaryDataset.Name']],
                         'constraints':
-                                [{'value': '123', 'keyword': ['Files.Name'], 'sign': '='},
-                                'and',
-                                [{'value': '456', 'keyword': ['Files.Path'], 'sign': '='},
-                                    'or',
-                                 {'value': '789', 'keyword': ['Files.Path'], 'sign': '='}]]}
-
-        keylist = {'keywords': [['Files.Path'], ['ProcAlgo.Algorithm'],
-                                        ['PrimaryDataset.Name']],
-                        'constraints': ['dataset.name', 'dataset.name', 'file.name']}
-        clause = self.handler.gen_clauses(mquery)
+                        [{'value': '123', 'keyword': ['Files.Name', 'file.name'], 'sign': '='},
+                        'and',
+                        [{'value': '456', 'keyword': ['Files.Path', 'dataset'], 'sign': '='},
+                            'or',
+                         {'value': '789', 'keyword': ['Files.Path', 'dataset'], 'sign': '='}]]}
+        keylist = {'keywords': ['dataset', 'algo', 'primds'],
+                    'constraints': ['file.name', 'dataset', 'dataset'],
+                    'keyset':['Files.Path',
+                        'ProcAlgo.Algorithm','PrimaryDataset.Name',
+                        'Files.Name', 'Files.Path', 'Files.Path'],
+                    'mkeywords':[['Files.Path'],
+                    ['ProcAlgo.Algorithm'],['PrimaryDataset.Name']]}
+        clause = self.handler.gen_clauses(mquery, keylist)
         query = self.handler.build_query(clause, keylist)
         print query
 
@@ -135,8 +151,10 @@ class TestSchemaHandler(unittest.TestCase):
         select_test = select(columns=[process_dataset.c.CreateDate,primary_dataset.c.Name])\
                         .correlate(primary_dataset.c.ID == process_dataset.c.PrimaryDataset)\
                         .where(primary_dataset.c.Name == 'test')
-        keylist = {'keywords': [['ProcessedDataset.CreateDate'], ['PrimaryDataset.Name'],],
-                   'constraints': ['primds.name']}
+        keylist = {'keywords': ['dataset.createdate','primds'],
+                   'constraints': ['primds.name'],
+                   'keyset':['ProcessedDataset.CreateDate','PrimaryDataset.Name','PrimaryDataset.Name'],
+                   'mkeywords':[['ProcessedDataset.CreateDate'],['PrimaryDataset.Name']]}
         query = self.handler.build_query(select_test, keylist)
         print query
 
@@ -193,8 +211,12 @@ class TestLive(unittest.TestCase):
         self.display_rows(rows)
 
         # Then use our software to modify one.
-        keylist = {'keywords': [['ProcessedDataset.Name'],
-        ['DataTier.Name'], ['PrimaryDataset.CreatedBy'],],'constraints':[]}
+        keylist = {
+            'keywords': ['dataset', 'tier','primds.createby'],
+            'constraints':[],
+            'keyset':['ProcessedDataset.Name','DataTier.Name','PrimaryDataset.CreatedBy'],
+            'mkeywords':[['ProcessedDataset.Name'],['DataTier.Name'],['PrimaryDataset.CreatedBy']]
+            }
         query = self.handler.build_query(None, keylist)
         print "modified select", query
         select_clause = query

@@ -45,9 +45,11 @@ class TestQueryBuilder(unittest.TestCase):
         query = "find dataset.createdate, dataset.name where file.name = 123"
         mquery, keylist = query_parser(self.app.mapper, query)
         mquery2 = {'keywords':[['ProcessedDataset.CreateDate'], ['Files.Path']],
-                    'constraints': [{'value': '123', 'keyword': ['Files.Name'], 'sign': '='}]}
-        keylist2 = {'keywords': [['ProcessedDataset.CreateDate'],['Files.Path']],
-                        'constraints':['file.name']}
+                    'constraints': [{'value': '123', 'keyword':
+                    ['Files.Name', 'file.name'], 'sign': '='}]}
+        keylist2 = {'mkeywords': [['ProcessedDataset.CreateDate'],['Files.Path']],
+                        'constraints':['file.name'],
+                    'keywords':['dataset.createdate', 'dataset.name']}
         self.assertEqual(mquery['keywords'], mquery2['keywords'])
         self.assertEqual(mquery['constraints'],mquery2['constraints'])
         self.assertEqual(keylist['keywords'], keylist2['keywords'])

@@ -98,6 +98,10 @@ class SchemaHandler(object):
         #         on core schema
         self.attr_table = self._schema.v_attr
         self.attr_path = self._schema.gen_attr_links(mapper)
+        for name, path in self.attr_path.items():
+            for pat in path:
+                _LOGGER.debug("path %s is %s.%s --> %s.%s" % (name, \
+                pat.ltable, pat.lcolumn, pat.rtable, pat.rcolumn))
         simschema = self._schema.gen_simschema()
         simschema.update_nodelist()
         self._simschema = simschema
@@ -142,8 +146,10 @@ class SchemaHandler(object):
         Get the links start from the end node on the core schema
         for this attribute
         """
+        _LOGGER.debug("finding attribute link %s" % compkey)
         if self.attr_path.has_key(compkey):
             return self.attr_path[compkey]
+        _LOGGER.debug("no attribute link %s" % compkey)
         return None
 
     def build_query(self, whereclause, keylist, algo="MIS"):
@@ -152,12 +158,33 @@ class SchemaHandler(object):
             check aggregation keywords if querying [key, aggregation, ...]
 
         """
-        #start = time.time()
+        start = time.time()
         froms = self.root_join(whereclause, keylist, algo)
-        #elapsed = (time.time() - start)
-        #_LOGGER.debug("root_join time %0.5f", elapsed)
+        _LOGGER.debug("froms is %s" % str(froms))
+        elapsed = (time.time() - start)
+        _LOGGER.debug("root_join time %0.5f", elapsed)
         query = self.handle_aggregation(keylist, froms, whereclause)
         return query
+
+    def unique_table_column(self, keylist, index):
+        """
+        get unique table column at keylist
+        index is keyword index at keylist
+        """
+        if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+            compkey = keylist['keywords'][index]
+            tnames = keylist['keyset'][index]
+            if tnames.count('.'):
+                tname, attr = tnames.split('.')
+            self.set_unique(compkey, tname)
+            table = self.find_table(compkey)
+            if table is not None:
+                col = table.columns[attr]
+            else:
+                raise Error("ERROR can't find table %s" % str(tname))
+        else:
+            col = self.get_table_column(keylist['mkeywords'][index][0])
+        return col
 
     def handle_aggregation(self, keylist, froms, whereclause):
         """
@@ -170,14 +197,21 @@ class SchemaHandler(object):
             -   apply order_by with all non aggregation keywords
             -   naming this subquery and select all keywords from it
         """
-        keywords = keylist['keywords']
+        keywords = keylist['mkeywords']
         selects = []
         columns = []
         mix_agg = False
-        for keyword in keywords:
+#        for keyword in keywords:
+        for index in range(len(keywords)):
+            keyword = keywords[index]
             if len(keyword) == 1:
                 try:
-                    col = self.get_table_column(keyword[0])
+#                    if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+#                        self.set_unique(compkey, tname)
+#                        col = self.get_table_column(keylist['keywords'][index])
+#                    else:
+#                        col = self.get_table_column(keyword[0])
+                    col = self.unique_table_column(keylist, index)
                     selects.append(col)
                     columns.append(col)
                     mix_agg = True
@@ -186,7 +220,12 @@ class SchemaHandler(object):
                     return None
             elif keyword[1] in ('count', 'max', 'min', 'sum'):
                 try:
-                    col = self.get_table_column(keyword[0])
+#                    if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+#                        self.set_unique(compkey, tname)
+#                        col = self.get_table_column(keylist['keywords'][index])
+#                    else:
+#                        col = self.get_table_column(keyword[0])
+                    col = self.unique_table_column(keylist, index)
                     selects.append(getattr(func, keyword[1])(col))
                     columns.append(col)
                 except:
@@ -274,19 +313,23 @@ class SchemaHandler(object):
         """
         tables_of_concern = set()
         # sqlalchemy.sql.expression.Alias or Table
-        for keyword in keylist['keywords']:
+        for keyword in keylist['keyset']:
             try:
-                col = self.get_table_column(keyword[0])
+                col = self.get_table_column(keyword)
                 tables_of_concern.add(col.table)
             except:
                 _LOGGER.error("can't find table %s" % keyword[0])
                 return None
-        if type(whereclause) != type(None):
-            if whereclause.__dict__.has_key('clauses'):
-                for clause in whereclause.clauses:
-                    pull_operator_side(clause, tables_of_concern)
-            else:
-                pull_operator_side(whereclause, tables_of_concern)
+        _LOGGER.debug("tables_of_concern is %s" % str(tables_of_concern))
+        # get alias for table
+#        if type(whereclause) != type(None):
+#            if whereclause.__dict__.has_key('clauses'):
+#                for clause in whereclause.clauses:
+#                    pull_operator_side(clause, tables_of_concern)
+#            else:
+#                pull_operator_side(whereclause, tables_of_concern)
+#            _LOGGER.debug("tables_of_concern adding clause ones is %s" % \
+#                            str(tables_of_concern))
 
         # no need to take a join if there is only one table involved
         if len(tables_of_concern) == 1:
@@ -320,6 +363,7 @@ class SchemaHandler(object):
                 self._simschema.nodelist[tname]) \
                 for tname in core_tables]
         subtree = self.construct_query(core_indices, algo)
+        _LOGGER.debug("core spanning tree are %s " % str(subtree))
 #        print subtree
 
 #        appendix = set(tnames_of_concern).intersection(self.attr_table)
@@ -355,15 +399,17 @@ class SchemaHandler(object):
                 root_join = root_table
 #           constraints attribute links
             if table.name in cons_jtables:
-                for links in cons_jtables[table.name]:
+                for links, compkey, tname in cons_jtables[table.name]:
                     current = table.name
                     for link in links:
                         if current == table.name:
                             if table.name != link.ltable:
                                 root_join = \
-                                    self.join_link(root_join, link, False)
+                                    self.join_link(root_join, \
+                                            link, False, compkey, tname)
                                 current = link.ltable
-                            root_join = self.join_link(root_join, link, True)
+                            root_join = self.join_link(root_join, \
+                                            link, True, compkey, tname)
                             current = link.rtable
 #           inner nodes
             weight_sort(subtree._graph[node_idx])
@@ -392,27 +438,35 @@ class SchemaHandler(object):
 #           retrive attribute links
             if table.name in return_jtables:
 #                print "attribute links"
-                for links in return_jtables[table.name]:
+                for links, compkey, tname in return_jtables[table.name]:
                     current = table.name
                     for link in links:
                         if current != link.ltable:
-                            root_join = self.join_link(root_join, link, False)
+                            root_join = self.join_link(root_join, \
+                                    link, False, compkey, tname)
                             current = link.ltable
                         else:
-                            root_join = self.join_link(root_join, link, True)
+                            root_join = self.join_link(root_join, \
+                                    link, True, compkey, tname)
                             current = link.rtable
             del unexplored[0]
         return root_join
 
-    def join_link(self, root_join, link, direction):
+    def join_link(self, root_join, link, direction, compkey=None, tname=None):
         """
         root_join join a link
         direction left to right : True
                   right to left : False
         """
         _LOGGER.debug("join link %s" % str(link))
-        ltable = self.find_table(link.ltable)
-        rtable = self.find_table(link.rtable)
+        if link.ltable == tname:
+            ltable = self.find_table(compkey)
+        else:
+            ltable = self.find_table(link.ltable)
+        if link.rtable == tname:
+            rtable = self.find_table(compkey)
+        else:
+            rtable = self.find_table(link.rtable)
         lcol = ltable.c._data[link.lcolumn[0]]
         rcol = rtable.c._data[link.rcolumn[0]]
         if direction:
@@ -433,38 +487,71 @@ class SchemaHandler(object):
         """
         return_jtables = {}
         cons_jtables = {}
-        for compkey in keylist['keywords']:
-            links = self.map_attribute(compkey[0])
+        keylen = len(keylist['keywords'])
+        for index in range(keylen):
+            compkey = keylist['keywords'][index]
+#        for compkey in keylist['keywords']:
+            _LOGGER.debug("trying gen join table for %s" % str(compkey))
+            links = self.map_attribute(compkey)
             if links == None:
                 continue
-            _LOGGER.debug(links)
+            _LOGGER.debug("gen join table for %s" % str(links))
             #TODO composite fkkeys
             if links[0].ltable in self._schema.v_ent:
                 jointable = links[0].ltable
             else:
                 jointable = links[0].rtable
-
-            if not return_jtables.has_key(jointable):
-                return_jtables[jointable] = [links]
+            tname = keylist['keyset'][index]
+            if tname.count('.') > 0:
+                tname = tname.split('.')[0]
+            # set unique alias
+            # only set end nodes, which means if double composite on
+            # path further handler is needed
+            if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+                self.set_unique(compkey, tname)
+                if not return_jtables.has_key(jointable):
+                    return_jtables[jointable] = [(links, compkey, tname)]
+                else:
+                    return_jtables[jointable].append((links, compkey, tname))
             else:
-                return_jtables[jointable].append(links)
+                if not return_jtables.has_key(jointable):
+                    return_jtables[jointable] = [(links, None, None)]
+                else:
+                    return_jtables[jointable].append((links, None, None))
 
-        for compkey in keylist['constraints']:
+        for index in range(len(keylist['constraints'])):
+            compkey = keylist['constraints'][index]
+#        for compkey in keylist['constraints']:
+            _LOGGER.debug("trying gen join table for %s" % str(compkey))
             links = self.map_attribute(compkey)
             if links == None:
                 continue
+            _LOGGER.debug("gen join table for %s" % str(links))
             _LOGGER.debug(links)
             # TODO composite fkkeys
             if links[0].ltable in self._schema.v_ent:
                 jointable = links[0].ltable
             else:
                 jointable = links[0].rtable
-            if not cons_jtables.has_key(jointable):
-                cons_jtables[jointable] = [links]
+            tname = keylist['keyset'][keylen + index]
+            if tname.count('.') > 0:
+                tname = tname.split('.')[0]
+            if keylist['keyset'].count(keylist['keyset'][keylen + index]) > 1:
+                self.set_unique(compkey, tname)
+                if not cons_jtables.has_key(jointable):
+                    cons_jtables[jointable] = [(links, compkey, tname)]
+                else:
+                    cons_jtables[jointable].append((links, compkey, tname))
             else:
-                cons_jtables[jointable].append(links)
+                if not cons_jtables.has_key(jointable):
+                    cons_jtables[jointable] = [(links, None, None)]
+                else:
+                    cons_jtables[jointable].append((links, None, None))
         return return_jtables, cons_jtables
 
+    def set_unique(self, compkey, tname):
+        """set unique sqlalchemy alias for table"""
+        self._schema.set_unique(compkey, tname)
 
     def find_table(self, tname):
         """return sqlalchemy table by table name"""
@@ -493,7 +580,7 @@ class SchemaHandler(object):
             else:
                 raise Error("ERROR can't find table %s" % str(entity))
 
-    def gen_clauses(self, query):
+    def gen_clauses(self, query, keylist):
         """
         query is a parser result
         correctly analysis the parser result and generate:
@@ -542,7 +629,8 @@ class SchemaHandler(object):
         constraint = queue.popleft()
         if len(queue) == 0:
             try:
-                column = self.get_table_column(constraint['keyword'][0])
+#                column = self.get_table_column(constraint['keyword'][0])
+                column = self.unique_table_col(keylist, constraint['keyword'])
             except:
                 _LOGGER.error("can't find table %s" % \
                         constraint['keyword'][0])
@@ -573,7 +661,8 @@ class SchemaHandler(object):
                     # construct whereclause
                     if type(right) == type({}):
                         try:
-                            column = self.get_table_column(right['keyword'][0])
+#                            column = self.get_table_column(right['keyword'][0])
+                            column = self.unique_table_col(keylist, right['keyword'])
                         except:
                             _LOGGER.error("can't find table %s" % \
                                 right['keyword'][0])
@@ -581,7 +670,8 @@ class SchemaHandler(object):
                         right = column.op(right['sign'])(right['value'])
                     if type(left) == type({}):
                         try:
-                            column = self.get_table_column(left['keyword'][0])
+#                            column = self.get_table_column(left['keyword'][0])
+                            column = self.unique_table_col(keylist, left['keyword'])
                         except:
                             _LOGGER.error("can't find table %s" % \
                                 left['keyword'][0])
@@ -601,3 +691,22 @@ class SchemaHandler(object):
                 break
             constraint = queue.popleft()
         return whereclause
+
+    def unique_table_col(self, keylist, keyword):
+        """
+        get unique table column at keylist
+        """
+        tnames  = keyword[0]
+        compkey = keyword[1]
+        if keylist['keyset'].count(tnames) > 1:
+            if tnames.count('.'):
+                tname, attr = tnames.split('.')
+            self.set_unique(compkey, tname)
+            table = self.find_table(compkey)
+            if table is not None:
+                col = table.columns[attr]
+            else:
+                raise Error("ERROR can't find table %s" % str(tname))
+        else:
+            col = self.get_table_column(tnames)
+        return col

@@ -745,10 +745,33 @@ class OriginSchema(TSchema):
             return self.tables[tname]
         elif self.alias_table.has_key(tname):
             return self.atables[tname]
+        elif self.atables.has_key(tname):
+            return self.atables[tname]
         tname = tname.lower()
         if self.tables.has_key(tname):
             return self.tables[tname]
         elif self.alias_table.has_key(tname):
             return self.atables[tname]
+        elif self.atables.has_key(tname):
+            return self.atables[tname]
+        _LOGGER.debug("didn't find table with tname %s" % tname)
         return None
 
+    def set_unique(self, compkey, tname):
+        """
+        set sqlalchemy table object with a unique name from compkey
+        such as dataset.createby : self.tables[tname].alias(dataset_createby)
+        """
+        if self.atables.has_key(compkey):
+            _LOGGER.debug("already set unique for table %s" % tname)
+            return
+        key = compkey.replace('.', '_')
+        _LOGGER.debug("set unique for table %s" % tname)
+        if self.tables.has_key(tname):
+            self.atables[compkey] = self.tables[tname].alias(key)
+            return
+        tname = tname.lower()
+        if self.tables.has_key(tname):
+            self.atables[compkey] = self.tables[tname].alias(key)
+            return
+        raise Error("tname %s are not found in database schema" % tname)
