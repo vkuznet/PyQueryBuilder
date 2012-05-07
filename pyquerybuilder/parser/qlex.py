@@ -16,7 +16,8 @@ tokens = [
    'ID',
    'LB',
    'RB',
-   'DATE'
+   'DATE',
+   'QT'
 ]
 reserved = {
    'find':'FIND',
@@ -40,6 +41,7 @@ t_EQUALS = r'\='
 t_COMMA = r'\,'
 t_LB = r'\('
 t_RB = r'\)'
+t_QT = r'\"'
 
 def t_DATE(tok):
     r'\d{4}-\d{2}-\d{2}($|\s+\d{2}:\d{2}($|:\d{2}))'
@@ -48,7 +50,7 @@ def t_DATE(tok):
 
 def t_ID(tok):
 #    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    r'[^\s><=!,()]+'
+    r'[^\s><=!,()\"]+'
     tok.type = reserved.get(tok.value, 'ID')
     return tok
 

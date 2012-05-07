@@ -55,6 +55,19 @@ def p_date(pattern):
     elif len(pattern) == 3:
         pattern[0] = ' '.join(pattern[1:])
 
+def p_quote(pattern):
+    '''quote : lquotes QT'''
+    if len(pattern) == 3:
+        pattern[0] = pattern[1]
+
+def p_lquotes(pattern):
+    '''lquotes : lquotes ID
+               | QT ID'''
+    if pattern[1] == '"':
+        pattern[0] = pattern[2]
+    else:
+        pattern[0] = pattern[1] + ' ' + pattern[2]
+
 def p_constraints(pattern):
     '''constraints : constraints AND constraint
                    | constraints OR constraint
@@ -78,6 +91,12 @@ def p_constraint(pattern):
                   | keyword NE ID
                   | keyword LIKE ID
                   | keyword NOT LIKE ID
+                  | keyword GE quote
+                  | keyword GT quote
+                  | keyword LE quote
+                  | keyword LT quote
+                  | keyword EQUALS quote
+                  | keyword NOT LIKE quote
                   | keyword GE date
                   | keyword GT date
                   | keyword LE date

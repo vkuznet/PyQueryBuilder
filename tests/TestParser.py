@@ -22,6 +22,9 @@ class TestParser(unittest.TestCase):
           'find asc where a>2 and (a>1 and b <3)',
           'find a.b,c where a.c >2 and f>1 or file<3',
           'find a,b.c,c where a>2 and (b<1 or( c>2 and b<3)and e.c<2) or e<1',
+          'find a where b > "C "',
+          'find a where b >" B   C" ',
+          'find asc where a>"2" and (a>"1" and b < " 3 ")',
         ]
         result = []  
         for line in inputs:
@@ -33,6 +36,9 @@ class TestParser(unittest.TestCase):
         self.assertTrue(result[4]['constraints'][2][2]['sign'] == '<')
         self.assertTrue(result[5]['keywords'][0] == ['a.b'])
         self.assertTrue(result[6]['constraints'][2][2][2]['value'] == '3')
+        self.assertTrue(result[7]['constraints'][0]['value'] == 'C')
+        self.assertTrue(result[8]['constraints'][0]['value'] == 'B C')
+        self.assertTrue(result[4]['constraints'][2][2]['value'] == '3')
 
     def test_wrong_inputs(self):
         """test wrong query"""
@@ -42,6 +48,7 @@ class TestParser(unittest.TestCase):
           'find ac where a>1 (and b>2',
           'find ac where a>1 and b<2)',
           'find asc, where a>2',
+          'find a where a > "C',
         ]
         for line in inputs:
             self.assertTrue( None == self.parser.parse(line))
