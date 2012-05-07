@@ -851,5 +851,4 @@ class OriginSchema(TSchema):
                         link2 = pathes[table][-index-1][0]
                         _LOGGER.debug('%s.%.5f switch to %s.%.5f' % \
                             (link1, link1.weight, link2, link2.weight))
-                        self.links[link1.name].weight))
                         link1.weight, link2.weight = link2.weight, link1.weight
