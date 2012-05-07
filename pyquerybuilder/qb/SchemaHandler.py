@@ -104,6 +104,7 @@ class SchemaHandler(object):
                 pat.ltable, pat.lcolumn, pat.rtable, pat.rcolumn))
         simschema = self._schema.gen_simschema()
         simschema.update_nodelist()
+        self._schema.recognize_shortcut()
         self._simschema = simschema
 
         # Step 4. Calculate each links type, by default foreign key link
@@ -171,11 +172,12 @@ class SchemaHandler(object):
         get unique table column at keylist
         index is keyword index at keylist
         """
-        if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+        tnames = keylist['keyset'][index]
+        if tnames.count('.'):
+             tname, attr = tnames.split('.')
+        if keylist['keyset'].count(keylist['keyset'][index]) > 1\
+            and tname in self._schema.v_attr:
             compkey = keylist['keywords'][index]
-            tnames = keylist['keyset'][index]
-            if tnames.count('.'):
-                tname, attr = tnames.split('.')
             self.set_unique(compkey, tname)
             table = self.find_table(compkey)
             if table is not None:
@@ -320,7 +322,6 @@ class SchemaHandler(object):
             except:
                 _LOGGER.error("can't find table %s" % keyword[0])
                 return None
-        _LOGGER.debug("tables_of_concern is %s" % str(tables_of_concern))
         # get alias for table
 #        if type(whereclause) != type(None):
 #            if whereclause.__dict__.has_key('clauses'):
@@ -704,9 +705,10 @@ class SchemaHandler(object):
         """
         tnames  = keyword[0]
         compkey = keyword[1]
-        if keylist['keyset'].count(tnames) > 1:
-            if tnames.count('.'):
-                tname, attr = tnames.split('.')
+        if tnames.count('.'):
+            tname, attr = tnames.split('.')
+        if keylist['keyset'].count(tnames) > 1\
+            and tname in self._schema.v_attr:
             self.set_unique(compkey, tname)
             table = self.find_table(compkey)
             if table is not None:

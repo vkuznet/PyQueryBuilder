@@ -774,4 +774,82 @@ class OriginSchema(TSchema):
         if self.tables.has_key(tname):
             self.atables[compkey] = self.tables[tname].alias(key)
             return
-        raise Error("tname %s are not found in database schema" % tname)
+        raise Exception("tname %s are not found in database schema" % tname)
+
+    def recognize_shortcut(self):
+        """
+        figure the short cut
+        exchange the weight between short cut and passing dependencies
+        referential is on primary key.
+        dataset<--block<---file
+             <------------/
+        dataset<----file is a short cut for dataset<--block<--file
+        """
+        # Do DFS for each node if a node is founded
+        for node in self.v_ent:
+            pathes = {} # { end_enitity : [[link1], [link2, link3], ] }
+            stack = []
+            for link in self.nodelist[node].outlinks:
+                stack.append(self.links[link])
+                # link.right shouldn't point to itself, need to filter
+                # out
+            while stack:
+                link = stack.pop()
+#                _LOGGER.info("TEMPTEST, link %s %s %s" % (str(link), link.ltable, link.rtable))
+                table = link.rtable
+                if table not in self.v_attr and table != node:
+#                    and link.rcolumn is in table.primarykey:
+                    # if link.left is node then append []
+                    # if link.left is not node then append node -->
+                    # table
+                    new_path = []
+                    if link.ltable == node:
+                        new_path = [link]
+                    else:
+                        # trace back
+                        if link.ltable != node and \
+                            len(pathes[link.ltable]) < 2:# keep smallest one
+                            for aplink in pathes[link.ltable][0]: # shortest
+                                new_path.append(aplink)
+                            new_path.append(link)
+                    # insert new path to correct position
+                    if table not in pathes:
+                        pathes[table] = [new_path]
+                    elif len(new_path) > 0:
+                        for index in range(len(pathes[table])):
+                            if len(new_path) < len(pathes[table][index]):
+                                continue
+                            distinct = False
+                            if len(new_path) == len(pathes[table][index]):
+                                for inde in range(len(new_path)):
+                                    if new_path[inde] == \
+                                        pathes[table][index][inde]:
+                                        continue
+                                    distinct = True
+                            else:
+                                distinct = True
+                            if distinct:
+                                pathes[table].insert(index, new_path)
+                for link in self.nodelist[table].outlinks:
+                    stack.append(self.links[link])
+            # review pathes, print out the short cut
+            for table in pathes:
+                if len(pathes[table]) > 1:
+                    temp = []
+                    for path in pathes[table]:
+                        strin = ""
+                        for link in path:
+                            strin += "%s->%s, " % (link.ltable, link.rtable)
+                        temp.append(strin)
+                    _LOGGER.debug('shortcut found for %s to %s via %s' % \
+                    (node, table, str(temp)))
+            # update weights for link
+            for table in pathes:
+                if len(pathes[table]) > 1:
+                    for index in range(len(pathes[table])/2):
+                        link1 = pathes[table][index][0]
+                        link2 = pathes[table][-index-1][0]
+                        _LOGGER.debug('%s.%.5f switch to %s.%.5f' % \
+                            (link1, link1.weight, link2, link2.weight))
+                        self.links[link1.name].weight))
+                        link1.weight, link2.weight = link2.weight, link1.weight
