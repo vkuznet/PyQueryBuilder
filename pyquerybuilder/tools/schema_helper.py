@@ -293,6 +293,7 @@ def main():
 
     simschema = originschema.gen_simschema()
     simschema.update_nodelist()
+    originschema.recognize_shortcut()
 
     if options.view_simulate:
         write_simulate_schema_graph(simschema, 'simschema')
