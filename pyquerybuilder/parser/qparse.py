@@ -96,6 +96,7 @@ def p_constraint(pattern):
                   | keyword LE quote
                   | keyword LT quote
                   | keyword EQUALS quote
+                  | keyword LIKE quote
                   | keyword NOT LIKE quote
                   | keyword GE date
                   | keyword GT date

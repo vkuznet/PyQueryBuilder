@@ -78,6 +78,10 @@ def query_parser(mapper, in_put):
                 _LOGGER.error("""keyword %s not in mapper """,
                        str(keyword[0]))
                 return None, None
+            # replace wildcard with %
+            if cons['value'].count('*') > 0:
+                cons['value'] = cons['value'].replace('*', '%')
+                cons['sign'] = 'like'
             # we finished the last element in stack
             if len(stack) == 0:
                 break
