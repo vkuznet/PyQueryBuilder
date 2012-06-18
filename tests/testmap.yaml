@@ -24,3 +24,6 @@ algo :
 phygrp :
   - name : ProcessedDataset.PhysicsGroup
 
+migrate :
+  - name : MigrationBlocks.BlockID
+  - req : MigrationRequest.URL

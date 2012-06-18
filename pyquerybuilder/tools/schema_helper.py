@@ -117,8 +117,8 @@ def load_split(filename=None):
     """
     if filename == None:
         filename = 'split.yaml'
-        if not os.path.isfile(filename):
-            return False
+    if not os.path.isfile(filename):
+        return False
     return load_file(filename)
 
 def write_splition(simschema, splition, filename="Subgraph"):
@@ -161,7 +161,7 @@ def write_basics_cycles(simschema, filename="basic_cycle"):
     fns = filename + '.dot'
     fls = open(fns, 'w')
     dot = DotGraph(fls)
-    simschema.write_cyclic_graph(dot, filename)
+    return simschema.write_cyclic_graph(dot, filename)
 
 def write_core_graph(simschema, filename="coreschema"):
     """view core graph on simulate schema graph"""
@@ -264,7 +264,8 @@ def main():
     originschema = OriginSchema(dbmanager.db_tables[dbalias])
 
     if not originschema.check_connective():
-        raise Exception('Schema graph is not connective')
+        print "schema graph is not connective"
+#        raise Exception('Schema graph is not connective')
 
     if options.view_origin:
         write_original_schema_graph(originschema, "original_schema")
@@ -291,42 +292,65 @@ def main():
     if options.alias_mapfile:
         mapper.load_mapfile(options.alias_mapfile)
 
-    simschema = originschema.gen_simschema()
-    simschema.update_nodelist()
+
+    simschemas = originschema.gen_simschema()
+    for simschema in simschemas:
+        simschema.update_nodelist()
+
     originschema.recognize_shortcut()
 
     if options.view_simulate:
-        write_simulate_schema_graph(simschema, 'simschema')
-        check_call(['dot', '-Tpng', 'simschema.dot', '-o', \
-            'simschema.png'])
+        for idx in range(len(simschemas)):
+            simschema = simschemas[idx]
+            fname = 'simschema%d.png' % idx
+            if len(simschema.nodelist) > 1:
+                write_simulate_schema_graph(simschema, 'simschema')
+                check_call(['dot', '-Tpng', 'simschema.dot', '-o', fname])
 
     if options.view_basics:
-        write_basics_cycles(simschema)
-        p1 = Popen(["dot"] + glob.glob('basic_cycle_*.dot'), stdout=PIPE)
-        p2 = Popen(["gvpack"], stdin=p1.stdout, stdout=PIPE)
-        p3 = Popen(['dot', '-Tpng', '-o', 'basic_cycle_pack.png'], \
-            stdin=p2.stdout, stdout=PIPE)
-        p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
-        p2.stdout.close()
-        output = p3.communicate()[0]
+        for idx in range(len(simschemas)):
+            simschema = simschemas[idx]
+            if len(simschema.nodelist) < 2:
+                continue
+            if not write_basics_cycles(simschema, "basic_cycle%d" % idx):
+                continue
+            fname = 'basic_cycle%d_pack.png' % idx
+            p1 = Popen(["dot"] + glob.glob('basic_cycle%d_*.dot' % idx), \
+                stdout=PIPE)
+            p2 = Popen(["gvpack"], stdin=p1.stdout, stdout=PIPE)
+            p3 = Popen(['dot', '-Tpng', '-o', fname], \
+                stdin=p2.stdout, stdout=PIPE)
+            p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+            p2.stdout.close()
+            output = p3.communicate()[0]
 
     if options.view_core:
-        write_core_wgraph(simschema)
-        check_call(['dot', '-Tpng', 'coreschema.dot', '-o', \
-            'coreschema.png'])
+        for idx in range(len(simschemas)):
+            simschema = simschemas[idx]
+            if len(simschema.nodelist) < 2:
+                continue
+            write_core_wgraph(simschema)
+            fname = 'coreschema%d.png' % idx
+            check_call(['dot', '-Tpng', 'coreschema.dot', '-o', fname])
 
     if options.split_file:
         splition_file = options.split_file
 
     if options.view_splition:
-        write_splition(simschema, splition_file, "Subgraph")
-        p1 = Popen(["dot"] + glob.glob('Subgraph_*.dot'), stdout=PIPE)
-        p2 = Popen(["gvpack"], stdin=p1.stdout, stdout=PIPE)
-        p3 = Popen(['dot', '-Tpng', '-o', 'subgraph_pack.png'], \
-            stdin=p2.stdout, stdout=PIPE)
-        p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
-        p2.stdout.close()
-        output = p3.communicate()[0]
+        for idx in range(len(simschemas)):
+            simschema = simschemas[idx]
+            if len(simschema.nodelist) < 2:
+                continue
+            write_splition(simschema, splition_file, "Subgraph%d" % idx)
+            fname = 'subgraph%d_pack.png' % idx
+            p1 = Popen(["dot"] + glob.glob('Subgraph%d_*.dot' % idx), \
+                stdout=PIPE)
+            p2 = Popen(["gvpack"], stdin=p1.stdout, stdout=PIPE)
+            p3 = Popen(['dot', '-Tpng', '-o', fname], \
+                stdin=p2.stdout, stdout=PIPE)
+            p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+            p2.stdout.close()
+            output = p3.communicate()[0]
 
 if __name__ == '__main__':
     main()

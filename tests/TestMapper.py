@@ -17,7 +17,7 @@ class TestMapper(unittest.TestCase):
         metadata = udb.load_from_file('starting_db.yaml')
         self.mapper.load_mapfile(self.mapfile)
         self.mapper.validate_map(metadata.tables)
-        self.assertEqual(19, len(self.mapper.dict))
+        self.assertEqual(22, len(self.mapper.dict))
 
     def test_get_key(self):
         """test get_key"""

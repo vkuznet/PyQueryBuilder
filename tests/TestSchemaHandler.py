@@ -34,13 +34,15 @@ class TestSchemaHandler(unittest.TestCase):
         self.handler._schema.recognize_type(self.mapper)
         self.handler._schema.handle_alias()
         self.handler._schema.gen_attr_links(self.mapper)
-        simschema = self.handler._schema.gen_simschema()
-        simschema.update_nodelist()
-        graph = simschema.get_wgraph_from_schema()
-        self.handler.subconstructors.append(ConstructQuery(graph, weighted=True))
-        nodes = set(range(len(simschema.ordered)))
-        self.handler.subnodes.append(nodes)
-        self.handler._simschema = simschema
+        simschemas = self.handler._schema.gen_simschema()
+        for simschema in simschemas:
+            simschema.update_nodelist()
+            graph = simschema.get_wgraph_from_schema()
+            self.handler.subconstructors.append([ConstructQuery(graph, \
+                weighted=True)])
+            nodes = set(range(len(simschema.ordered)))
+            self.handler.subnodes.append([nodes])
+        self.handler._simschemas = simschemas
 
 
     def tearDown(self):
@@ -174,14 +176,15 @@ class TestLive(unittest.TestCase):
         self.handler._schema.recognize_type(self.mapper)
         self.handler._schema.handle_alias()
         self.handler._schema.gen_attr_links(self.mapper)
-        simschema = self.handler._schema.gen_simschema()
-        simschema.update_nodelist()
-        graph = simschema.get_wgraph_from_schema()
-        self.handler.subconstructors.append(ConstructQuery(graph, weighted=True))
-        nodes = set(range(len(simschema.ordered)))
-        self.handler.subnodes.append(nodes)
-        self.handler._simschema = simschema
-
+        simschemas = self.handler._schema.gen_simschema()
+        for simschema in simschemas:
+            simschema.update_nodelist()
+            graph = simschema.get_wgraph_from_schema()
+            self.handler.subconstructors.append([ConstructQuery(graph, \
+                weighted=True)])
+            nodes = set(range(len(simschema.ordered)))
+            self.handler.subnodes.append([nodes])
+        self.handler._simschemas = simschemas
 
 
     def tearDown(self):

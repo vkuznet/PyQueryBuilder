@@ -72,6 +72,24 @@ AlgorithmConfig:
   - member: ApplicationVersion
   - member: ApplicationFamily
 
+MigrationRequest:
+  - member : ID
+    primaryKey :
+  - member : URL
+  - member : CreateDate
 
+MigrationBlocks:
+  - member : BlockID
+  - member : request
+    foreignKey : MigrationRequest
 
-  
+MigrationRequest2:
+  - member : ID
+    primaryKey :
+  - member : URL
+  - member : CreateDate
+
+MigrationBlocks2:
+  - member : BlockID
+  - member : request
+

@@ -27,6 +27,7 @@ class TestOriginSchema(unittest.TestCase):
         self.mapper = Mapper()
         self.mapper.load_mapfile('testmap.yaml')
         self.mapper.validate_map(metadata.tables)
+        self.oschema.check_connective()
 
     def test_yaml_graph(self):
         """test create schema from yaml
@@ -35,22 +36,31 @@ class TestOriginSchema(unittest.TestCase):
         oschema = self.oschema
         dot = DotGraph(file("z.dot","w"))
         oschema.write_graph(dot)
-        self.assertTrue(8 == len(oschema.nodelist))
+        self.assertTrue(12 == len(oschema.nodelist))
+
+#    def test_check_connective(self):
+#        """test check connectives """
+#        self.oschema.check_connective()
 
     def test_recognize_type(self):
         """test recognize three type kinds of nodes"""
         oschema = self.oschema
         oschema.recognize_type(self.mapper)
-        self.assertTrue(5 == len(oschema.v_ent))
+#        for node in oschema.nodelist:
+#            print oschema.nodelist[node],oschema.nodelist[node].parent
+#        print oschema.v_ent
+#        print oschema.v_rel
+#        print oschema.v_attr
+        self.assertTrue(6 == len(oschema.v_ent))
         self.assertTrue(1 == len(oschema.v_rel))
-        self.assertTrue(2 ==  len(oschema.v_attr))
+        self.assertTrue(3 ==  len(oschema.v_attr))
 
     def test_handle_alias(self):
         """test handle alias"""
         oschema = self.oschema
         oschema.recognize_type(self.mapper)
         oschema.handle_alias()
-        self.assertTrue(3 == len(oschema.v_attr))
+        self.assertTrue(4 == len(oschema.v_attr))
 
     def test_gen_attr_link(self):
         """test attribute link generation"""
@@ -65,28 +75,31 @@ class TestOriginSchema(unittest.TestCase):
         oschema.recognize_type(self.mapper)
         oschema.handle_alias()
         attr_path = oschema.gen_attr_links(self.mapper)
-        simschema = oschema.gen_simschema()
-        simschema.update_nodelist()
-        self.assertEqual(6, len(simschema.nodelist))
+        simschemas = oschema.gen_simschema()
+        for simschema in simschemas:
+            simschema.update_nodelist()
+        self.assertEqual(1, len(simschemas))
 
 class TestTSchema(unittest.TestCase):
     """Test TSchema"""
     def setUp(self):
         metadata = load_from_file("starting_db.yaml")
         oschema = OriginSchema(metadata.tables)
+        oschema.check_connective()
         self.mapper = Mapper()
         self.mapper.load_mapfile('testmap.yaml')
         self.mapper.validate_map(metadata.tables)
         oschema.recognize_type(self.mapper)
         oschema.handle_alias()
         attr_path = oschema.gen_attr_links(self.mapper)
-        self.simschema = oschema.gen_simschema()
-        self.simschema.update_nodelist()
+        self.simschemas = oschema.gen_simschema()
+        for simschema in self.simschemas:
+            simschema.update_nodelist()
 
     def test_get_wgraph_from_schema(self):
         """test get wgraph from schema"""
         graph1 = [[(5, 0), (4, 0)], [(4, 0)], [], [(4, 0)], [(2, 0)], [(4, 0)]]
-        graph2 = self.simschema.get_wgraph_from_schema()
+        graph2 = self.simschemas[0].get_wgraph_from_schema()
         self.assertEqual(len(graph1), len(graph2))
         for idx in range(len(graph1)):
             self.assertEqual(graph1[idx].sort(), graph2[idx].sort())
@@ -94,7 +107,7 @@ class TestTSchema(unittest.TestCase):
     def test_get_graph_from_schema(self):
         """test get graph from schema"""
         graph1 = [[5, 4], [4], [], [4], [2], [4]]
-        graph2 = self.simschema.get_graph_from_schema()
+        graph2 = self.simschemas[0].get_graph_from_schema()
         self.assertEqual(len(graph1), len(graph2))
         for idx in range(len(graph1)):
             self.assertEqual(graph1[idx].sort(), graph2[idx].sort())
@@ -102,11 +115,11 @@ class TestTSchema(unittest.TestCase):
     def test_write_graph(self):
         """test write graph"""
         dot = DotGraph(file("z.dot","w"))
-        self.simschema.write_graph(dot)
+        self.simschemas[0].write_graph(dot)
 
     def test_get_cycle_basis(self):
         """test get basic cycles"""
-        simschema = self.simschema
+        simschema = self.simschemas[0]
         relations = simschema.get_graph_from_schema()
         graph = Graph(relations)
         ugraph = graph.get_undirected()
@@ -124,7 +137,7 @@ class TestTSchema(unittest.TestCase):
     def test_write_cyclic_graph(self):
         """test write cyclic graph"""
         dot = DotGraph(file("z.dot","w"))
-        self.simschema.write_cyclic_graph(dot, "basic_cycles")
+        self.simschemas[0].write_cyclic_graph(dot, "basic_cycles")
 
     def test_gen_subgraph(self):
         """test generating subgraph"""

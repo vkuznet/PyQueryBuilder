@@ -54,7 +54,7 @@ class TestUnittestDB(unittest.TestCase):
         metadata = load_from_file('starting_db.yaml')
         udb = UnittestDB()
         c_count = udb.column_count(metadata)
-        self.assertEqual(c_count, 41)
+        self.assertEqual(c_count, 51)
 
     def test_fill(self):
         """test fill"""

@@ -149,6 +149,8 @@ class TSchema(object):
         graph = Graph(relations)
         ugraph = graph.get_undirected()
         cycles = self.get_cycle_basis(ugraph._graph)
+        if len(cycles) == 0:
+            return False
         nodes = None
         order = self.ordered
         for cycle in cycles:
@@ -172,6 +174,7 @@ class TSchema(object):
                 if end_node in nodes:
                     bdot.add_edge(order[node], order[end_node])
         bdot.finish_output()
+        return True
 
     def get_cycle_basis(self, graph):
         """
@@ -227,10 +230,13 @@ class TSchema(object):
             2. first generate sub schema, and then generate sub graph
             3. sub graphs will extend as fk links direction
             4. sub graphs should be kept in sequence
+        split could happen on different connectives:
         """
         core_node = set([])
         in_splition = []
         for split in splition:
+            if not set(split).issubset(set(self.nodelist.keys())):
+                continue
             newsplit = []
             for node in split:
                 if node not in self.nodelist.keys():
@@ -245,7 +251,8 @@ class TSchema(object):
 #        full_node = set(range(len(self.ordered)))
 
 #        external_node = full_node.difference(core_node)
-
+        if len(in_splition) == 0:
+            return [], []
         #subschema_list = []
         sub_nodelist = []
         #sub_link = []
@@ -348,12 +355,16 @@ class OriginSchema(TSchema):
             self.alias_table = alias_table
         self.nodelist = self.gen_nodelist() #sets for node division
 
+        self.connectives = []
+
         self.v_ent = set()
         self.v_attr = set()
         self.v_rel = set()
+        self.v_orphan = set()
 
         self.e_rel = set()
         self.e_attr = set()
+        self.e_orphan = set()
 
         self.ordered = []
 
@@ -371,38 +382,48 @@ class OriginSchema(TSchema):
 
     def recognize_type(self, mapper):
         """
-        recognize three kinds of node type:
+        recognize 4 kinds of node type:
         entity node
         relationship node
         attribute node
-        recognize two kinds of link type:
+        orphan node
+
+        recognize 3 kinds of link type:
         relationship link
         attribute link
+        orphan link
         """
         tablenames = set(self.tables.keys())
-        k_table = set()
+#        k_table = set()
         if not mapper.is_ready():
             raise Exception("""Without mapper we are not able to
             recognize schema properly""")
-        for table in mapper.list_column():
-            table = table.split('.')[0]
-            k_table.add(table)
+#        for table in mapper.list_column():
+#            table = table.split('.')[0]
+#            k_table.add(table)
         for entity in mapper.list_entity():
             self.v_ent.add(mapper.get_table(entity))
-        k_temp_table = tablenames.difference(self.v_ent)
-        for table in k_temp_table:
-            if self.get_outdegree(table, self.v_ent) == 0:
-                # table doesn't point to a entity
-                #     but could point to himself.
-                # table not in keyword set
-                #     should be on a path of entity ---> attribute
-                self.v_attr.add(table)
-        self.v_rel = k_temp_table.difference(self.v_attr)
-
+        for nodeset in self.connectives:
+            # orphan nodeset
+            if nodeset.isdisjoint(self.v_ent):
+                self.v_orphan = self.v_orphan.union(nodeset)
+                continue
+            temptable = nodeset.difference(self.v_ent)
+            for table in temptable:
+                if self.get_outdegree(table, self.v_ent) == 0:
+                    # table doesn't point to a entity
+                    #     but could point to himself.
+                    # table not in keyword set
+                    #     should be on a path of entity ---> attribute
+                    self.v_attr.add(table)
+            self.v_rel = self.v_rel.union(temptable.difference(self.v_attr))
         for link in self.links.values():
             if link.rtable in self.v_attr:
                 self.e_attr.add(link.name)
-        self.e_rel = set(self.links.keys()).difference(self.e_attr)
+            if link.rtable in self.v_orphan:
+                self.e_orphan.add(link.name)
+        self.e_rel = set(self.links.keys()).difference(self.e_attr)\
+                                           .difference(self.e_orphan)
 
     def get_outdegree(self, table, tableset):
         """
@@ -546,19 +567,33 @@ class OriginSchema(TSchema):
             update to have new ordered
             fakenode point to original node in new ordered.
         tables and links will not be modified in simschema
+        for each connective generate a separate simschema
         """
-        simtables = {}
-        for node in self.v_ent:
-            simtables[node] = self.nodelist[node]
-        for node in self.v_rel:
-            simtables[node] = self.nodelist[node]
-        simlinks = {}
-        for linkname in self.e_rel:
-            link = self.links[linkname]
-            if link.ltable in simtables and link.rtable in simtables:
-                simlinks[linkname] = link
-        simschema = TSchema(simtables, simlinks)
-        return simschema
+        simschemas = []
+        idx = 0
+        for nodeset in self.connectives:
+            simtables = {}
+            valid_connective = False
+            for node in nodeset:
+                if node in self.v_ent:
+                    simtables[node] = self.nodelist[node]
+                    valid_connective = True
+            if valid_connective == False:
+                self.connectives.pop(idx)
+                continue
+            else:
+                idx = idx + 1
+            for node in self.v_rel:
+                if node in nodeset:
+                    simtables[node] = self.nodelist[node]
+            simlinks = {}
+            for linkname in self.e_rel:
+                link = self.links[linkname]
+                if link.ltable in simtables and link.rtable in simtables:
+                    simlinks[linkname] = link
+            simschemas.append(TSchema(simtables, simlinks))
+
+        return simschemas
 
     def get_links(self, table):
         """get CLinkObj list for a table"""
@@ -583,13 +618,30 @@ class OriginSchema(TSchema):
         return name
 
     def check_connective(self):
-        """check the connective of the schema"""
-        unique_parent = None # checking connective
+        """
+        check the connective of the schema
+        get connective sets in self.connectives
+        """
+        parent_list = []
+        current_index = 0
         for node in self.nodelist.values():
-            if unique_parent == None:
-                unique_parent = find(node)
-            if find(node) != unique_parent:
-                return False
+            parent = find(node)
+            if len(parent_list) == 0:
+                parent_list.append(parent)
+                self.connectives.append(set([parent.name, node.name]))
+            if parent == parent_list[current_index]:
+                self.connectives[current_index].add(node.name)
+            else:
+                if parent in parent_list:
+                    current_index = parent_list.index(parent)
+                    self.connectives[current_index].add(node.name)
+                else:
+                    current_index = len(parent_list)
+                    parent_list.append(parent)
+                    self.connectives.append(set([parent.name, node.name]))
+        if len(parent_list) != 1:
+            _LOGGER.debug(self.connectives)
+            return False
         return True
 
     def add_node(self, node, nodetype):
@@ -661,6 +713,8 @@ class OriginSchema(TSchema):
             a_child = v_ent + "_" + c_child
             a_child_parent = c_child + "_" + c_parent
             a_parent = v_ent + "_" + c_parent
+
+            _LOGGER.debug("a_parent %s a_child %s" % (a_parent, a_child))
 
             self.alias_table[a_parent_child] = v_rel
             self.atables[a_parent_child] = \

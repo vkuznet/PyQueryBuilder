@@ -43,9 +43,9 @@ class SchemaHandler(object):
         Constructor
         """
         self._schema = OriginSchema(tables)
-        self._simschema = None
+        self._simschemas = None
         if not self._schema.check_connective():
-            _LOGGER.error('Schema graph is not connective')
+            _LOGGER.debug('Schema graph is not connective')
         self.attr_path = {}
         self.subconstructors = []
         self.subnodes = [] # calculate coverage
@@ -102,10 +102,17 @@ class SchemaHandler(object):
             for pat in path:
                 _LOGGER.debug("path %s is %s.%s --> %s.%s" % (name, \
                 pat.ltable, pat.lcolumn, pat.rtable, pat.rcolumn))
-        simschema = self._schema.gen_simschema()
-        simschema.update_nodelist()
-        self._schema.recognize_shortcut()
-        self._simschema = simschema
+
+        simschemas = self._schema.gen_simschema()
+
+        _LOGGER.debug("%d simschemas are generated" % len(simschemas))
+        for simschema in simschemas:
+            simschema.update_nodelist()
+
+        if dbmanager != None and alias != None:
+            self._schema.recognize_shortcut()
+
+        self._simschemas = simschemas
 
         # Step 4. Calculate each links type, by default foreign key link
         #         other format of link are acceptable. Such as OUTER
@@ -117,22 +124,26 @@ class SchemaHandler(object):
         if dbmanager != None and alias != None:
             splition = load_split(config['split_file'])
         if splition:
-            subgraphs, subnodes = simschema.gen_subgraph(splition)
+            for simschema in simschemas:
+                self.subconstructors.append([])
+                self.subnodes.append([])
+                subgraphs, subnodes = simschema.gen_subgraph(splition)
         # Step 6. Generate sub graphs from each sub sets.
         #         self.sub_schema.add(tables)
         #         self.sub_graphs.add(self.graph_from_schema(tables,
         #           links))
         #         ? construct_query instance?
-            for subgraph in subgraphs:
-                self.subconstructors.append(ConstructQuery(subgraph._graph, \
-                    weighted=True))
-
-            self.subnodes = subnodes
+                for subgraph in subgraphs:
+                    self.subconstructors[-1].append(\
+                      ConstructQuery(subgraph._graph, weighted=True))
+                for nodes in subnodes:
+                    self.subnodes[-1].append(nodes)
         else:
-            graph = simschema.get_wgraph_from_schema()
-            self.subconstructors.append(ConstructQuery(graph, weighted=True))
-            nodes = set(range(len(simschema.ordered)))
-            self.subnodes.append(nodes)
+            for simschema in simschemas:
+                graph = simschema.get_wgraph_from_schema()
+                self.subconstructors.append([ConstructQuery(graph, weighted=True)])
+                nodes = set(range(len(simschema.ordered)))
+                self.subnodes.append([nodes])
 
     def load_statistics(self, dbmanager, alias):
         """load statistics"""
@@ -200,6 +211,8 @@ class SchemaHandler(object):
             -   naming this subquery and select all keywords from it
         """
         keywords = keylist['mkeywords']
+        if len(keywords) > 1 and froms == None:
+            return None
         selects = []
         columns = []
         mix_agg = False
@@ -270,28 +283,28 @@ class SchemaHandler(object):
                 return True
         return False
 
-    def check_coverage(self, core_indices):
+    def check_coverage(self, sim_idx, core_indices):
         """
         check whether this subgraph covering all the tables or not
         to check it, we need the node indexes for each subschema
         if no one matches, return -1
         """
-        for idx in range(len(self.subnodes)):
-            if core_indices.issubset(self.subnodes[idx]):
+        for idx in range(len(self.subnodes[sim_idx])):
+            if core_indices.issubset(self.subnodes[sim_idx][idx]):
                 return idx
         return -1
 
-    def construct_query(self, core_indices, algo):
+    def construct_query(self, sim_idx, core_indices, algo):
         """
         generate the spanning tree for this table sets
         this function will perform the algorithm on the first matching subgraph
         and return the spanning tree as required
         """
-        match_subgraph = self.check_coverage(set(core_indices))
+        match_subgraph = self.check_coverage(sim_idx, set(core_indices))
         if match_subgraph == -1:
             _LOGGER.error("no subgraph could answer this query")
             return None
-        constructor = self.subconstructors[match_subgraph]
+        constructor = self.subconstructors[sim_idx][match_subgraph]
         if algo == 'LWS':
             subtree = constructor.get_leastw_subtree(core_indices)
         elif algo == 'MIS':
@@ -365,11 +378,22 @@ class SchemaHandler(object):
         if len(core_tables) == 1 and lens == 1 and \
             core_tables.issubset(set(tnames_of_concern)):
             return None
-
-        core_indices = [self._simschema.ordered.index(\
-                self._simschema.nodelist[tname]) \
+        chosen_simschema = self._simschemas[0]
+        sim_idx = 0
+        if len(self._simschemas) != 1:
+            sim_idx = -1
+            for idx in range(len(self._simschemas)):
+                if core_tables.issubset(self._simschemas[idx].nodelist.keys()):
+                    sim_idx = idx
+            if sim_idx == -1:
+                _LOGGER.error("could not answer this query, please " + \
+                "check the relationship between entities")
+                return None
+        chosen_simschema = self._simschemas[sim_idx]
+        core_indices = [chosen_simschema.ordered.index(\
+                chosen_simschema.nodelist[tname]) \
                 for tname in core_tables]
-        subtree = self.construct_query(core_indices, algo)
+        subtree = self.construct_query(sim_idx, core_indices, algo)
         _LOGGER.debug("core spanning tree are %s " % str(subtree))
 #        print subtree
 
@@ -393,7 +417,7 @@ class SchemaHandler(object):
 
         root_join = None
         root_table = self.find_table(\
-            self._simschema.ordered[subtree.root_index].name)
+            chosen_simschema.ordered[subtree.root_index].name)
 
         unexplored = [(subtree.root_index, None)]
         visited = [False] * len(subtree)
@@ -401,7 +425,7 @@ class SchemaHandler(object):
             node_idx, _ = unexplored[0]
             visited[node_idx] = True
             table = self.find_table(\
-                self._simschema.ordered[node_idx].name)
+                chosen_simschema.ordered[node_idx].name)
             if table.name == root_table.name:
                 root_join = root_table
 #           constraints attribute links
@@ -424,8 +448,8 @@ class SchemaHandler(object):
                 if not visited[adjacent[0]]:
                     unexplored.append((adjacent[0], node_idx))
                     visited[adjacent[0]] = True
-                    parent = self._simschema.ordered[node_idx]
-                    node = self._simschema.ordered[adjacent[0]]
+                    parent = chosen_simschema.ordered[node_idx]
+                    node = chosen_simschema.ordered[adjacent[0]]
                     jlink = None
                     follow_pn = True
                     for link in node.outlinks.values():
