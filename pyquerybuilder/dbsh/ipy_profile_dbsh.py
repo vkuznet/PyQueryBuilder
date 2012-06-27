@@ -142,6 +142,7 @@ def connect(self, arg):
         if DB.db_type[db_alias()] == 'mysql':# for mysql case sensitive
             DBPRINT.print_blue('mysql case sensitive')
             QB.mapper.set_sens(True)
+        alias = db_alias()
         QB.recognize_schema(DB, alias)
 
 def close(self, arg):
@@ -532,7 +533,8 @@ def mapfile(self, arg):
             if DB.db_type[db_alias()] == 'mysql':# for mysql case sensitive
                 DBPRINT.print_blue('mysql case sensitive')
                 QB.mapper.set_sens(True)
-            QB.recognize_schema(DB, db_alias)
+            alias = db_alias()
+            QB.recognize_schema(DB, alias)
         return
 
 def schemafile(self, arg):

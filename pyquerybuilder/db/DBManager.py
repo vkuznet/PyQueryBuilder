@@ -55,7 +55,10 @@ def get_graph(sorted_tables, table_index, graph):
             if table.c[col_name].foreign_keys:
                 for fk_table in table.c[col_name].foreign_keys:
                     fk_name = fk_table.target_fullname
-                    fk_tbname = fk_name.split('.')[0]
+                    if fk_name.count('.') == 2:
+                        fk_tbname = fk_name.split('.')[1]
+                    else:
+                        fk_tbname = fk_name.split('.')[0]
                     # 1. fk to him self
                     if fk_tbname == name:
                         continue
@@ -327,7 +330,12 @@ class DBManager(object):
                 else:
                     print "%s;\n" % error.statement
             try:
-                result = self.con.execute("SELECT * FROM %s" % t_name)
+                query = "SELECT * FROM %s" % t_name
+                if self.db_type[db_alias] == 'oracle' and \
+                    self.db_owner[db_alias]:
+                    query = "SELECT * FROM %s" % \
+                        self.db_owner[db_alias].lower() + '.' + t_name
+                result = self.con.execute(query)
                 for item in result:
                     if type(item) is types.StringType:
                         raise Exception, item + "\n"
@@ -337,6 +345,11 @@ class DBManager(object):
                                        "(").replace("]", ")")
                     stm = "INSERT INTO %s %s VALUES %s;" % \
                              (t_name, columns, values)
+                    if self.db_type[db_alias] == 'oracle' and \
+                        self.db_owner[db_alias]:
+                        stm = "INSERT INTO %s %s VALUES %s;" % \
+                            (self.db_owner[db_alias].lower() + '.' + t_name, \
+                            columns, values)
                     if  file_name:
                         l_file.write(stm + "\n")
                     else:
@@ -391,13 +404,21 @@ class DBManager(object):
             print "sequence is ", sequence
         for index in sequence:
             new_table = sorted_tables[index].tometadata(meta)
+            if self.db_type[db_alias] == 'oracle':
+                if self.db_owner[db_alias]:
+                    new_table.schema = self.db_owner[new_dbalias]
             try:
                 new_table.create(bind = remote_engine, checkfirst=True)
             except Exception:
                 raise traceback.print_exc()
             if self.verbose:
                 print new_table
-            query = "select * from %s" % sorted_tables[index].name
+            query = "SELECT * FROM %s" % sorted_tables[index].name
+            if self.db_type[db_alias] == 'oracle' and \
+                self.db_owner[db_alias]:
+                query = "SELECT * FROM %s" % \
+                    self.db_owner[db_alias].lower() + '.' + \
+                    sorted_tables[index].name
             print "migrating table %s" % sorted_tables[index].name
             try:
                 result = db_con.execute(query)
@@ -644,7 +665,7 @@ class DBManager(object):
                 if self.db_type[db_alias] == 'oracle':
                     query = text("DROP TABLE " + sorted_tables[index].name \
                         + " CASCADE constraints")
-                elif self.db_type[db_alias] == 'posgresql':
+                elif self.db_type[db_alias] == 'postgresql':
                     query = text("DROP TABLE " + sorted_tables[index].name \
                         + " CASCADE ")
                 else:
@@ -675,7 +696,7 @@ class DBManager(object):
                 if self.db_type[db_alias] == 'oracle':
                     query = text("DROP TABLE " + tab_obj.name \
                         + " CASCADE constraints")
-                elif self.db_type[db_alias] == 'posgresql':
+                elif self.db_type[db_alias] == 'postgresql':
                     query = text("DROP TABLE " + tab_obj.name \
                         + " CASCADE ")
                 else:
@@ -857,8 +878,9 @@ class DBManager(object):
         e_type = self.db_type[db_alias]
         engine = self.engine[db_alias]
         if  e_type == 'oracle' and self.db_owner[db_alias]:
+            owner = self.db_owner[db_alias].upper()
             query = "SELECT table_name FROM all_tables WHERE owner='%s'" % \
-                     self.db_owner[db_alias].upper()
+                     owner
             result = self.con.execute(query)
             table_names = [x[0].lower().split(".")[-1] for x in result]
             query = "SELECT view_name FROM all_views WHERE owner='%s'" % \
@@ -894,6 +916,8 @@ class DBManager(object):
 #                kwargs['useexisting'] = True
 # SQLAlchemy 0.7.5
                 kwargs['extend_existing'] = True
+            if self.db_owner[db_alias] and e_type == 'oracle':
+                kwargs['schema'] = self.db_owner[db_alias].upper()
             tables[tab_name] = sqlalchemy.Table(tab_name, db_meta, **kwargs)
         self.db_tables[db_alias] = tables
         return tables

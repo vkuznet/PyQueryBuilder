@@ -51,7 +51,7 @@ class SchemaHandler(object):
         self.subnodes = [] # calculate coverage
         self.attr_table = set([])
 
-    def recognize_schema(self, mapper, dbmanager=None, alias=None):
+    def recognize_schema(self, mapper, dbmanager=None, db_alias=None):
         """
         # Step 1. Recognize three types of tables and links.
         # Step 2. Detect recursive cases, and create Alias table to
@@ -86,8 +86,8 @@ class SchemaHandler(object):
 
         self._schema.handle_alias()
         config = {'alias_mapfile':None, 'split_file':None}
-        if dbmanager != None and alias != None:
-            self.load_statistics(dbmanager, alias)
+        if dbmanager != None and db_alias != None:
+            self.load_statistics(dbmanager, db_alias)
             config = readconfig()
             self.further_map(mapper, config['alias_mapfile'])
 
@@ -109,7 +109,7 @@ class SchemaHandler(object):
         for simschema in simschemas:
             simschema.update_nodelist()
 
-        if dbmanager != None and alias != None:
+        if dbmanager != None and db_alias != None:
             self._schema.recognize_shortcut()
 
         self._simschemas = simschemas
@@ -121,7 +121,7 @@ class SchemaHandler(object):
         # Step 5. Detect dividings and accept input from administrator.
         #         Load split.yaml file
         splition = False
-        if dbmanager != None and alias != None:
+        if dbmanager != None and db_alias != None:
             splition = load_split(config['split_file'])
         if splition:
             for simschema in simschemas:
@@ -145,9 +145,9 @@ class SchemaHandler(object):
                 nodes = set(range(len(simschema.ordered)))
                 self.subnodes.append([nodes])
 
-    def load_statistics(self, dbmanager, alias):
+    def load_statistics(self, dbmanager, db_alias):
         """load statistics"""
-        return load_statistics(dbmanager, alias, self._schema)
+        return load_statistics(dbmanager, db_alias, self._schema)
 
     def further_map(self, mapper, filename="map2.yaml"):
         """further map after alias generated"""
@@ -185,7 +185,7 @@ class SchemaHandler(object):
         """
         tnames = keylist['keyset'][index]
         if tnames.count('.'):
-             tname, attr = tnames.split('.')
+            tname, attr = tnames.split('.')
         if keylist['keyset'].count(keylist['keyset'][index]) > 1\
             and tname in self._schema.v_attr:
             compkey = keylist['keywords'][index]
@@ -199,6 +199,12 @@ class SchemaHandler(object):
             col = self.get_table_column(keylist['mkeywords'][index][0])
         return col
 
+    def single_table_query(self, keylist, froms, whereclause):
+        """
+        deal with single table queries
+        find entity.attr1, entity.attr2, ... [ where entity.attr1 op value ]
+        """
+
     def handle_aggregation(self, keylist, froms, whereclause):
         """
         1. generate selects
@@ -211,7 +217,9 @@ class SchemaHandler(object):
             -   naming this subquery and select all keywords from it
         """
         keywords = keylist['mkeywords']
-        if len(keywords) > 1 and froms == None:
+        # num of tables related in finds
+        mtables = set([key.split('.')[0] for key in keylist['keyset']])
+        if froms == None and len(mtables) > 1:
             return None
         selects = []
         columns = []
@@ -600,7 +608,12 @@ class SchemaHandler(object):
             (entity, attr) = keyword.split('.')
             table = self.find_table(entity)
             if table is not None:
-                return table.columns[attr]
+                if table.columns.has_key(attr):
+                    return table.columns[attr]
+                attr = attr.lower()
+                if table.columns.has_key(attr):
+                    return table.columns[attr]
+                raise Error("ERROR can't find attribute %s" % str(attr))
             else:
                 raise Error("ERROR can't find table %s" % str(entity))
         else:

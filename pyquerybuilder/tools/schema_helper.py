@@ -40,7 +40,7 @@ def check_indexed(columns, indexes):
     return len(cols) == 0
 
 
-def load_statistics(dbmanager, alias, originschema):
+def load_statistics(dbmanager, db_alias, originschema):
     """
     load statistics for simulate schema
     DBManager
@@ -59,16 +59,22 @@ def load_statistics(dbmanager, alias, originschema):
     #index_info = {}
     select_info = {}
     tables = originschema.tables
-    select = "select count(%s) from %s"
-    select_c = "select count(distinct %s) from %s"
+    select = "SELECT COUNT(%s) FROM %s"
+    select_c = "SELECT COUNT(DISTINCT %s) FROM %s"
 # Calculate table size
     for tname, table in tables.items():
 #   SQLAlchemy 0.5.8
 #        select_ts = select % (','.join(table.primary_key.keys()), tname)
 #   SQLAlchemy 0.6 0.7
         select_ts = select % \
-            (','.join(table.primary_key.columns.keys()), tname)
-        size = dbmanager.execute(select_ts, alias).fetchone().values()
+            ('*', tname)
+
+        if dbmanager.db_type[db_alias] == 'oracle' and \
+            dbmanager.db_owner[db_alias]:
+            select_ts = select % ('*', \
+            dbmanager.db_owner[db_alias].lower() + '.' + tname)
+
+        size = dbmanager.execute(select_ts, db_alias).fetchone().values()
         table_size[tname] = size[0]
 # Handle alias table
     for tname, table in originschema.alias_table.items():
@@ -94,9 +100,21 @@ def load_statistics(dbmanager, alias, originschema):
                 select_info[link.name] = 1
                 continue
             select_cd = select_c % (columns[0], tname)
+
+            if dbmanager.db_type[db_alias] == 'oracle' and \
+                dbmanager.db_owner[db_alias]:
+                select_cd = select_c % (columns[0], \
+                    dbmanager.db_owner[db_alias].lower() + '.' + tname)
+
         else:
             select_cd = select_c % (",".join(columns), tname)
-        size = dbmanager.execute(select_cd, alias).fetchone().values()[0]
+
+            if dbmanager.db_type[db_alias] == 'oracle' and \
+                dbmanager.db_owner[db_alias]:
+                select_cd = select_c % (",".join(columns), \
+                    dbmanager.db_owner[db_alias].lower() + '.' + tname)
+
+        size = dbmanager.execute(select_cd, db_alias).fetchone().values()[0]
         distinct = 0
         if table_size[tname] != 0:
             distinct = size/table_size[tname]
