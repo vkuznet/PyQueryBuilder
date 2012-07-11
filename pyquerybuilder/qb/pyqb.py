@@ -137,6 +137,10 @@ class QueryBuilder():
         self.mapper = Mapper()
         self.mapper.load_mapfile(mapfile)
 
+    def get_mapper(self):
+        """get mapper"""
+        return self.mapper
+
     def set_from_tables(self, tables):
         """set querybuilder from tables"""
         self.schema.set_tables(tables)
@@ -165,6 +169,12 @@ class QueryBuilder():
         if query is None:
             return None
         return self.querybuilder.gen_clauses(query, keylist)
+
+    def get_attr_path(self):
+        """
+        get attribute path
+        """
+        return self.querybuilder.get_attr_path()
 
     def build_query(self, query):
         """

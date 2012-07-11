@@ -141,3 +141,11 @@ def make_timestamp(seconds=0):
 def make_rfc_timestamp(seconds=0):
     """Create RFC timestamp"""
     return format_date_time(make_timestamp(seconds))
+
+def formatpath(link_list):
+    """link list"""
+    linkstr = ""
+    for link in link_list:
+        linkstr += " %s.%s->%s.%s" % (link.ltable, link.lcolumn[0], \
+            link.rtable, link.rcolumn[0])
+    return linkstr

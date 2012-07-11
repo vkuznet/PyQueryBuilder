@@ -24,6 +24,7 @@ from cherrypy import config as cherryconf
 
 from pyquerybuilder.web.tools import exposecss, exposejs, exposejson
 from pyquerybuilder.web.tools import TemplatedPage
+from pyquerybuilder.web.tools import formatpath
 
 #from pyquerybuilder.qb.pyqb import QueryBuilder
 from pyquerybuilder.utils.Errors import Error
@@ -241,8 +242,36 @@ class WebServerManager(WebManager):
         """
         Serve FAQ pages
         """
-        page = self.templatepage('faq')
-        return self.page(page)
+        page  = self.top()
+        page += self.templatepage('faq')
+        mapper = cherrypy.engine.qbm.qbs.get_mapper()
+        attr_path = cherrypy.engine.qbm.qbs.get_attr_path()
+        keys = mapper.list_key()
+        variables = {'entities':{},
+                     'prim':{},
+                     'path':{},}
+        entities = variables['entities']
+        prim = variables['prim']
+        path = variables['path']
+        for key in keys:
+            names = key.split('.')
+            if len(names) == 1:
+                if not entities.has_key(key):
+                    entities[key] = {}
+                    prim[key] = mapper.get_column(key)
+            else:
+                if not entities.has_key(names[0]):
+                    entities[names[0]] = {}
+                    prim[names[0]] = mapper.get_key(mapper.get_column(key))
+                entities[names[0]][names[1]] = mapper.get_column(key).lower()
+                if attr_path.has_key(key):
+                    if not path.has_key(names[0]):
+                        path[names[0]] = {}
+                    path[names[0]][names[1]] = formatpath(attr_path[key])
+        page += self.templatepage('ktable', **variables)
+        timestamp = time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime())
+        page += self.templatepage('bottom', ctime=None, timestamp=timestamp)
+        return page
 
     @expose
     def bugs(self, *args, **kwargs):

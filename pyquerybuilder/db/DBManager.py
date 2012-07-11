@@ -510,8 +510,12 @@ class DBManager(object):
         if self.total_cache.has_key(qid):
             return self.total_cache[qid]
         else:
-            total = self.execute(\
-                query.apply_labels().alias().count()).fetchall()[0][0]
+            total_res = self.execute(\
+                query.apply_labels().alias().count()).fetchall()
+            if total_res != []:
+                total = total_res[0][0]
+            else:
+                total = 0
             self.total_cache[qid] = total
             return self.total_cache[qid]
 
@@ -520,10 +524,14 @@ class DBManager(object):
         update the total rows of given query
         incase never cache results
         """
-        total = self.execute(\
-                query.apply_labels().alias().count()).fetchall()[0][0]
+        total_res = self.execute(\
+                query.apply_labels().alias().count()).fetchall()
+        if total_res != []:
+            total = total_res[0][0]
+        else:
+            total = 0
         qid = hash(str(qinput))
-        if total:
+        if total >= 0 :
             self.total_cache[qid] = total
         return self.total_cache[qid]
 

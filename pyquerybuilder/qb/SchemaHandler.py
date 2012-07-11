@@ -27,6 +27,7 @@ from pyquerybuilder.utils.Errors import Error
 from pyquerybuilder.tools.config import readconfig
 #from pyquerybuilder.tools.map_reader import Mapper
 #from sqlalchemy.sql.expression import Select
+from pyquerybuilder.utils.Utils import contain_link
 
 _LOGGER = getLogger("ConstructQuery")
 
@@ -187,12 +188,16 @@ class SchemaHandler(object):
         if tnames.count('.'):
             tname, attr = tnames.split('.')
         if keylist['keyset'].count(keylist['keyset'][index]) > 1\
-            and tname in self._schema.v_attr:
+            and (tname in self._schema.v_attr or tname.lower() in \
+                        self._schema.v_attr):
             compkey = keylist['keywords'][index]
             self.set_unique(compkey, tname)
             table = self.find_table(compkey)
             if table is not None:
-                col = table.columns[attr]
+                if table.columns.has_key(attr):
+                    col = table.columns[attr]
+                else:
+                    col = table.columns[attr.lower()]
             else:
                 raise Error("ERROR can't find table %s" % str(tname))
         else:
@@ -498,11 +503,11 @@ class SchemaHandler(object):
                   right to left : False
         """
         _LOGGER.debug("join link %s" % str(link))
-        if link.ltable == tname:
+        if tname != None and link.ltable.lower() == tname.lower():
             ltable = self.find_table(compkey)
         else:
             ltable = self.find_table(link.ltable)
-        if link.rtable == tname:
+        if tname != None and link.rtable.lower() == tname.lower():
             rtable = self.find_table(compkey)
         else:
             rtable = self.find_table(link.rtable)
@@ -527,37 +532,6 @@ class SchemaHandler(object):
         return_jtables = {}
         cons_jtables = {}
         keylen = len(keylist['keywords'])
-        for index in range(keylen):
-            compkey = keylist['keywords'][index]
-#        for compkey in keylist['keywords']:
-            _LOGGER.debug("trying gen join table for %s" % str(compkey))
-            links = self.map_attribute(compkey)
-            if links == None:
-                continue
-            _LOGGER.debug("gen join table for %s" % str(links))
-            #TODO composite fkkeys
-            if links[0].ltable in self._schema.v_ent:
-                jointable = links[0].ltable
-            else:
-                jointable = links[0].rtable
-            tname = keylist['keyset'][index]
-            if tname.count('.') > 0:
-                tname = tname.split('.')[0]
-            # set unique alias
-            # only set end nodes, which means if double composite on
-            # path further handler is needed
-            if keylist['keyset'].count(keylist['keyset'][index]) > 1:
-                self.set_unique(compkey, tname)
-                if not return_jtables.has_key(jointable):
-                    return_jtables[jointable] = [(links, compkey, tname)]
-                else:
-                    return_jtables[jointable].append((links, compkey, tname))
-            else:
-                if not return_jtables.has_key(jointable):
-                    return_jtables[jointable] = [(links, None, None)]
-                else:
-                    return_jtables[jointable].append((links, None, None))
-
         for index in range(len(keylist['constraints'])):
             compkey = keylist['constraints'][index]
 #        for compkey in keylist['constraints']:
@@ -586,6 +560,41 @@ class SchemaHandler(object):
                     cons_jtables[jointable] = [(links, None, None)]
                 else:
                     cons_jtables[jointable].append((links, None, None))
+
+        for index in range(keylen):
+            compkey = keylist['keywords'][index]
+#        for compkey in keylist['keywords']:
+            _LOGGER.debug("trying gen join table for %s" % str(compkey))
+            links = self.map_attribute(compkey)
+            if links == None:
+                continue
+            _LOGGER.debug("gen join table for %s" % str(links))
+            #TODO composite fkkeys
+            if links[0].ltable in self._schema.v_ent:
+                jointable = links[0].ltable
+            else:
+                jointable = links[0].rtable
+            tname = keylist['keyset'][index]
+            if tname.count('.') > 0:
+                tname = tname.split('.')[0]
+            # set unique alias
+            # only set end nodes, which means if double composite on
+            # path further handler is needed
+            if keylist['keyset'].count(keylist['keyset'][index]) > 1:
+                self.set_unique(compkey, tname)
+                if not return_jtables.has_key(jointable):
+                    if not contain_link(cons_jtables, jointable, links):
+                        return_jtables[jointable] = [(links, compkey, tname)]
+                else:
+                    if not contain_link(cons_jtables, jointable, links):
+                        return_jtables[jointable].append((links, compkey, tname))
+            else:
+                if not return_jtables.has_key(jointable):
+                    if not contain_link(cons_jtables, jointable, links):
+                        return_jtables[jointable] = [(links, None, None)]
+                else:
+                    if not contain_link(cons_jtables, jointable, links):
+                        return_jtables[jointable].append((links, None, None))
         return return_jtables, cons_jtables
 
     def set_unique(self, compkey, tname):
@@ -755,3 +764,7 @@ class SchemaHandler(object):
         else:
             col = self.get_table_column(tnames)
         return col
+
+    def get_attr_path(self):
+        """get attribute path"""
+        return self.attr_path

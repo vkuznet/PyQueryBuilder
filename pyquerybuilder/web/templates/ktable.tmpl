@@ -1,0 +1,49 @@
+<!-- ktable.tmpl -->
+<table border="1">
+    <caption>keywords mapping</caption>
+    <colgroup span="1" style="background:#DEDEDE;"/>
+    <colgroup span="2" style="background:#EFEFEF;"/>
+
+    <!-- Table Header-->
+    <thead>
+    <tr>
+        <th>Entity</th>
+        <th>Attribute</th>
+        <th>Table.Column</th>
+        <th>Path</th>
+        </tr>
+    </thead>
+
+    <!-- Table Body-->
+    <tbody>
+    #for $entity, $attributes in $entities.items()
+        #set $index = 0
+        #for $attribute, $column in $attributes.items():
+            <tr>
+            #if $index == 0
+                <td>$entity</td>
+            #else
+                <td></td>
+            #end if
+                #if $column == $prim[$entity]
+                    <td><b>$attribute</b></td>
+                #else
+                    <td>$attribute</td>
+                #end if
+                <td>$column</td>
+                #if $path.has_key($entity)
+                    #if $path[$entity].has_key($attribute)
+                        <td>$path[$entity][$attribute]</td>
+                    #else
+                        <td></td>
+                    #end if
+                #else
+                    <td></td>
+                #end if
+            #set $index = $index + 1
+            </tr>
+        #end for
+    #end for
+    </tbody>
+</table>
+<!-- end of ktable.tmpl -->
