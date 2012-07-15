@@ -603,8 +603,8 @@ class DBManager(object):
         for item in result:
             if type(item) is types.StringType:
                 raise Exception, item + "\n"
-            if not (type(result) is types.ListType):
-                self.t_cache.append(item)
+            #if not (type(result) is types.ListType):
+            #    print item
             if not t_list:
                 t_list = list(item.keys())
                 l_list = [len(x) for x in t_list]
@@ -630,8 +630,8 @@ class DBManager(object):
         for item in result:
             if type(item) is types.StringType:
                 raise Exception, item + "\n"
-            if not (type(result) is types.ListType):
-                self.t_cache.append(item)
+            #if not (type(result) is types.ListType):
+            #    print item
             if not t_list:
                 t_list = list(item.keys())
                 l_list = [len(x) for x in t_list]

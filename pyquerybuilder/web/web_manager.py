@@ -15,7 +15,7 @@ import os
 import sys
 import time
 import urllib
-
+import json
 # cherrypy modules
 import cherrypy
 from cherrypy import expose, response, tools
@@ -337,6 +337,32 @@ class WebServerManager(WebManager):
 #        print rows
         return rows
 
+    def get_json_data(self, uninput):
+        """
+        Retrieves data from the back-end
+        """
+        keywords = [ keys.strip() for keys in \
+                    uninput.split('where')[0].split('find')[1].split(',')]
+        query = cherrypy.engine.qbm.dbm.explain_query(uninput)
+        result = cherrypy.engine.qbm.dbm.execute(query)
+        results = cherrypy.engine.qbm.dbm.pack_result(result)
+
+        t_list = keywords
+        o_list = results[1]
+        rows = []
+        if o_list == {}:
+            record = {}
+            for title in t_list:
+                record[title] = ''
+            rows.append(record)
+        for res in o_list:
+            index = 0
+            record = {}
+            for index in range(0, len(t_list)):
+                record[t_list[index]] = str(res[index])
+            rows.append(record)
+        return json.dumps({'result':rows})
+
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
         return cherrypy.engine.qbm.dbm.get_total(uinput)
@@ -425,6 +451,36 @@ class WebServerManager(WebManager):
         page    = self.templatepage('table', **names)
         page    = self.page(page)
         return page
+
+    @expose
+    def jsonresults(self, *args, **kwargs):
+        """return json results"""
+        cherrypy.response.headers["Content-Type"] = "application/json"
+        uinput = kwargs.get('input', '')
+        if  not uinput:
+            return json.dumps({'error':"empty input"})
+        manager = cherrypy.engine.qbm
+        keywords = []
+        try:
+            if cherrypy.engine.qbm.qbs == None:
+                self.log("qbs is None", 2)
+                raise Exception, "qbs is None"
+        except Error:
+            traceback.print_exc()
+        try:
+            mquery = manager.dbm.explain_query(uinput)
+            if mquery == None:
+                mquery = manager.qbs.build_query(uinput)
+                if mquery == None:
+                    self.log('invalid query', 2)
+                    return json.dumps({'error':"invalid query"})
+                manager.dbm.set_query_explain(uinput, mquery)
+        except Error:
+            traceback.print_exc()
+
+        return self.get_json_data(uinput)
+
+
 
     @expose
     def error(self, msg=''):

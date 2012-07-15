@@ -1,0 +1,84 @@
+#!/usr/bin/env python
+"""
+Very simple client:
+"""
+import sys
+#import cjson
+import json
+import getopt
+import time
+import urllib, urllib2
+
+class PyQBClient:
+    def __init__(self, baseurl):
+        self.baseurl = baseurl
+        self.header =  {"Accept": "application/json"}
+        self.opener =  urllib2.build_opener()
+
+    def get(self, params):
+        "method for GET verb"
+        url = self.baseurl
+        if not params == {}:
+            url = "?".join((url, urllib.urlencode(params, doseq=True)))
+        #req = urllib2.Request(url = url, headers = self.header)
+        req = urllib2.Request(url = url)
+        data = self.opener.open(req)
+        #ddata = cjson.decode(data.read())
+        #return ddata
+        a = data.read()
+        data.close()
+        return json.loads(a)
+
+    def put(self, indata):
+        """method for PUT verb"""
+        url = self.baseurl
+        header = self.header
+        header['Content-Type'] = 'application/json'
+        endata = cjson.encode(indata)
+        req = urllib2.Request(url = url, data = endata, headers = header)
+        req.get_method = lambda: 'POST'
+        self.opener.open(req)
+
+def usage():
+    progName = os.path.basename(sys.argv[0])
+    print "Usage:"
+    print "  %s -q=<query> -f=<query_file>" % progName
+    print "     -u=<url> -m=<mapfile>"
+    print " "
+
+if __name__ == "__main__":
+    query = None
+    qfile = None
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "q:f:", \
+            ["query=", "file=",])
+    except getopt.GetoptError:
+        usage()
+        sys.exit(2)
+    for opt, oarg in opts:
+        if opt in ("-q", "--query"):
+            query = oarg
+        elif opt in ("-f", "--file"):
+            qfile = oarg
+
+    if opts == []:
+        usage()
+        sys.exit(2)
+
+    URLBASE = "http://cmsweb.ihep.ac.cn:8310/jsonresults/"
+    #URLBASE = "http://vocms09.cern.ch:8989/DBSServlet/"
+    CLI = PyQBClient(URLBASE)
+
+    if query or qfile:
+        if query:
+            st = time.clock()
+            res = CLI.get({"input":query})
+            print json.dumps(res, sort_keys = True, indent = 4)
+            print "total execute time %f" % (time.clock() - st)
+        else:
+            queries = open(qfile)
+            st = time.clock()
+            for query in queries.readlines():
+                res = CLI.get({"input":query})
+                print json.dumps(res, sort_keys = True, indent = 4)
+            print "total execute time %f" % (time.clock() - st)

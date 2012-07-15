@@ -17,6 +17,7 @@ from math import log
 from optparse import OptionParser
 from subprocess import check_call, Popen, PIPE
 import glob
+import yaml
 #from sqlalchemy.sql.expression
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.qb.DotGraph import DotGraph, MultiDot
@@ -55,72 +56,82 @@ def load_statistics(dbmanager, db_alias, originschema):
     table_size:
     column_distinct:
     """
-    table_size = {}
+    statistics = {'table_size':{}, 'select_info':{}}
+    table_size = statistics['table_size']
     #index_info = {}
-    select_info = {}
+    select_info = statistics['select_info']
     tables = originschema.tables
     select = "SELECT COUNT(%s) FROM %s"
     select_c = "SELECT COUNT(DISTINCT %s) FROM %s"
+    if os.getenv('QB_ROOT') == None:
+        raise Exception('QB_ROOT not set')
+    statistic_file = os.getenv('QB_ROOT') + '/etc/statistic.yaml'
+    if not os.path.isfile(statistic_file):
+        output = open(statistic_file, 'w')
 # Calculate table size
-    for tname, table in tables.items():
+        for tname, table in tables.items():
 #   SQLAlchemy 0.5.8
 #        select_ts = select % (','.join(table.primary_key.keys()), tname)
 #   SQLAlchemy 0.6 0.7
-        select_ts = select % \
-            ('*', tname)
+            select_ts = select % ('*', tname)
 
-        if dbmanager.db_type[db_alias] == 'oracle' and \
-            dbmanager.db_owner[db_alias]:
-            select_ts = select % ('*', \
-            dbmanager.db_owner[db_alias].lower() + '.' + tname)
+            if dbmanager.db_type[db_alias] == 'oracle' and \
+                dbmanager.db_owner[db_alias]:
+                select_ts = select % ('*', \
+                dbmanager.db_owner[db_alias].lower() + '.' + tname)
 
-        size = dbmanager.execute(select_ts, db_alias).fetchone().values()
-        table_size[tname] = size[0]
+            size = dbmanager.execute(select_ts, db_alias).fetchone().values()
+            table_size[tname] = size[0]
 # Handle alias table
-    for tname, table in originschema.alias_table.items():
-        table_size[tname] = table_size[table]
+        for tname, table in originschema.alias_table.items():
+            table_size[tname] = table_size[table]
 # Calculate Link
 #        index info
 #        primary info
-    for link in originschema.links.values():
-        tname = link.rtable
-        if originschema.alias_table.has_key(tname):
-            tname = originschema.alias_table[tname]
-        columns = link.rcolumn
-        table = tables[tname]
-        if check_indexed(columns, table.indexes):
-            select_info[link.name] = 1
-            continue
+        for link in originschema.links.values():
+            tname = link.rtable
+            if originschema.alias_table.has_key(tname):
+                tname = originschema.alias_table[tname]
+            columns = link.rcolumn
+            table = tables[tname]
+            if check_indexed(columns, table.indexes):
+                select_info[link.name] = 1
+                continue
 
-        if len(columns) == 1:
+            if len(columns) == 1:
 #   SQLAlchemy 0.5.8
 #            if columns[0] in table.primary_key.keys():
 #   SQLAlchemy 0.6 0.7
-            if columns[0] in table.primary_key.columns.keys():
-                select_info[link.name] = 1
-                continue
-            select_cd = select_c % (columns[0], tname)
+                if columns[0] in table.primary_key.columns.keys():
+                    select_info[link.name] = 1
+                    continue
+                select_cd = select_c % (columns[0], tname)
 
-            if dbmanager.db_type[db_alias] == 'oracle' and \
-                dbmanager.db_owner[db_alias]:
-                select_cd = select_c % (columns[0], \
-                    dbmanager.db_owner[db_alias].lower() + '.' + tname)
+                if dbmanager.db_type[db_alias] == 'oracle' and \
+                    dbmanager.db_owner[db_alias]:
+                    select_cd = select_c % (columns[0], \
+                        dbmanager.db_owner[db_alias].lower() + '.' + tname)
 
-        else:
-            select_cd = select_c % (",".join(columns), tname)
+            else:
+                select_cd = select_c % (",".join(columns), tname)
 
-            if dbmanager.db_type[db_alias] == 'oracle' and \
-                dbmanager.db_owner[db_alias]:
-                select_cd = select_c % (",".join(columns), \
-                    dbmanager.db_owner[db_alias].lower() + '.' + tname)
+                if dbmanager.db_type[db_alias] == 'oracle' and \
+                    dbmanager.db_owner[db_alias]:
+                    select_cd = select_c % (",".join(columns), \
+                        dbmanager.db_owner[db_alias].lower() + '.' + tname)
 
-        size = dbmanager.execute(select_cd, db_alias).fetchone().values()[0]
-        distinct = 0
-        if table_size[tname] != 0:
-            distinct = size/table_size[tname]
-        select_info[link.name] = distinct
-        link.indexed = 0
-
+            size = dbmanager.execute(select_cd, db_alias).fetchone().values()[0]
+            distinct = 0
+            if table_size[tname] != 0:
+                distinct = size/table_size[tname]
+            select_info[link.name] = distinct
+            link.indexed = 0
+        yaml.dump(statistics, output)
+        output.close()
+    else:
+        statistics = yaml.load(open(statistic_file))
+        table_size = statistics['table_size']
+        select_info = statistics['select_info']
     # assign weight on links
     ieffects = 1
     for lname, link in originschema.links.items():
