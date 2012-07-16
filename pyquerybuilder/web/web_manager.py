@@ -365,7 +365,8 @@ class WebServerManager(WebManager):
 
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
-        return cherrypy.engine.qbm.dbm.get_total(uinput)
+        mquery = cherrypy.engine.qbm.dbm.explain_query(uinput)
+        return cherrypy.engine.qbm.dbm.get_total(uinput, mquery)
 
     @exposejson
     def yuijson(self, **kwargs):

@@ -501,7 +501,7 @@ class DBManager(object):
         if not self.query_cache.has_key(qid):
             self.query_cache[qid] = query
 
-    def get_total(self, query):
+    def get_total(self, query, mquery):
         """
         check the total rows of given query
         execute ensure updating of get_total
@@ -511,7 +511,7 @@ class DBManager(object):
             return self.total_cache[qid]
         else:
             total_res = self.execute(\
-                query.apply_labels().alias().count()).fetchall()
+                mquery.apply_labels().alias().count()).fetchall()
             if total_res != []:
                 total = total_res[0][0]
             else:
