@@ -16,6 +16,7 @@ import sys
 import time
 import urllib
 import json
+import types
 # cherrypy modules
 import cherrypy
 from cherrypy import expose, response, tools
@@ -337,31 +338,30 @@ class WebServerManager(WebManager):
 #        print rows
         return rows
 
-    def get_json_data(self, uninput):
+    def pack_result(self, result, t_list):
+        """
+        pack result in dictionary and dumps with json
+        """
+        o_list  = []
+        for item in result:
+            if type(item) is types.StringType:
+                raise Exception, item + "\n"
+            #if not (type(result) is types.ListType):
+            #    print item
+            v_list = item.values()
+            for idx in range(len(t_list)):
+                o_list.append({t_list[idx]:v_list[idx]})
+        return json.dumps(o_list)
+
+
+    def get_json_data(self, uninput, query):
         """
         Retrieves data from the back-end
         """
-        keywords = [ keys.strip() for keys in \
+        t_list = [ keys.strip() for keys in \
                     uninput.split('where')[0].split('find')[1].split(',')]
-        query = cherrypy.engine.qbm.dbm.explain_query(uninput)
         result = cherrypy.engine.qbm.dbm.execute(query)
-        results = cherrypy.engine.qbm.dbm.pack_result(result)
-
-        t_list = keywords
-        o_list = results[1]
-        rows = []
-        if o_list == {}:
-            record = {}
-            for title in t_list:
-                record[title] = ''
-            rows.append(record)
-        for res in o_list:
-            index = 0
-            record = {}
-            for index in range(0, len(t_list)):
-                record[t_list[index]] = str(res[index])
-            rows.append(record)
-        return json.dumps({'result':rows})
+        return self.pack_result(result, t_list)
 
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
@@ -479,7 +479,7 @@ class WebServerManager(WebManager):
         except Error:
             traceback.print_exc()
 
-        return self.get_json_data(uinput)
+        return self.get_json_data(uinput, mquery)
 
 
 
