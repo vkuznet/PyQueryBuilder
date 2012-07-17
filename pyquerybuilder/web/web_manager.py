@@ -16,7 +16,8 @@ import sys
 import time
 import urllib
 import json
-import types
+#import types
+from itertools import izip
 # cherrypy modules
 import cherrypy
 from cherrypy import expose, response, tools
@@ -29,7 +30,7 @@ from pyquerybuilder.web.tools import formatpath
 
 #from pyquerybuilder.qb.pyqb import QueryBuilder
 from pyquerybuilder.utils.Errors import Error
-from pyquerybuilder.dbsh.dbresults import Results
+#from pyquerybuilder.dbsh.dbresults import Results
 #from pyquerybuilder.db.DBManager import DBManager
 import traceback
 
@@ -188,16 +189,16 @@ class WebManager(TemplatedPage):
             self.cache[idx] = data
         return self.cache[idx]
 
-    def check_scripts(self, scripts, map):
+    def check_scripts(self, scripts, maps):
         """
         Check a script is known to the map and that the script actually exists
         """
         for script in scripts:
-            if script not in map.keys():
+            if script not in maps.keys():
                 self.warning("%s not known" % script)
                 scripts.remove(script)
             else:
-                path = os.path.join(sys.path[0], map[script])
+                path = os.path.join(sys.path[0], maps[script])
                 path = os.path.normpath(path)
                 if not os.path.exists(path):
                     self.warning("%s not found at %s" % (script, path))
@@ -338,22 +339,6 @@ class WebServerManager(WebManager):
 #        print rows
         return rows
 
-    def pack_result(self, result, t_list):
-        """
-        pack result in dictionary and dumps with json
-        """
-        o_list  = []
-        for item in result:
-            if type(item) is types.StringType:
-                raise Exception, item + "\n"
-            #if not (type(result) is types.ListType):
-            #    print item
-            v_list = item.values()
-            for idx in range(len(t_list)):
-                o_list.append({t_list[idx]:v_list[idx]})
-        return json.dumps(o_list)
-
-
     def get_json_data(self, uninput, query):
         """
         Retrieves data from the back-end
@@ -361,7 +346,7 @@ class WebServerManager(WebManager):
         t_list = [ keys.strip() for keys in \
                     uninput.split('where')[0].split('find')[1].split(',')]
         result = cherrypy.engine.qbm.dbm.execute(query)
-        return self.pack_result(result, t_list)
+        return pack_result(result, t_list)
 
     def get_total(self, uinput):
         """Gets total number of results for provided input, i.e. count(*)"""
@@ -408,7 +393,6 @@ class WebServerManager(WebManager):
         try:
             if cherrypy.engine.qbm.qbs == None:
                 raise Exception, "qbs is None"
-                self.log("qbs is None", 2)
         except Error:
             traceback.print_exc()
         limit = 50
@@ -461,7 +445,6 @@ class WebServerManager(WebManager):
         if  not uinput:
             return json.dumps({'error':"empty input"})
         manager = cherrypy.engine.qbm
-        keywords = []
         try:
             if cherrypy.engine.qbm.qbs == None:
                 self.log("qbs is None", 2)
@@ -488,3 +471,22 @@ class WebServerManager(WebManager):
         """Return error page"""
         return self.page(msg)
 
+def pack_result(cursor, t_list):
+    """
+    pack result in dictionary and dumps with json
+    """
+    results = []
+    rapp = results.append
+    while True:
+        if not cursor.closed:
+            rows = cursor.fetchmany(size=50)
+            if not rows:
+                cursor.close()
+                break
+            for rec in rows:
+                rapp(dict(izip(t_list, rec)))
+        else:
+            break
+    if not cursor.closed:
+        cursor.close()
+    return json.dumps(results)

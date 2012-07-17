@@ -3,6 +3,7 @@
 Very simple client:
 """
 import sys
+import os
 #import cjson
 import json
 import getopt
@@ -75,6 +76,7 @@ if __name__ == "__main__":
             res = CLI.get({"input":query})
             print json.dumps(res, sort_keys = True, indent = 4)
             print "total execute time %f" % (time.clock() - st)
+            print "total results is %d" % (len(res))
         else:
             queries = open(qfile)
             st = time.clock()
@@ -82,3 +84,4 @@ if __name__ == "__main__":
                 res = CLI.get({"input":query})
                 print json.dumps(res, sort_keys = True, indent = 4)
             print "total execute time %f" % (time.clock() - st)
+            print "total results is %d" % (len(res))
