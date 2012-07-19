@@ -10,6 +10,7 @@ import getopt
 import time
 import urllib, urllib2
 
+
 class PyQBClient:
     def __init__(self, baseurl):
         self.baseurl = baseurl
@@ -24,11 +25,20 @@ class PyQBClient:
         #req = urllib2.Request(url = url, headers = self.header)
         req = urllib2.Request(url = url)
         data = self.opener.open(req)
+        result = []
+        if data.headers.has_key('content-length'):
         #ddata = cjson.decode(data.read())
         #return ddata
-        a = data.read()
-        data.close()
-        return json.loads(a)
+            a = data.read()
+            data.close()
+            result = json.loads(a)
+        else:
+            a = data.readline()
+            while a:
+                result.extend(json.loads(a))
+                a = data.readline()
+            data.close()
+        return result
 
     def put(self, indata):
         """method for PUT verb"""

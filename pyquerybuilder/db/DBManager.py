@@ -143,12 +143,8 @@ class DBManager(object):
         self.results     = None
         self.query       = ""
         self.new_paged   = 0
-        # for web dynamic table 
-        self.t_result = [] # titles of current result
-        self.l_result = 0 # total length of current reuslt
         # all parameters below are defined at run time
         self.t_cache     = []
-        self.total_cache = {}
         self.query_cache = {}
         self.engine      = {}
         self.db_tables   = {}
@@ -468,6 +464,7 @@ class DBManager(object):
         """
         execute query with explicit limit and offset
         """
+        tquery = query.apply_labels().alias().count()
         query._limit = limit
         query._offset = offset
         if sdir == 'asc':
@@ -479,10 +476,13 @@ class DBManager(object):
             query = query.order_by(\
                 desc(query.columns[query.c.keys()[sort_idx]]))
         try:
+            trans = self.con.begin()
+            total_res = self.execute(tquery)
             result = self.con.execute(query)
-            return self.pack_result(result)
+            trans.commit()
         except Error:
             raise Exception
+        return total_res, result
 
     def explain_query(self, input):
         """
@@ -501,39 +501,18 @@ class DBManager(object):
         if not self.query_cache.has_key(qid):
             self.query_cache[qid] = query
 
-    def get_total(self, query, mquery):
+    def get_total(self, mquery):
         """
         check the total rows of given query
         execute ensure updating of get_total
         """
-        qid = hash(str(query))
-        if self.total_cache.has_key(qid):
-            return self.total_cache[qid]
-        else:
-            total_res = self.execute(\
-                mquery.apply_labels().alias().count()).fetchall()
-            if total_res != []:
-                total = total_res[0][0]
-            else:
-                total = 0
-            self.total_cache[qid] = total
-            return self.total_cache[qid]
-
-    def set_total(self, qinput, query):
-        """
-        update the total rows of given query
-        incase never cache results
-        """
         total_res = self.execute(\
-                query.apply_labels().alias().count()).fetchall()
+            mquery.apply_labels().alias().count()).fetchall()
         if total_res != []:
             total = total_res[0][0]
         else:
             total = 0
-        qid = hash(str(qinput))
-        if total >= 0 :
-            self.total_cache[qid] = total
-        return self.total_cache[qid]
+        return total
 
     def page(self, arg):
         """page by inputing offset and limit per page

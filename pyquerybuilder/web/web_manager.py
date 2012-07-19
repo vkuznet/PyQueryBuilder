@@ -212,18 +212,7 @@ class WebServerManager(WebManager):
     def __init__(self, config):
         WebManager.__init__(self, config)
         self.base = '' # define base url path, no path is required right now
-#        self.dbm = DBManager()
-#        self.pyqb = QueryBuilder()
-#        try:
-#            self.pyqb.set_mapper(config['map_file'])
-#            self.dbm.connect(config['db_url'])
-#            db_alias = self.dbm.get_alias(config['db_url'])
-#            tables = self.dbm.load_tables(db_alias)
-#            self.pyqb.set_from_tables(tables)
-#        except Error:
-#            traceback.print_exc()
-#        self.db_result = Results()
-        self.c_titles = []
+        self.total_cache = {}
 
     @expose
     def index(self, *args, **kwargs):
@@ -309,49 +298,49 @@ class WebServerManager(WebManager):
     def get_data(self, uinput, idx, limit, sort, sdir):
         """
         Retrieves data from the back-end
+        and total number of results for provided input, i.e. count(*)
         """
         keywords = [ keys.strip().replace('(', '').replace(')', \
                     '').replace('.', '') for keys in \
                     uinput.split('where')[0].split('find')[1].split(',')]
         query = cherrypy.engine.qbm.dbm.explain_query(uinput)
-        result = cherrypy.engine.qbm.dbm.execute_with_slice(\
+        t_cursor, cursor = cherrypy.engine.qbm.dbm.execute_with_slice(\
                     query, limit, idx, keywords.index(sort), sdir)
 
+        total = t_cursor.fetchone()
+        if total:
+            total = total[0]
+        else:
+            total = 0
         t_list = keywords
-        o_list = result[1]
-        rows = []
-        if o_list == {}:
-            record = {}
-            for title in t_list:
-                record[title] = ''
-            rows.append(record)
-        for res in o_list:
-            index = 0
-            record = {}
-            for index in range(0, len(t_list)):
-                record[t_list[index]] = str(res[index])
-            rows.append(record)
-#        if sdir == 'asc':
-#            rows.sort()
-#        elif  sdir == 'desc':
-#            rows.sort()
-#            rows.reverse()
-#        print rows
-        return rows
+        results = []
+        rapp = results.append
+        while True:
+            if not cursor.closed:
+                rows = cursor.fetchmany(size=50)
+                if not rows:
+                    cursor.close()
+                    break
+                for rec in rows:
+                    rapp(dict(izip(t_list, rec)))
+            else:
+                break
+        if not cursor.closed:
+            cursor.close()
+        return total, results
 
-    def get_json_data(self, uninput, query):
-        """
-        Retrieves data from the back-end
-        """
-        t_list = [ keys.strip() for keys in \
-                    uninput.split('where')[0].split('find')[1].split(',')]
-        result = cherrypy.engine.qbm.dbm.execute(query)
-        return pack_result(result, t_list)
-
-    def get_total(self, uinput):
+    def get_total(self, mquery):
         """Gets total number of results for provided input, i.e. count(*)"""
-        mquery = cherrypy.engine.qbm.dbm.explain_query(uinput)
-        return cherrypy.engine.qbm.dbm.get_total(uinput, mquery)
+        return cherrypy.engine.qbm.dbm.get_total(mquery)
+
+    def get_cached_total(self, mquery):
+        """Gets totalnumber of results"""
+        qid = hash(str(mquery))
+        if not self.total_cache.has_key(qid):
+            total = cherrypy.engine.qbm.dbm.get_total(mquery)
+            self.total_cache[qid] = total
+        return self.total_cache[qid]
+
 
     @exposejson
     def yuijson(self, **kwargs):
@@ -366,9 +355,7 @@ class WebServerManager(WebManager):
         limit  = int(kwargs.get('limit', 50)) # number of shown results
         idx    = int(kwargs.get('idx', 0)) # start with
         sdir   = kwargs.get('dir', 'asc')
-        rows   = self.get_data(uinput, idx, limit, sort, sdir)
-#        rows   = self.get_data(uinput, limit, idx)
-        total  = self.get_total(uinput)
+        total, rows   = self.get_data(uinput, idx, limit, sort, sdir)
         jsondict = {'recordsReturned': len(rows),
                    'totalRecords': total,
                    'startIndex':idx,
@@ -404,7 +391,6 @@ class WebServerManager(WebManager):
                     self.log('invalid query', 2)
                     return self.page("invalid query")
                 manager.dbm.set_query_explain(uinput, mquery)
-                manager.dbm.set_total(uinput, mquery)
         except Error:
             traceback.print_exc()
         keywords = [ keys.strip().replace(')', '').replace('(', \
@@ -424,7 +410,7 @@ class WebServerManager(WebManager):
         coldefs = coldefs.replace("},{", "},\n{")
         myfields = myfields.replace("},{", "},\n{")
 
-        total   = self.get_total(uinput)
+        total   = self.get_total(mquery)
 
         names   = {'title1':titles[0],
                    'coldefs':coldefs,
@@ -445,12 +431,7 @@ class WebServerManager(WebManager):
         if  not uinput:
             return json.dumps({'error':"empty input"})
         manager = cherrypy.engine.qbm
-        try:
-            if cherrypy.engine.qbm.qbs == None:
-                self.log("qbs is None", 2)
-                raise Exception, "qbs is None"
-        except Error:
-            traceback.print_exc()
+        mquery = None
         try:
             mquery = manager.dbm.explain_query(uinput)
             if mquery == None:
@@ -462,14 +443,64 @@ class WebServerManager(WebManager):
         except Error:
             traceback.print_exc()
 
+        total = self.get_cached_total(mquery)
+        if total > 3000:
+            qline = kwargs['input']
+            streamapi = "/stream?input=" + qline
+            raise cherrypy.InternalRedirect(streamapi)
         return self.get_json_data(uinput, mquery)
 
+    @expose
+    def stream(self, *args, **kwargs):
+        """
+        stream json output
+        http://www.enricozini.org/2011/tips/python-stream-json/
+        """
+        cherrypy.response.headers["Content-Type"] = "application/json"
+        uinput = kwargs.get('input', '')
+        if not uinput:
+            return json.dumps({'error':"empty input"})
+        manager = cherrypy.engine.qbm
+        mquery = None
+        try:
+            mquery = manager.dbm.explain_query(uinput)
+        except Error:
+            traceback.print_exc()
+        if mquery == None:
+            mquery = manager.qbs.build_query(uinput)
+        if mquery == None:
+            self.log('invalid query', 2)
+            return json.dumps({'error':"invalid query"})
 
+        t_list = [ keys.strip() for keys in \
+                    uinput.split('where')[0].split('find')[1].split(',') ]
+        cursor = cherrypy.engine.qbm.dbm.execute(mquery)
+        chunk_size = 3000
+        return pack_stream(cursor, t_list, chunk_size)
+
+    stream._cp_config = {'response.stream': True}
+
+    def get_json_data(self, uninput, query):
+        """
+        Retrieves data from the back-end
+        """
+        t_list = [ keys.strip() for keys in \
+                    uninput.split('where')[0].split('find')[1].split(',') ]
+        cursor = cherrypy.engine.qbm.dbm.execute(query)
+        return pack_result(cursor, t_list)
 
     @expose
     def error(self, msg=''):
         """Return error page"""
         return self.page(msg)
+
+    #@cherrypy.tools.redirect(url='/test', internal=True)
+    def testred(self, *args, **kwargs):
+        query = kwargs['input']
+        streamapi = "/stream?input=" + query
+        raise cherrypy.InternalRedirect(streamapi)
+    testred.exposed = True
+
 
 def pack_result(cursor, t_list):
     """
@@ -490,3 +521,30 @@ def pack_result(cursor, t_list):
     if not cursor.closed:
         cursor.close()
     return json.dumps(results)
+
+def pack_stream(cursor, t_list, chunk_size):
+    """
+    """
+    results = []
+    rapp = results.append
+    output = 0
+    while True:
+        if not cursor.closed:
+            rows = cursor.fetchmany(size=50)
+            if not rows:
+                cursor.close()
+                break
+            for rec in rows:
+                rapp(dict(izip(t_list, rec)))
+            output += 50
+            if output >= chunk_size:
+                yield json.dumps(results) + '\n'
+                results = []
+                rapp = results.append
+                output = 0
+        else:
+            break
+    if not cursor.closed:
+        cursor.close()
+    if results != []:
+        yield json.dumps(results) + '\n'
