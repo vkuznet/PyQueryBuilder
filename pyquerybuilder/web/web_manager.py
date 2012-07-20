@@ -478,7 +478,10 @@ class WebServerManager(WebManager):
         chunk_size = 3000
         return pack_stream(cursor, t_list, chunk_size)
 
-    stream._cp_config = {'response.stream': True}
+    stream._cp_config = {'response.stream': True,
+                         'tools.etags.on': False,
+                         'tools.etags.autotags': False,
+                        }
 
     def get_json_data(self, uninput, query):
         """
@@ -493,14 +496,6 @@ class WebServerManager(WebManager):
     def error(self, msg=''):
         """Return error page"""
         return self.page(msg)
-
-    #@cherrypy.tools.redirect(url='/test', internal=True)
-    def testred(self, *args, **kwargs):
-        query = kwargs['input']
-        streamapi = "/stream?input=" + query
-        raise cherrypy.InternalRedirect(streamapi)
-    testred.exposed = True
-
 
 def pack_result(cursor, t_list):
     """
@@ -524,27 +519,19 @@ def pack_result(cursor, t_list):
 
 def pack_stream(cursor, t_list, chunk_size):
     """
+    chunk generator
     """
-    results = []
-    rapp = results.append
-    output = 0
     while True:
-        if not cursor.closed:
-            rows = cursor.fetchmany(size=50)
-            if not rows:
+        results = []
+        if not cursor.closed:# not end
+            rows = cursor.fetchmany(size=chunk_size)
+            if not rows:# no record
                 cursor.close()
                 break
-            for rec in rows:
-                rapp(dict(izip(t_list, rec)))
-            output += 50
-            if output >= chunk_size:
-                yield json.dumps(results) + '\n'
-                results = []
-                rapp = results.append
-                output = 0
+            for rec in rows:# records loads
+                results.append(dict(izip(t_list, rec)))
+            yield json.dumps(results) + '\n'
         else:
             break
     if not cursor.closed:
         cursor.close()
-    if results != []:
-        yield json.dumps(results) + '\n'
