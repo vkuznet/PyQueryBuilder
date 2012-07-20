@@ -13,7 +13,6 @@ import sys
 import time
 import types
 import traceback
-
 import os
 import thread
 
@@ -464,24 +463,24 @@ class DBManager(object):
         """
         execute query with explicit limit and offset
         """
-        tquery = query.apply_labels().alias().count()
+        tquery = query._clone()
+        tquery = tquery.count()
         query._limit = limit
         query._offset = offset
         if sdir == 'asc':
-            query = query.apply_labels()
             query = query.order_by(\
                 asc(query.columns[query.c.keys()[sort_idx]]))
         elif sdir == 'desc':
-            query = query.apply_labels()
             query = query.order_by(\
                 desc(query.columns[query.c.keys()[sort_idx]]))
+        trans = self.con.begin()
         try:
-            trans = self.con.begin()
             total_res = self.execute(tquery)
             result = self.con.execute(query)
             trans.commit()
         except Error:
-            raise Exception
+            trans.rollback()
+            raise Exception("transaction rollback")
         return total_res, result
 
     def explain_query(self, input):
@@ -490,14 +489,14 @@ class DBManager(object):
         """
         qid = hash(input)
         if self.query_cache.has_key(qid):
-            return self.query_cache[qid]
+            return self.query_cache[qid]._clone()
         return None
 
-    def set_query_explain(self, input, query):
+    def set_query_explain(self, uinput, query):
         """
         record SQL query for input
         """
-        qid = hash(input)
+        qid = hash(uinput)
         if not self.query_cache.has_key(qid):
             self.query_cache[qid] = query
 
@@ -506,10 +505,9 @@ class DBManager(object):
         check the total rows of given query
         execute ensure updating of get_total
         """
-        total_res = self.execute(\
-            mquery.apply_labels().alias().count()).fetchall()
-        if total_res != []:
-            total = total_res[0][0]
+        total = self.execute(mquery.count()).fetchone()
+        if total:
+            total = total[0]
         else:
             total = 0
         return total
