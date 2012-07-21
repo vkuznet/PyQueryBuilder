@@ -24,6 +24,7 @@ Contents:
    pyqb_mapper.rst
    pyqb_db.rst
    pyqb_schema_viewer.rst
+   pyqb_web.rst
    code.rst
    pyqb_operation.rst
    changelog.rst

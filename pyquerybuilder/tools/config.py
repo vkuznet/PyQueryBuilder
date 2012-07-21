@@ -57,6 +57,7 @@ def readconfig():
                             config.get('server', 'doc_dir', ''))
 
     configdict['environment'] = config.get('server', 'environment', 'production')
+    configdict['profiler'] = int(config.get('server', 'profiler', 0))
     configdict['threadpool'] = int(config.get('server', 'thread_pool', 30))
     configdict['socket_queue_size'] = int(config.get('server', 'socket_queue_size', 15))
     configdict['expires'] = int(config.get('server', 'expires', 300))

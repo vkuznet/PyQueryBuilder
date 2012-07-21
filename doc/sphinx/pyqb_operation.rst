@@ -85,6 +85,7 @@ it's structure is as following example.
    server_port = 8310
 
    environment = production
+   profiler = 0
    thread_pool = 30
    socket_queue_size = 15
    expires = 300

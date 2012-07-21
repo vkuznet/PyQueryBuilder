@@ -458,6 +458,9 @@ class WebServerManager(WebManager):
         """
         cherrypy.response.headers["Content-Type"] = "application/json"
         uinput = kwargs.get('input', '')
+        chunk_size = int(kwargs.get('chunk_size'))
+        if chunk_size < 0 or chunk_size > 500000:
+            chunk_size = 3000
         if not uinput:
             return json.dumps({'error':"empty input"})
         manager = cherrypy.engine.qbm
@@ -475,7 +478,6 @@ class WebServerManager(WebManager):
         t_list = [ keys.strip() for keys in \
                     uinput.split('where')[0].split('find')[1].split(',') ]
         cursor = cherrypy.engine.qbm.dbm.execute(mquery)
-        chunk_size = 3000
         return pack_stream(cursor, t_list, chunk_size)
 
     stream._cp_config = {'response.stream': True,

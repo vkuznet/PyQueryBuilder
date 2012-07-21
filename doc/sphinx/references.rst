@@ -13,6 +13,7 @@ References
 .. [YAML] http://en.wikipedia.org/wiki/Yaml,
    http://pyyaml.org/wiki/PyYAMLDocumentation, version PyYAML-3.08
 .. [PYLINT] http://pypi.python.org/pypi/pylint
+.. [CherryPy] http://www.cherrypy.org
 .. [Cheetah] http://www.cheetahtemplate.org/, version 2.4.0
 .. [Sphinx] http://sphinx.pocoo.org/, version 0.6.4
 .. [IPython] http://ipython.scipy.org/, version 0.10
@@ -20,3 +21,4 @@ References
 .. [JSON] http://en.wikipedia.org/wiki/JSON
 .. [CJSON] http://pypi.python.org/pypi/python-cjson
 .. [SchemaSpy] schemaspy.sourceforge.net/
+.. [Gprof2Dot] http://code.google.com/p/jrfonseca/wiki/

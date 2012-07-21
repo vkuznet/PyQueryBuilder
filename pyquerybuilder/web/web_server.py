@@ -169,7 +169,14 @@ class Root(object):
                   'map_file':self.config['map_file']}
         # can be something to consider
         obj = WebServerManager(config) # mount the web server manager
-        tree.mount(obj, '/')
+        if self.config.get('profiler', 0):
+            from pyquerybuilder.web.profiler import cachegrind
+            cherrypy.tools.cachegrind = cherrypy.Tool('before_handler', \
+                    cachegrind, priority=100)
+            toolconfig = {'/' : {'tools.cachegrind.on' : True}, }
+            tree.mount(obj, '/', toolconfig)
+        else:
+            tree.mount(obj, '/')
 
         # mount static document directory
         dirs = self.config['doc_dir'].split('/html')
