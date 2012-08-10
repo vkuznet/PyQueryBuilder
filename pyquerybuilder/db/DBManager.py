@@ -396,7 +396,7 @@ class DBManager(object):
         sequence = topo_sort(graph)
         con = remote_engine.connect()
         if self.verbose:
-            print "sequence is ", sequence
+            print "sequence is ", [ sorted_tables[seq].name for seq in sequence ]
         for index in sequence:
             new_table = sorted_tables[index].tometadata(meta)
             if self.db_type[db_alias] == 'oracle':
@@ -505,7 +505,8 @@ class DBManager(object):
         check the total rows of given query
         execute ensure updating of get_total
         """
-        total = self.execute(mquery.count()).fetchone()
+        tquery = mquery._clone()
+        total = self.execute(tquery.count()).fetchone()
         if total:
             total = total[0]
         else:
@@ -819,11 +820,15 @@ class DBManager(object):
             else:
                 host_port = host
             if e_type == 'sqlite':
+                kwargs = {}
                 e_name = "%s://%s?check_same_thread=False" % (e_type, file_name)
                 if not file_name.startswith('/'):
                     e_name = "%s:///:memory:%s?check_same_thread=False" % \
                              (e_type, file_name)
-                engine = sqlalchemy.create_engine(e_name)
+                if int("".join(sqlalchemy.__version__.split('.'))[:2]) < 7:
+                    from sqlalchemy.pool import NullPool
+                    kwargs['poolclass'] = NullPool
+                engine = sqlalchemy.create_engine(e_name, **kwargs)
             elif e_type == 'oracle':
                 e_name = "%s://%s:%s@%s" % (e_type, db_user, db_pass, db_name)
                 engine = sqlalchemy.create_engine(e_name,
@@ -898,9 +903,10 @@ class DBManager(object):
             if  table_name and tab_name != table_name:
                 continue
             if  e_type == 'oracle':
-#                kwargs['useexisting'] = True
+                kwargs['useexisting'] = True
 # SQLAlchemy 0.7.5
-                kwargs['extend_existing'] = True
+                if int("".join(sqlalchemy.__version__.split('.'))[:2]) >= 7:
+                    kwargs['extend_existing'] = True
             if self.db_owner[db_alias] and e_type == 'oracle':
                 kwargs['schema'] = self.db_owner[db_alias].upper()
             tables[tab_name] = sqlalchemy.Table(tab_name, db_meta, **kwargs)

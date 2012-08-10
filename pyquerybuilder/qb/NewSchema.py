@@ -12,6 +12,7 @@ __revision__ = "$Revision: 1.11 $"
 
 # system modules
 from logging import getLogger
+import sqlalchemy
 
 from sqlalchemy.schema import ForeignKeyConstraint
 from pyquerybuilder.qb.Node import Node, find, make_set, union
@@ -610,11 +611,19 @@ class OriginSchema(TSchema):
         naming a constraints without name as table.colname_ftable.colname
         """
         name = cons.table.name
-        for idx in range(len(cons.columns)):
-            col = cons.columns[idx]
-            element = cons.elements[idx]
-            name = name + '.' + col.name + "_" + \
-                element.target_fullname
+        if int("".join(sqlalchemy.__version__.split('.'))[:2]) >= 7:
+            for idx in range(len(cons.columns)):
+                col = cons.columns[idx]
+                element = cons.elements[idx]
+                name = name + '.' + col.name + "_" + \
+                    element.target_fullname
+        else:
+            for element in cons.elements:
+                for key in cons.columns.keys():
+                    col = cons.columns[key]
+                    if element.parent == col:
+                        name = name + '.' + col.name + "_" + \
+                            element.target_fullname
         return name
 
     def check_connective(self):

@@ -11,11 +11,8 @@ __author__ = "Valentin Kuznetsov"
 __email__ = "vkuznet@gmail.com"
 
 # system modules
-import os
-import sys
-import time
+import os, sys, time
 import urllib
-import json
 #import types
 from itertools import izip
 # cherrypy modules
@@ -27,7 +24,7 @@ from cherrypy import config as cherryconf
 from pyquerybuilder.web.tools import exposecss, exposejs, exposejson
 from pyquerybuilder.web.tools import TemplatedPage
 from pyquerybuilder.web.tools import formatpath
-
+from pyquerybuilder.wrappers import jsonwrapper as json
 #from pyquerybuilder.qb.pyqb import QueryBuilder
 from pyquerybuilder.utils.Errors import Error
 #from pyquerybuilder.dbsh.dbresults import Results

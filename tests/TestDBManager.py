@@ -48,7 +48,8 @@ class TestDBManager(unittest.TestCase):
 
     def test_migrate_drop(self):
         """test migrate database"""
-
+        if self.murl.startswith('oracle'):
+            return
         self.manager.connect(self.url)
         self.manager.migrate(self.name, \
                self.murl)

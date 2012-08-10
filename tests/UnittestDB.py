@@ -180,8 +180,11 @@ class UnittestDB(object):
         elif filename.endswith("sql"):
             metadata = udb.read_from_oracle(filename)
         metadata.bind = dbname
-        metadata.drop_all()
-        metadata.create_all()
+        try:
+            metadata.drop_all()
+        except:
+            pass
+        metadata.create_all(checkfirst=False)
         udb.fill_tables(metadata, 10)
         return metadata
 

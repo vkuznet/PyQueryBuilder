@@ -64,7 +64,7 @@ class QueryBuilderBus(plugins.SimplePlugin):
 
     def start(self):
         """get db connection"""
-        print 'Connecting to database %s' % self.url
+        print 'Connecting to database '
         self.con = self.dbm.connect(self.url)
         self.qbs.set_from_tables(self.dbm.load_tables( \
                  self.dbm.get_alias(self.url)))

@@ -18,6 +18,7 @@ from optparse import OptionParser
 from subprocess import check_call, Popen, PIPE
 import glob
 import yaml
+import sqlalchemy
 #from sqlalchemy.sql.expression
 from pyquerybuilder.db.DBManager import DBManager
 from pyquerybuilder.qb.DotGraph import DotGraph, MultiDot
@@ -56,7 +57,7 @@ def load_statistics(dbmanager, db_alias, originschema):
     table_size:
     column_distinct:
     """
-    statistics = {'table_size':{}, 'select_info':{}}
+    statistics = {'table_size':{}, 'select_info':{}, 'dbalias':db_alias}
     table_size = statistics['table_size']
     #index_info = {}
     select_info = statistics['select_info']
@@ -66,15 +67,29 @@ def load_statistics(dbmanager, db_alias, originschema):
     if os.getenv('QB_ROOT') == None:
         raise Exception('QB_ROOT not set')
     statistic_file = os.getenv('QB_ROOT') + '/etc/statistic.yaml'
-    if not os.path.isfile(statistic_file):
+    if os.path.isfile(statistic_file):
+        stat = yaml.load(open(statistic_file))
+        if stat != None and stat.has_key('table_size') and \
+             stat.has_key('select_info') and stat['dbalias'] == db_alias:
+            table_size = stat['table_size']
+            select_info = stat['select_info']
+    else:
+        try:
+            output = open(statistic_file, 'w')
+            output.close()
+        except Exception, ex:
+            raise Exception('failed to open a statistic config file %s' % \
+                str(ex))
+    if table_size == {} and select_info == {}:
         output = open(statistic_file, 'w')
 # Calculate table size
         for tname, table in tables.items():
+            if int("".join(sqlalchemy.__version__.split('.')[:2])) <= 5:
 #   SQLAlchemy 0.5.8
-#        select_ts = select % (','.join(table.primary_key.keys()), tname)
+                select_ts = select % (','.join(table.primary_key.keys()), tname)
+            else:
 #   SQLAlchemy 0.6 0.7
-            select_ts = select % ('*', tname)
-
+                select_ts = select % ('*', tname)
             if dbmanager.db_type[db_alias] == 'oracle' and \
                 dbmanager.db_owner[db_alias]:
                 select_ts = select % ('*', \
@@ -100,11 +115,15 @@ def load_statistics(dbmanager, db_alias, originschema):
 
             if len(columns) == 1:
 #   SQLAlchemy 0.5.8
-#            if columns[0] in table.primary_key.keys():
+                if int("".join(sqlalchemy.__version__.split('.')[:2])) <= 5:
+                    if columns[0] in table.primary_key.keys():
+                        select_info[link.name] = 1
+                        continue
 #   SQLAlchemy 0.6 0.7
-                if columns[0] in table.primary_key.columns.keys():
-                    select_info[link.name] = 1
-                    continue
+                else:
+                    if columns[0] in table.primary_key.columns.keys():
+                        select_info[link.name] = 1
+                        continue
                 select_cd = select_c % (columns[0], tname)
 
                 if dbmanager.db_type[db_alias] == 'oracle' and \
@@ -128,10 +147,6 @@ def load_statistics(dbmanager, db_alias, originschema):
             link.indexed = 0
         yaml.dump(statistics, output)
         output.close()
-    else:
-        statistics = yaml.load(open(statistic_file))
-        table_size = statistics['table_size']
-        select_info = statistics['select_info']
     # assign weight on links
     ieffects = 1
     for lname, link in originschema.links.items():

@@ -360,13 +360,16 @@ class RootedWGraph(WGraph):
         """ovewrite"""
         return "Root(%d) %s" % (self.root_index, WGraph.__repr__(self))
 
-    def add_branch_in_set(self, node_index, node_set, add_to):
+    def add_branch_in_set(self, node_index, node_set, add_to, visited):
         """given a node set, fill the available edges on that"""
         branches = self._graph[node_index]
         add = []
+        visited.append(node_index)
         if branches:
             for branch in branches:
-                if self.add_branch_in_set(branch[0], node_set, add_to):
+                if branch in visited:
+                    continue
+                if self.add_branch_in_set(branch[0], node_set, add_to, visited):
                     add.append(branch)
 
         add_to[node_index] = add
@@ -387,7 +390,9 @@ class RootedWGraph(WGraph):
 
         #add_to = [[] for x in self._graph]
         add_to = [[]] * self.__len__()
-        self.add_branch_in_set(self.root_index, node_set, add_to)
+        visited = []
+        self.add_branch_in_set(self.root_index, node_set, add_to, visited)
         subtree = RootedWGraph(add_to, self.root_index)
+        del visited
         return subtree
 

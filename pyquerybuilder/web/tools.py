@@ -13,7 +13,6 @@ __email__ = "vkuznet@gmail.com"
 
 # system modules
 import os
-import types
 import logging
 
 from datetime import datetime, timedelta
@@ -29,7 +28,7 @@ from cherrypy import expose
 from Cheetah.Template import Template
 from Cheetah import Version
 
-from json import JSONEncoder
+from pyquerybuilder.wrappers.jsonwrapper import JSONEncoder
 
 class Page(object):
     """
