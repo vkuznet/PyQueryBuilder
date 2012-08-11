@@ -442,8 +442,8 @@ class WebServerManager(WebManager):
 
         total = self.get_cached_total(mquery)
         if total > 150000:
-            qline = kwargs['input']
-            streamapi = "/stream?chunk_size=5000&input=" + qline
+            qline = kwargs.get('input', '')
+            streamapi = "/stream?input=" + qline
             raise cherrypy.InternalRedirect(streamapi)
         return self.get_json_data(uinput, mquery)
 
@@ -455,8 +455,8 @@ class WebServerManager(WebManager):
         """
         cherrypy.response.headers["Content-Type"] = "application/json"
         uinput = kwargs.get('input', '')
-        chunk_size = int(kwargs.get('chunk_size'))
-        if chunk_size < 0 or chunk_size > 500000:
+        chunk_size = int(kwargs.get('chunk_size', 5000))
+        if chunk_size <= 0 or chunk_size > 500000:
             chunk_size = 5000
         if not uinput:
             return json.dumps({'error':"empty input"})
