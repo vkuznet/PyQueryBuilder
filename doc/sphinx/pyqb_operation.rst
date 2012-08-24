@@ -65,6 +65,28 @@ or
    $> cd /<path>/PyQueryBuilder/
    $> python setup.py test
 
+There is a query generator tools to do validation for QL component.
+It can generate
+ - all single entity queries without constraints
+ - all single entity queries with constraints on one attribute
+ - all double entities queries with constraints on one attribute
+
+.. doctest::
+
+   $ python tests/TestQueryGenerator.py  -h
+   Usage: TestQueryGenerator.py -m mapfile
+      -s databaselink -a alias_mapfile
+
+   Options:
+     --version             show program's version number and exit
+     -h, --help            show this help message and exit
+     -m MAPFILE, --mapfile=MAPFILE
+                           input registration yaml map file
+     -s SOURCE, --source=SOURCE
+                           input validate database source link
+     -a ALIAS_MAPFILE, --alias_mapfile=ALIAS_MAPFILE
+                           input mapfile based on aliased table
+
 Publish a database
 ------------------
 To publish a database a configuration file is need to map between

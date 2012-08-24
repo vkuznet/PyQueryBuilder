@@ -463,7 +463,7 @@ class DBManager(object):
         """
         execute query with explicit limit and offset
         """
-        tquery = query._clone()
+        tquery = query._clone().apply_labels()
         tquery = tquery.count()
         query._limit = limit
         query._offset = offset
@@ -505,7 +505,7 @@ class DBManager(object):
         check the total rows of given query
         execute ensure updating of get_total
         """
-        tquery = mquery._clone()
+        tquery = mquery._clone().apply_labels()
         total = self.execute(tquery.count()).fetchone()
         if total:
             total = total[0]
@@ -907,6 +907,7 @@ class DBManager(object):
 # SQLAlchemy 0.7.5
                 if int("".join(sqlalchemy.__version__.split('.'))[:2]) >= 7:
                     kwargs['extend_existing'] = True
+                    del kwargs['useexisting']
             if self.db_owner[db_alias] and e_type == 'oracle':
                 kwargs['schema'] = self.db_owner[db_alias].upper()
             tables[tab_name] = sqlalchemy.Table(tab_name, db_meta, **kwargs)

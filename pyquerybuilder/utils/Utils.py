@@ -40,7 +40,7 @@ def weight_sort(adjlist):
     """
     return adjlist.sort(key=itemgetter(1))
 
-def similar(str1, str2):
+def similar(str1="attr", str2="column"):
     """
     createdate <--> creationdate
     moddate <--> lastmodificationdate
@@ -48,8 +48,11 @@ def similar(str1, str2):
     anyway this could be replaced by a explicit configuration
     such as: dataset.type : DSTYPE.NAME via link from DATASET.TYPE
     """
+    known_dict = {'child': 'this'}
     str1 = str1.lower()
     str2 = str2.lower()
+    if known_dict.has_key(str1):
+        str1 = known_dict[str1]
     if len(str1) > len(str2):
         return str_including(str2, str1, 1)
     else:

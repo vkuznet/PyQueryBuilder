@@ -48,6 +48,7 @@ class SchemaHandler(object):
         if not self._schema.check_connective():
             _LOGGER.debug('Schema graph is not connective')
         self.attr_path = {}
+        self.attr_path_tables = {}
         self.subconstructors = []
         self.subnodes = [] # calculate coverage
         self.attr_table = set([])
@@ -98,7 +99,8 @@ class SchemaHandler(object):
         #         We need a function map(key.attribute) ==> table name
         #         on core schema
         self.attr_table = self._schema.v_attr
-        self.attr_path = self._schema.gen_attr_links(mapper)
+        self.attr_path, self.attr_path_tables = \
+            self._schema.gen_attr_links(mapper)
         for name, path in self.attr_path.items():
             for pat in path:
                 _LOGGER.debug("path %s is %s.%s --> %s.%s" % (name, \
@@ -348,16 +350,6 @@ class SchemaHandler(object):
             except:
                 _LOGGER.error("can't find table %s" % keyword[0])
                 return None
-        # get alias for table
-#        if type(whereclause) != type(None):
-#            if whereclause.__dict__.has_key('clauses'):
-#                for clause in whereclause.clauses:
-#                    pull_operator_side(clause, tables_of_concern)
-#            else:
-#                pull_operator_side(whereclause, tables_of_concern)
-#            _LOGGER.debug("tables_of_concern adding clause ones is %s" % \
-#                            str(tables_of_concern))
-
         # no need to take a join if there is only one table involved
         if len(keylist['keyset']) == 1:
             return None
@@ -424,10 +416,12 @@ class SchemaHandler(object):
         # so we need to search through tables to find which had the
         # foreign key and which the primary key
         # root_join is a table.join().join()...
-#        print subtree
-#        print return_jtables
-#        print cons_jtables
 
+        # the attribute join path could overlap with existing join path
+        # dataset.app_exec vs procds.app_exec
+        # so re calculation is needed to get the right join position
+        # set joined_tables recording the tables in current root_join
+        joined_tables = core_tables # initialize with core_tables
         root_join = None
         root_table = self.find_table(\
             chosen_simschema.ordered[subtree.root_index].name)
@@ -446,15 +440,24 @@ class SchemaHandler(object):
                 for links, compkey, tname in cons_jtables[table.name]:
                     current = table.name
                     for link in links:
+                        if link.ltable in joined_tables and \
+                           link.rtable in joined_tables:
+                            if current == link.ltable:
+                                current = link.rtable
+                            current = link.ltable
+                            continue
                         if current == table.name:
                             if table.name != link.ltable:
                                 root_join = \
                                     self.join_link(root_join, \
                                             link, False, compkey, tname)
                                 current = link.ltable
-                            root_join = self.join_link(root_join, \
+                            else:
+                                root_join = self.join_link(root_join, \
                                             link, True, compkey, tname)
-                            current = link.rtable
+                                current = link.rtable
+                            joined_tables.add(link.ltable)
+                            joined_tables.add(link.rtable)
 #           inner nodes
             weight_sort(subtree._graph[node_idx])
             for adjacent in subtree._graph[node_idx]:
@@ -478,6 +481,8 @@ class SchemaHandler(object):
                         _LOGGER.error("jlink is None")
                         return None
                     root_join = self.join_link(root_join, jlink, follow_pn)
+                    joined_tables.add(jlink.ltable)
+                    joined_tables.add(jlink.rtable)
 
 #           retrive attribute links
             if table.name in return_jtables:
@@ -485,14 +490,24 @@ class SchemaHandler(object):
                 for links, compkey, tname in return_jtables[table.name]:
                     current = table.name
                     for link in links:
+                        if link.ltable in joined_tables and \
+                           link.rtable in joined_tables:
+                            if current == link.ltable:
+                                current = link.rtable
+                            current = link.ltable
+                            continue
                         if current != link.ltable:
                             root_join = self.join_link(root_join, \
                                     link, False, compkey, tname)
                             current = link.ltable
+                            joined_tables.add(link.ltable)
+                            joined_tables.add(link.rtable)
                         else:
                             root_join = self.join_link(root_join, \
                                     link, True, compkey, tname)
                             current = link.rtable
+                            joined_tables.add(link.ltable)
+                            joined_tables.add(link.rtable)
             del unexplored[0]
         return root_join
 
@@ -501,6 +516,7 @@ class SchemaHandler(object):
         root_join join a link
         direction left to right : True
                   right to left : False
+        define a LEFT JOIN dictionary
         """
         _LOGGER.debug("join link %s" % str(link))
         if tname != None and link.ltable.lower() == tname.lower():
@@ -525,7 +541,8 @@ class SchemaHandler(object):
 
     def gen_join_table(self, keylist):
         """
-        get jointable indexed by jointable name
+        get join table (the entity node starts a attribute link out)
+        indexed by jointable name
         also record the join type of each jointable
         keywords or constaints
         """
@@ -534,7 +551,6 @@ class SchemaHandler(object):
         keylen = len(keylist['keywords'])
         for index in range(len(keylist['constraints'])):
             compkey = keylist['constraints'][index]
-#        for compkey in keylist['constraints']:
             _LOGGER.debug("trying gen join table for %s" % str(compkey))
             links = self.map_attribute(compkey)
             if links == None:
@@ -563,7 +579,6 @@ class SchemaHandler(object):
 
         for index in range(keylen):
             compkey = keylist['keywords'][index]
-#        for compkey in keylist['keywords']:
             _LOGGER.debug("trying gen join table for %s" % str(compkey))
             links = self.map_attribute(compkey)
             if links == None:

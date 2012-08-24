@@ -369,6 +369,8 @@ class OriginSchema(TSchema):
 
         self.ordered = []
 
+        self.alias_dict = {} # resolve ora000972 identifier is too long
+
     def gen_nodelist(self):
         """gen Node list"""
         node_dict = {}
@@ -519,6 +521,7 @@ class OriginSchema(TSchema):
         constructor = ConstructQuery(relation)
 
         attr_path = {} # {key.attr : [link1, link2, ...]}
+        attr_path_tables = {} # {key.attr : set([table1, table2,...])
         count = 0
         for compkey in mapper.list_key():
             if compkey not in mapper.entdict.keys():
@@ -529,6 +532,7 @@ class OriginSchema(TSchema):
                     count = count + 1 # founded link count
                     root = None # start node
                     linkpath = []
+                    path_tables = set([])
                     length = 0
                     for node, parent in self.lookup_link(constructor, \
                             [table1, table2]):
@@ -545,6 +549,8 @@ class OriginSchema(TSchema):
                                 # attr from compkey
                                     continue
                                 linkpath.append(link)
+                                path_tables.add(link.ltable)
+                                path_tables.add(link.rtable)
                         if length == len(linkpath):# link is from node to parent
                             for link in node.outlinks.values():
                                 if link.rtable == parent.name:
@@ -552,12 +558,15 @@ class OriginSchema(TSchema):
                                             similar(attr, link.lcolumn[0]):
                                         continue
                                     linkpath.append(link)
+                                    path_tables.add(link.ltable)
+                                    path_tables.add(link.rtable)
                     if root.name == table2:
                         linkpath.reverse()
                     attr_path[compkey] = linkpath
+                    attr_path_tables[compkey] = path_tables
         if len(attr_path) != count:
             raise Exception("""some path are not recognized""")
-        return attr_path
+        return attr_path, attr_path_tables
 
     def gen_simschema(self):
         """
@@ -693,11 +702,30 @@ class OriginSchema(TSchema):
             self.e_rel.remove(link.name)
         self.links.pop(link.name)
 
+    def check_alias_name(self, alias):
+        if alias > 30:
+            if alias.count('_') > 1:
+                alist = []
+                for p in alias.split('_'):
+                    if p:
+                        alist.append(p[0])
+                newalias = '_'.join(alist)
+                if self.alias_dict.has_key(newalias):
+                    if newalias[-1].isdigit():
+                        num = int(newalias[-1])
+                        newalias = '%s%d' %(newalias[:-1], num)
+                    else:
+                        newalias = newalias + '1'
+                self.alias_dict[newalias] = alias
+                alias = newalias
+        return alias
+
     def set_alias(self, link1, link2=None):
         """recursive cases"""
         if link2 == None and len (link1.lcolumn) == 1:
             _LOGGER.debug("link to self table %s" % str(link1))
             newnode = "_".join((link1.ltable, link1.lcolumn[0]))
+            newnode = self.check_alias_name(newnode)
             self.alias_table[newnode] = link1.ltable
             self.atables[newnode] = self.tables[link1.ltable].alias(newnode)
             linkname = newnode + "_FK"
@@ -719,9 +747,13 @@ class OriginSchema(TSchema):
             c_child = link2.lcolumn[0]
 
             a_parent_child = c_parent + "_" + c_child
+            a_parent_child = self.check_alias_name(a_parent_child)
             a_child = v_ent + "_" + c_child
+            a_child = self.check_alias_name(a_child)
             a_child_parent = c_child + "_" + c_parent
+            a_child_parent = self.check_alias_name(a_child_parent)
             a_parent = v_ent + "_" + c_parent
+            a_parent= self.check_alias_name(a_parent)
 
             _LOGGER.debug("a_parent %s a_child %s" % (a_parent, a_child))
 
@@ -837,7 +869,11 @@ class OriginSchema(TSchema):
         if self.tables.has_key(tname):
             self.atables[compkey] = self.tables[tname].alias(key)
             return
-        raise Exception("tname %s are not found in database schema" % tname)
+        if self.atables.has_key(tname):
+            self.atables[compkey] = self.atables[tname]
+            return
+        raise Exception("compkey %s tname %s are not found in database schema \n%s\n%s\n%s" % \
+                (compkey, tname, str(self.alias_dict), str(self.atables.keys()), str(self.tables.keys())))
 
     def recognize_shortcut(self):
         """

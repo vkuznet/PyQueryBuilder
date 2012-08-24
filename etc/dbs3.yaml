@@ -81,7 +81,7 @@ lumi :
 
   -  run : FILE_LUMIS.RUN_NUM
 
-phygrp :
+phgrp :
   -  name : PHYSICS_GROUPS.PHYSICS_GROUP_NAME
   -  id : PHYSICS_GROUPS.PHYSICS_GROUP_ID
 

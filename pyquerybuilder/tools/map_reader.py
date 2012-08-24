@@ -84,7 +84,8 @@ class Mapper(object):
                 raise Error("table %s doesn't exist" % self.tbdict[key])
             else:
                 table = tables[self.tbdict[key]]
-                if not table.columns.has_key(self.coldict[key]):
+                if not table.columns.has_key(self.coldict[key].lower()) \
+                    and not table.columns.has_key(self.coldict[key]):
                     raise Error("column %s doesn't exist in table %s "% \
                           ( self.coldict[key], self.tbdict[key]))
         return True
@@ -211,7 +212,7 @@ def main():
             dbmanager = DBManager()
             dbmanager.connect(source)
             dbaliase = dbmanager.get_alias(source)
-            tables = dbmanager.load_tables(dbaliase).values()
+            tables = dbmanager.load_tables(dbaliase)
             if mapper.validate_map(tables):
                 print "Validate is OK"
     if column:

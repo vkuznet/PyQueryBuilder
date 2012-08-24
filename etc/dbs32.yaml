@@ -1,12 +1,12 @@
 dataset :
-  - parent : DATASETS_PARENT_DATASET_ID.DATASET
-  - child : DATASETS_THIS_DATASET_ID.DATASET
+  - parent : D_P_D_I.DATASET
+  - child : D_T_D_I.DATASET
 
 block :
-  - parent : BLOCKS_PARENT_BLOCK_ID.BLOCK_NAME
-  - child : BLOCKS_THIS_BLOCK_ID.BLOCK_NAME
+  - parent : B_P_B_I.BLOCK_NAME
+  - child : B_T_B_I.BLOCK_NAME
 
 file :
-  - parent : FILES_PARENT_FILE_ID.LOGICAL_FILE_NAME
-  - child : FILES_THIS_FILE_ID.LOGICAL_FILE_NAME
+  - parent : F_P_F_I.LOGICAL_FILE_NAME
+  - child : F_T_F_I.LOGICAL_FILE_NAME
 

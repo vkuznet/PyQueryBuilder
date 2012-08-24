@@ -22,6 +22,7 @@ class PyQBClient:
         url = self.baseurl
         if not params == {}:
             url = "?".join((url, urllib.urlencode(params, doseq=True)))
+#            url = url+'&chunk_size=2'
         #req = urllib2.Request(url = url, headers = self.header)
         req = urllib2.Request(url = url)
         data = self.opener.open(req)
@@ -88,10 +89,24 @@ if __name__ == "__main__":
             print "total execute time %f" % (time.clock() - st)
             print "total results is %d" % (len(res))
         else:
+            count = 0
+            ecount = 0
             queries = open(qfile)
+            equeries = ""
             st = time.clock()
             for query in queries.readlines():
-                res = CLI.get({"input":query})
-                print json.dumps(res, sort_keys = True, indent = 4)
+                print query
+                query = query.rstrip()
+                try:
+                    res = CLI.get({"input":query})
+                    count += 1
+                    print json.dumps(res, sort_keys = True, indent = 4)
+                except Exception, e:
+                    ecount += 1
+                    equeries += query+'\n'
+
+            print "total succeed query is %d" % (count)
+            print "total failed query is %d" % (ecount)
             print "total execute time %f" % (time.clock() - st)
-            print "total results is %d" % (len(res))
+#            print "total results is %d" % (len(res))
+            print "failed queries is\n", equeries

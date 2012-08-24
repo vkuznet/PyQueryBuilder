@@ -65,7 +65,7 @@ class TestOriginSchema(unittest.TestCase):
     def test_gen_attr_link(self):
         """test attribute link generation"""
         self.oschema.recognize_type(self.mapper)
-        attr_path = self.oschema.gen_attr_links(self.mapper)
+        attr_path, _ = self.oschema.gen_attr_links(self.mapper)
         self.assertEqual('Files.Dataset_ProcessedDataset.ID'.lower(), \
             attr_path['dataset.name'][0].name.lower())
 
@@ -74,7 +74,7 @@ class TestOriginSchema(unittest.TestCase):
         oschema = self.oschema
         oschema.recognize_type(self.mapper)
         oschema.handle_alias()
-        attr_path = oschema.gen_attr_links(self.mapper)
+        attr_path, _ = oschema.gen_attr_links(self.mapper)
         simschemas = oschema.gen_simschema()
         for simschema in simschemas:
             simschema.update_nodelist()
@@ -91,7 +91,7 @@ class TestTSchema(unittest.TestCase):
         self.mapper.validate_map(metadata.tables)
         oschema.recognize_type(self.mapper)
         oschema.handle_alias()
-        attr_path = oschema.gen_attr_links(self.mapper)
+        attr_path, _ = oschema.gen_attr_links(self.mapper)
         self.simschemas = oschema.gen_simschema()
         for simschema in self.simschemas:
             simschema.update_nodelist()

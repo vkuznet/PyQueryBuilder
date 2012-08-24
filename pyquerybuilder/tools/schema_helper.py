@@ -331,6 +331,7 @@ def main():
     originschema.recognize_type(mapper)
     originschema.handle_alias()
     originschema.gen_attr_links(mapper)
+
     load_statistics(dbmanager, dbalias, originschema)
 
     if options.alias_mapfile:
@@ -344,6 +345,9 @@ def main():
     originschema.recognize_shortcut()
 
     if options.view_simulate:
+        write_original_schema_graph(originschema, "simschema")
+        check_call(['dot', '-Tpng', 'simschema.dot', '-o', \
+            'simschema.png'])
         for idx in range(len(simschemas)):
             simschema = simschemas[idx]
             fname = 'simschema%d.png' % idx
