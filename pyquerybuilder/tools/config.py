@@ -55,6 +55,8 @@ def readconfig():
                             config.get('server', 'logconfig', ''))
     configdict['doc_dir'] = os.path.join(os.environ['QB_ROOT'], \
                             config.get('server', 'doc_dir', ''))
+    configdict['left_join'] = os.path.join(os.environ['QB_ROOT'], \
+                            config.get('server', 'left_join', ''))
 
     configdict['environment'] = config.get('server', 'environment', 'production')
     configdict['profiler'] = int(config.get('server', 'profiler', 0))
@@ -84,6 +86,7 @@ def writeconfig():
     config.set('server', 'map_file', 'map.yaml')
     config.set('server', 'alias_mapfile', 'map2.yaml')
     config.set('server', 'split_file', 'split.yaml')
+    config.set('server', 'left_join', 'left.yaml')
     config.set('server', 'logconfig', 'logconfig')
     config.write(open(configfile(), 'wb'))
 

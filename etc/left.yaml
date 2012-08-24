@@ -1,0 +1,14 @@
+left :
+   - dataset.phgrp
+   - dataset.acq
+   - dataset.parent
+   - dataset.child
+   - dataset.processing
+   - block.parent
+   - block.child
+   - file.parent
+   - file.child
+   - app
+   - processing
+   - config
+   - pset

@@ -25,6 +25,7 @@ from pyquerybuilder.utils.Utils import pull_operator_side, weight_sort
 from pyquerybuilder.tools.schema_helper import load_statistics
 from pyquerybuilder.utils.Errors import Error
 from pyquerybuilder.tools.config import readconfig
+from pyquerybuilder.tools.left_list import load_left_join
 #from pyquerybuilder.tools.map_reader import Mapper
 #from sqlalchemy.sql.expression import Select
 from pyquerybuilder.utils.Utils import contain_link
@@ -52,6 +53,7 @@ class SchemaHandler(object):
         self.subconstructors = []
         self.subnodes = [] # calculate coverage
         self.attr_table = set([])
+        self.left_joins = []
 
     def recognize_schema(self, mapper, dbmanager=None, db_alias=None):
         """
@@ -106,6 +108,8 @@ class SchemaHandler(object):
                 _LOGGER.debug("path %s is %s.%s --> %s.%s" % (name, \
                 pat.ltable, pat.lcolumn, pat.rtable, pat.rcolumn))
 
+        if dbmanager != None and db_alias != None:
+            self.left_joins = load_left_join(config['left_join'])
         simschemas = self._schema.gen_simschema()
 
         _LOGGER.debug("%d simschemas are generated" % len(simschemas))
@@ -395,6 +399,7 @@ class SchemaHandler(object):
                 "check the relationship between entities")
                 return None
         chosen_simschema = self._simschemas[sim_idx]
+        core_indices = []
         core_indices = [chosen_simschema.ordered.index(\
                 chosen_simschema.nodelist[tname]) \
                 for tname in core_tables]
@@ -437,7 +442,7 @@ class SchemaHandler(object):
                 root_join = root_table
 #           constraints attribute links
             if table.name in cons_jtables:
-                for links, compkey, tname in cons_jtables[table.name]:
+                for links, compkey, tname, left in cons_jtables[table.name]:
                     current = table.name
                     for link in links:
                         if link.ltable in joined_tables and \
@@ -450,11 +455,11 @@ class SchemaHandler(object):
                             if table.name != link.ltable:
                                 root_join = \
                                     self.join_link(root_join, \
-                                            link, False, compkey, tname)
+                                            link, False, compkey, tname, left)
                                 current = link.ltable
                             else:
                                 root_join = self.join_link(root_join, \
-                                            link, True, compkey, tname)
+                                            link, True, compkey, tname, left)
                                 current = link.rtable
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
@@ -487,7 +492,7 @@ class SchemaHandler(object):
 #           retrive attribute links
             if table.name in return_jtables:
 #                print "attribute links"
-                for links, compkey, tname in return_jtables[table.name]:
+                for links, compkey, tname, left in return_jtables[table.name]:
                     current = table.name
                     for link in links:
                         if link.ltable in joined_tables and \
@@ -498,20 +503,20 @@ class SchemaHandler(object):
                             continue
                         if current != link.ltable:
                             root_join = self.join_link(root_join, \
-                                    link, False, compkey, tname)
+                                    link, False, compkey, tname, left)
                             current = link.ltable
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
                         else:
                             root_join = self.join_link(root_join, \
-                                    link, True, compkey, tname)
+                                    link, True, compkey, tname, left)
                             current = link.rtable
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
             del unexplored[0]
         return root_join
 
-    def join_link(self, root_join, link, direction, compkey=None, tname=None):
+    def join_link(self, root_join, link, direction, compkey=None, tname=None, left=False):
         """
         root_join join a link
         direction left to right : True
@@ -530,10 +535,18 @@ class SchemaHandler(object):
         lcol = ltable.c._data[link.lcolumn[0]]
         rcol = rtable.c._data[link.rcolumn[0]]
         if direction:
+            if left:
+                root_join = root_join.outerjoin(rtable, lcol == rcol)
+                _LOGGER.debug("left out join %s on %s == %s" % \
+                (rtable.name, lcol, rcol))
             root_join = root_join.join(rtable, lcol == rcol)
             _LOGGER.debug("join %s on %s == %s" % \
                 (rtable.name, lcol, rcol))
         else:
+            if left:
+                root_join = root_join.outerjoin(ltable, rcol == lcol)
+                _LOGGER.debug("left out join %s on %s == %s" % \
+                (rtable.name, lcol, rcol))
             root_join = root_join.join(ltable, rcol == lcol)
             _LOGGER.debug("join %s on %s == %s" % \
                 (ltable.name, rcol, lcol))
@@ -555,27 +568,45 @@ class SchemaHandler(object):
             links = self.map_attribute(compkey)
             if links == None:
                 continue
-            _LOGGER.debug("gen join table for %s" % str(links))
+            left = False
+            ent = compkey.split('.')[0]
+            if compkey in self.left_joins or ent in self.left_joins:
+                left = True
+            _LOGGER.debug("gen join table 4 %s left_join candidate" % str(links))
             _LOGGER.debug(links)
             # TODO composite fkkeys
-            if links[0].ltable in self._schema.v_ent:
-                jointable = links[0].ltable
-            else:
-                jointable = links[0].rtable
+            jointable = None
+            found = -1 #found jointable?
+            for idx in range(len(links)):
+                #print links[idx],links[idx].ltable,links[idx].rtable
+                if links[idx].ltable in self._schema.v_ent:
+                    if links[idx].rtable in self._schema.v_ent:
+                        continue
+                    else:
+                        if found != -1:
+                            jointable = links[idx].ltable
+                            found = idx
+                        links = links[idx:]
+                if found != -1:
+                    jointable = links[idx].rtable
+                    found = idx
+            links = links[found:]
+            if jointable == None:
+                continue
             tname = keylist['keyset'][keylen + index]
             if tname.count('.') > 0:
                 tname = tname.split('.')[0]
             if keylist['keyset'].count(keylist['keyset'][keylen + index]) > 1:
                 self.set_unique(compkey, tname)
                 if not cons_jtables.has_key(jointable):
-                    cons_jtables[jointable] = [(links, compkey, tname)]
+                    cons_jtables[jointable] = [(links, compkey, tname, left)]
                 else:
-                    cons_jtables[jointable].append((links, compkey, tname))
+                    cons_jtables[jointable].append((links, compkey, tname, left))
             else:
                 if not cons_jtables.has_key(jointable):
-                    cons_jtables[jointable] = [(links, None, None)]
+                    cons_jtables[jointable] = [(links, None, None, left)]
                 else:
-                    cons_jtables[jointable].append((links, None, None))
+                    cons_jtables[jointable].append((links, None, None, left))
 
         for index in range(keylen):
             compkey = keylist['keywords'][index]
@@ -583,12 +614,30 @@ class SchemaHandler(object):
             links = self.map_attribute(compkey)
             if links == None:
                 continue
-            _LOGGER.debug("gen join table for %s" % str(links))
+            left = False
+            ent = compkey.split('.')[0]
+            if compkey in self.left_joins or ent in self.left_joins:
+                left = True
+            _LOGGER.debug("gen join table 4 %s left_join candidate" % str(links))
             #TODO composite fkkeys
-            if links[0].ltable in self._schema.v_ent:
-                jointable = links[0].ltable
-            else:
-                jointable = links[0].rtable
+            jointable = None
+            found = -1 #found jointable?
+            for idx in range(len(links)):
+                #print links[idx],links[idx].ltable,links[idx].rtable
+                if links[idx].ltable in self._schema.v_ent:
+                    if links[idx].rtable in self._schema.v_ent:
+                        continue
+                    else:
+                        if found != -1:
+                            jointable = links[idx].ltable
+                            found = idx
+                        links = links[idx:]
+                if found != -1:
+                    jointable = links[idx].rtable
+                    found = idx
+            links = links[found:]
+            if jointable == None:
+                continue
             tname = keylist['keyset'][index]
             if tname.count('.') > 0:
                 tname = tname.split('.')[0]
@@ -599,17 +648,17 @@ class SchemaHandler(object):
                 self.set_unique(compkey, tname)
                 if not return_jtables.has_key(jointable):
                     if not contain_link(cons_jtables, jointable, links):
-                        return_jtables[jointable] = [(links, compkey, tname)]
+                        return_jtables[jointable] = [(links, compkey, tname, left)]
                 else:
                     if not contain_link(cons_jtables, jointable, links):
-                        return_jtables[jointable].append((links, compkey, tname))
+                        return_jtables[jointable].append((links, compkey, tname, left))
             else:
                 if not return_jtables.has_key(jointable):
                     if not contain_link(cons_jtables, jointable, links):
-                        return_jtables[jointable] = [(links, None, None)]
+                        return_jtables[jointable] = [(links, None, None, left)]
                 else:
                     if not contain_link(cons_jtables, jointable, links):
-                        return_jtables[jointable].append((links, None, None))
+                        return_jtables[jointable].append((links, None, None, left))
         return return_jtables, cons_jtables
 
     def set_unique(self, compkey, tname):
