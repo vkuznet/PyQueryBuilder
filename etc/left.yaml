@@ -8,6 +8,8 @@ left :
    - block.child
    - file.parent
    - file.child
+   - acq
+   - phgrp
    - app
    - processing
    - config

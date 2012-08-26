@@ -110,6 +110,13 @@ class SchemaHandler(object):
 
         if dbmanager != None and db_alias != None:
             self.left_joins = load_left_join(config['left_join'])
+            for idx in range(len(self.left_joins)):
+                key = self.left_joins[idx]
+                if key != None and key.find('.') == -1:
+                    table = mapper.get_table(key)
+                    self.left_joins.pop(idx)
+                    self.left_joins.insert(idx, table)
+            _LOGGER.debug('left_joins is %s' % str(self.left_joins))
         simschemas = self._schema.gen_simschema()
 
         _LOGGER.debug("%d simschemas are generated" % len(simschemas))
@@ -313,7 +320,7 @@ class SchemaHandler(object):
                 return idx
         return -1
 
-    def construct_query(self, sim_idx, core_indices, algo):
+    def construct_query(self, sim_idx, core_indices, algo, lefts):
         """
         generate the spanning tree for this table sets
         this function will perform the algorithm on the first matching subgraph
@@ -327,7 +334,7 @@ class SchemaHandler(object):
         if algo == 'LWS':
             subtree = constructor.get_leastw_subtree(core_indices)
         elif algo == 'MIS':
-            subtree = constructor.get_mcst(core_indices)
+            subtree = constructor.get_mcst(core_indices, lefts)
         return subtree
 
     def root_join(self, whereclause, keylist, algo):
@@ -400,10 +407,18 @@ class SchemaHandler(object):
                 return None
         chosen_simschema = self._simschemas[sim_idx]
         core_indices = []
-        core_indices = [chosen_simschema.ordered.index(\
-                chosen_simschema.nodelist[tname]) \
-                for tname in core_tables]
-        subtree = self.construct_query(sim_idx, core_indices, algo)
+        left_indices = []
+        for tname in core_tables:
+            idx = chosen_simschema.ordered.index(
+                chosen_simschema.nodelist[tname])
+            core_indices.append(idx)
+            if tname in self.left_joins:
+                left_indices.append(idx)
+
+#        core_indices = [chosen_simschema.ordered.index(\
+#                chosen_simschema.nodelist[tname]) \
+#                for tname in core_tables]
+        subtree = self.construct_query(sim_idx, core_indices, algo, left_indices)
         _LOGGER.debug("core spanning tree are %s " % str(subtree))
 #        print subtree
 
@@ -426,7 +441,7 @@ class SchemaHandler(object):
         # dataset.app_exec vs procds.app_exec
         # so re calculation is needed to get the right join position
         # set joined_tables recording the tables in current root_join
-        joined_tables = core_tables # initialize with core_tables
+        joined_tables = core_tables.union(set([])) # initialize with core_tables
         root_join = None
         root_table = self.find_table(\
             chosen_simschema.ordered[subtree.root_index].name)
@@ -461,6 +476,7 @@ class SchemaHandler(object):
                                 root_join = self.join_link(root_join, \
                                             link, True, compkey, tname, left)
                                 current = link.rtable
+                            if left: left = False
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
 #           inner nodes
@@ -473,6 +489,7 @@ class SchemaHandler(object):
                     node = chosen_simschema.ordered[adjacent[0]]
                     jlink = None
                     follow_pn = True
+                    left = False
                     for link in node.outlinks.values():
                         if link.rtable == parent.name:
                             jlink = link
@@ -485,7 +502,11 @@ class SchemaHandler(object):
                     if jlink == None:
                         _LOGGER.error("jlink is None")
                         return None
-                    root_join = self.join_link(root_join, jlink, follow_pn)
+                    if jlink.rtable in self.left_joins and \
+                        len(core_tables) > 0:
+                        left = True
+                    root_join = self.join_link(root_join, jlink, follow_pn, \
+                                                            None, None, left)
                     joined_tables.add(jlink.ltable)
                     joined_tables.add(jlink.rtable)
 
@@ -505,12 +526,14 @@ class SchemaHandler(object):
                             root_join = self.join_link(root_join, \
                                     link, False, compkey, tname, left)
                             current = link.ltable
+                            if left: left = False
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
                         else:
                             root_join = self.join_link(root_join, \
                                     link, True, compkey, tname, left)
                             current = link.rtable
+                            if left: left = False
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)
             del unexplored[0]
@@ -539,16 +562,18 @@ class SchemaHandler(object):
                 root_join = root_join.outerjoin(rtable, lcol == rcol)
                 _LOGGER.debug("left out join %s on %s == %s" % \
                 (rtable.name, lcol, rcol))
-            root_join = root_join.join(rtable, lcol == rcol)
-            _LOGGER.debug("join %s on %s == %s" % \
+            else:
+                root_join = root_join.join(rtable, lcol == rcol)
+                _LOGGER.debug("join %s on %s == %s" % \
                 (rtable.name, lcol, rcol))
         else:
             if left:
                 root_join = root_join.outerjoin(ltable, rcol == lcol)
                 _LOGGER.debug("left out join %s on %s == %s" % \
                 (rtable.name, lcol, rcol))
-            root_join = root_join.join(ltable, rcol == lcol)
-            _LOGGER.debug("join %s on %s == %s" % \
+            else:
+                root_join = root_join.join(ltable, rcol == lcol)
+                _LOGGER.debug("join %s on %s == %s" % \
                 (ltable.name, rcol, lcol))
         return root_join
 
@@ -572,8 +597,7 @@ class SchemaHandler(object):
             ent = compkey.split('.')[0]
             if compkey in self.left_joins or ent in self.left_joins:
                 left = True
-            _LOGGER.debug("gen join table 4 %s left_join candidate" % str(links))
-            _LOGGER.debug(links)
+                _LOGGER.debug("%s left_join candidate" % str(compkey))
             # TODO composite fkkeys
             jointable = None
             found = -1 #found jointable?
@@ -583,15 +607,22 @@ class SchemaHandler(object):
                     if links[idx].rtable in self._schema.v_ent:
                         continue
                     else:
-                        if found != -1:
+                        if found == -1:
                             jointable = links[idx].ltable
                             found = idx
-                        links = links[idx:]
-                if found != -1:
-                    jointable = links[idx].rtable
-                    found = idx
+                            break
+                elif links[idx].rtable in self._schema.v_ent:
+                    if links[idx].ltable in self._schema.v_ent:
+                        continue
+                    else:
+                        if found == -1:
+                            jointable = links[idx].rtable
+                            found = idx
+                            break
             links = links[found:]
+            _LOGGER.debug("gen join table 4 %s " % str(links))
             if jointable == None:
+                _LOGGER.debug("failed to find a jointable")
                 continue
             tname = keylist['keyset'][keylen + index]
             if tname.count('.') > 0:
@@ -618,7 +649,7 @@ class SchemaHandler(object):
             ent = compkey.split('.')[0]
             if compkey in self.left_joins or ent in self.left_joins:
                 left = True
-            _LOGGER.debug("gen join table 4 %s left_join candidate" % str(links))
+                _LOGGER.debug("%s left_join candidate" % str(compkey))
             #TODO composite fkkeys
             jointable = None
             found = -1 #found jointable?
@@ -628,15 +659,22 @@ class SchemaHandler(object):
                     if links[idx].rtable in self._schema.v_ent:
                         continue
                     else:
-                        if found != -1:
+                        if found == -1:
                             jointable = links[idx].ltable
                             found = idx
-                        links = links[idx:]
-                if found != -1:
-                    jointable = links[idx].rtable
-                    found = idx
+                            break
+                elif links[idx].rtable in self._schema.v_ent:
+                    if links[idx].ltable in self._schema.v_ent:
+                        continue
+                    else:
+                        if found == -1:
+                            jointable = links[idx].rtable
+                            found = idx
+                            break
             links = links[found:]
+            _LOGGER.debug("gen join table 4 %s " % str(links))
             if jointable == None:
+                _LOGGER.debug("failed to find a jointable")
                 continue
             tname = keylist['keyset'][index]
             if tname.count('.') > 0:

@@ -2,7 +2,7 @@
 from heapq import heappush, heappop
 from pyquerybuilder.qb.WGraph import RootedWGraph
 
-def calmcst(keys, graph):
+def calmcst(keys, graph, lefts):
     """
     Input: keys is the keywords set of a Query
     Output : minimal cost spanning tree, cover keys.
@@ -134,9 +134,16 @@ def calmcst(keys, graph):
                 break
         iterator = iterator + 1
         if len(heap_out) != 0:
-            root = heappop(heap_out)
-            if len(heap_out) != 0:
-                candi = heappop(heap_out)
+            while True:
+                if len(heap_out) != 0:
+                    root = heappop(heap_out)
+                else:
+                    break
+                if root[1] not in lefts:
+                    return traceback(root, infos, keys)
+#            root = heappop(heap_out)
+#            if len(heap_out) != 0:
+#                candi = heappop(heap_out)
 #                if root[0] == candi[0]:
 #                    raise Exception('Warnning: weight cofliction')
             return traceback(root, infos, keys)

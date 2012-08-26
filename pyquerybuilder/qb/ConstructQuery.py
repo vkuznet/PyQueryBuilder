@@ -99,8 +99,8 @@ class ConstructQuery(object):
             edge_sets.append(subs)
         return (min_index, edge_sets[min_index])
 
-    def get_mcst(self, query_elements):
+    def get_mcst(self, query_elements, lefts):
         """
         Iterator approach of calculating mcst
         """
-        return calmcst(query_elements, self.undirected_graph._graph)
+        return calmcst(query_elements, self.undirected_graph._graph, lefts)

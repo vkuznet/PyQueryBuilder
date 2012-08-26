@@ -91,14 +91,24 @@ if __name__ == "__main__":
         else:
             count = 0
             ecount = 0
+            pcount = 0
+            icount = 0
             queries = open(qfile)
             equeries = ""
+            empties = ""
+            invalids = ""
             st = time.clock()
             for query in queries.readlines():
                 print query
                 query = query.rstrip()
                 try:
                     res = CLI.get({"input":query})
+                    if len(res) == 0:
+                        empties += query+'\n'
+                        pcount += 1
+                    if res != [] and res[0].has_key('error'):
+                        invalids += query+'\n'
+                        icount += 1
                     count += 1
                     print json.dumps(res, sort_keys = True, indent = 4)
                 except Exception, e:
@@ -107,6 +117,10 @@ if __name__ == "__main__":
 
             print "total succeed query is %d" % (count)
             print "total failed query is %d" % (ecount)
+            print "total empty query is %d" % (pcount)
+            print "total invalid query is %d" % (icount)
             print "total execute time %f" % (time.clock() - st)
 #            print "total results is %d" % (len(res))
             print "failed queries is\n", equeries
+            print "empty queries is\n", empties
+            print "invalid queries is\n", invalids
