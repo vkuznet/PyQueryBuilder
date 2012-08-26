@@ -459,12 +459,13 @@ class DBManager(object):
 #        self.print_result(result, query)
         return result
 
-    def execute_with_slice(self, query, limit, offset, sort_idx, sdir):
+    def execute_with_slice(self, oquery, limit, offset, sort_idx, sdir):
         """
         execute query with explicit limit and offset
         """
-        tquery = query._clone().apply_labels()
+        tquery = oquery._clone().apply_labels()
         tquery = tquery.count()
+        query = oquery._clone().apply_labels()
         query._limit = limit
         query._offset = offset
         if sdir == 'asc':
