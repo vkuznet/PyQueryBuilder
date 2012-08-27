@@ -159,23 +159,44 @@ def get_sample(mapper, dbmanager, dbalias, alias=None):
     columns = mapper.list_column()
     entities = mapper.list_entity()
     keys = mapper.list_key()
+    tables = {}
     tm = "SELECT %s FROM ( SELECT %s FROM %s ORDER BY dbms_random.value ) WHERE rownum = 1"
     owner = ""
     if dbmanager.db_owner.has_key(dbalias):
         owner = '"' + dbmanager.db_owner[dbalias] + '".'
+    # generate a column lists for a table
+    column_list = {}
     for column in columns:
         table, col = column.split('.')
         if alias != None:
             if alias.has_key(table.lower()):
                 table = alias[table.lower()]
-        query = tm % (col, col, owner + table)
+        if not column_list.has_key(table):
+            column_list[table] = []
+        column_list[table].append(col)
+    for column in columns:
+        table, col = column.split('.')
+        if alias != None:
+            if alias.has_key(table.lower()):
+                table = alias[table.lower()]
+    for table, cols in column_list.items():
+        columns = ""
+        for col in cols:
+            columns += col + ','
+        if len(cols) > 0:
+            columns = columns.rstrip(',')
+        query = tm % (columns, columns, owner + table)
 #        print query
         res = dbmanager.execute(query, db_alias=dbalias).fetchone()
-        a = "NULL"
-        if res != None:
-            if res[0] != None:
-                a = res[0]
-        samples[column] = a
+        for idx in range(len(cols)):
+            a = "NULL"
+            if res != None:
+                if res[idx] != None:
+                    a = res[idx]
+                    if type(a) == type(str) and a.index(" ") != -1:
+                        a = '"%s"' % a
+            samples[cols[idx]] = a
+    print samples
     return samples
 
 def sample(dbmanager, dbalias, column):
@@ -194,11 +215,12 @@ def gen_single_constraints(edict, single, mapper, samples):
         ent = query.split('find')[1].lstrip().split('.')[0]
         for attr in edict[ent]:
             col = mapper.get_column(attr)
+            table, col = col.split('.')
             if samples.has_key(col):
                 sample_data = samples[col]
             if sample_data != "NULL":
                 constraints.append(query + ' where ' + attr + ' = ' + str(sample_data))
-#    p.pprint(constraints)
+    p.pprint(constraints)
     return constraints
 
 def gen_double_constraints(edict, double, mapper, samples):
@@ -210,6 +232,7 @@ def gen_double_constraints(edict, double, mapper, samples):
         attrs.extend(edict[pair[1]])
         for attr in attrs:
             col = mapper.get_column(attr)
+            table, col = col.split('.')
             if samples.has_key(col):
                 sample_data = samples[col]
             if sample_data != "NULL":
