@@ -74,6 +74,23 @@ def find(arg, alias):
     result = DB.print_result(res, mquery)
 #    RESULTS.set(result)
 
+def get_total(arg, alias):
+    query = arg.split(';')[0].strip()
+    mquery = QB.build_query(query)
+    if mquery == None:
+        _LOGGER.debug("failed to build query %s" % query)
+        return
+    mquery = mquery._clone()
+    if mquery.use_labels:
+        mquery = mquery.apply_labels()
+        mquery.use_labels = False
+    mquery = mquery.count()
+    print mquery
+    _LOGGER.debug(mquery)
+    res = DB.execute(mquery, alias)
+    result = DB.print_result(res, mquery)
+
+
 def mapfile(arg, alias):
     """Set map file for QueryBuilder"""
     if os.path.isfile(arg):
@@ -123,6 +140,7 @@ if __name__ == '__main__':
         mapfile(map_file, dbalias)
         if query:
             st = time.clock()
+            get_total(query, dbalias)
             find(query, dbalias)
             print "total execute time %f" % (time.clock() - st)
         else:

@@ -506,7 +506,7 @@ class DBManager(object):
         check the total rows of given query
         execute ensure updating of get_total
         """
-        tquery = mquery._clone().apply_labels()
+        tquery = mquery._clone()
         total = self.execute(tquery.count()).fetchone()
         if total:
             total = total[0]

@@ -247,12 +247,9 @@ class SchemaHandler(object):
             keyword = keywords[index]
             if len(keyword) == 1:
                 try:
-#                    if keylist['keyset'].count(keylist['keyset'][index]) > 1:
-#                        self.set_unique(compkey, tname)
-#                        col = self.get_table_column(keylist['keywords'][index])
-#                    else:
-#                        col = self.get_table_column(keyword[0])
                     col = self.unique_table_column(keylist, index)
+                    col = col.label('_'.join(\
+                        (col.table.name[0], str(index), col.name)))
                     selects.append(col)
                     columns.append(col)
                     mix_agg = True
@@ -261,12 +258,9 @@ class SchemaHandler(object):
                     return None
             elif keyword[1] in ('count', 'max', 'min', 'sum'):
                 try:
-#                    if keylist['keyset'].count(keylist['keyset'][index]) > 1:
-#                        self.set_unique(compkey, tname)
-#                        col = self.get_table_column(keylist['keywords'][index])
-#                    else:
-#                        col = self.get_table_column(keyword[0])
                     col = self.unique_table_column(keylist, index)
+                    col = col.label('_'.join(\
+                        (col.table.name[0], str(index), col.name, keyword[1][1])))
                     selects.append(getattr(func, keyword[1])(col))
                     columns.append(col)
                 except:
@@ -279,8 +273,9 @@ class SchemaHandler(object):
             query = select(selects, from_obj=froms, whereclause=whereclause)
             return query
         bquery = select(columns, from_obj=froms, whereclause=whereclause)
-        bquery = bquery.apply_labels().alias()
         keys = bquery.c.keys()
+        if len(bquery.columns) != len(columns):
+            _LOGGER.error("columns alias failed %s" % str(columns))
         columns = bquery.columns
 
         group_by = []
