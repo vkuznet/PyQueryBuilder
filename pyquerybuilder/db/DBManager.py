@@ -463,9 +463,8 @@ class DBManager(object):
         """
         execute query with explicit limit and offset
         """
-        tquery = oquery._clone().apply_labels()
-        tquery = tquery.count()
-        query = oquery._clone().apply_labels()
+        tquery = oquery._clone().count()
+        query = oquery._clone()
         query._limit = limit
         query._offset = offset
         if sdir == 'asc':
