@@ -64,7 +64,10 @@ def close(alias):
 def find(arg, alias):
     """Execute QL expressions"""
     query = arg.split(';')[0].strip()
-    mquery = QB.build_query(query)
+    st = time.clock()
+    for _ in range(20000):
+        mquery = QB.build_query(query)
+    print "total build time %f" % (time.clock() - st)
     if mquery == None:
         _LOGGER.debug("failed to build query %s" % query)
         return
@@ -140,7 +143,7 @@ if __name__ == '__main__':
         mapfile(map_file, dbalias)
         if query:
             st = time.clock()
-            get_total(query, dbalias)
+            #get_total(query, dbalias)
             find(query, dbalias)
             print "total execute time %f" % (time.clock() - st)
         else:

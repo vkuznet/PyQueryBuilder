@@ -122,5 +122,5 @@ if __name__ == "__main__":
             print "total execute time %f" % (time.clock() - st)
 #            print "total results is %d" % (len(res))
             print "failed queries is\n", equeries
-            print "empty queries is\n", empties
-            print "invalid queries is\n", invalids
+#            print "empty queries is\n", empties
+#            print "invalid queries is\n", invalids

@@ -3,7 +3,7 @@
 Given a graph representing a schema and nodes to hit, this class does a poor
 man's travelling salesman solution.
 """
-__author__ = "Andrew J. Dolgert <ajd27@cornell.edu>"
+__author__ = "<liangd@ihep.ac.cn>; <ajd27@cornell.edu>"
 __revision__ = "$Revision: 1.1 $"
 
 # system modules
@@ -13,7 +13,10 @@ from logging import getLogger
 from pyquerybuilder.qb.DotGraph import DotGraph
 from pyquerybuilder.qb.Graph import Graph
 from pyquerybuilder.qb.WGraph import WGraph
+from pyquerybuilder.qb.WGraph import RootedWGraph
 from pyquerybuilder.qb.CalMCST import calmcst
+from pyquerybuilder.qb.Prim import prim
+from pyquerybuilder.qb.Steiner import steiner
 
 _LOGGER = getLogger("ConstructQuery")
 
@@ -28,6 +31,8 @@ class ConstructQuery(object):
             graph = WGraph(connectivity)
         else:
             graph = Graph(connectivity)
+        self.graph = graph
+        self._mst = [[]] * len(self.graph)
         self.undirected_graph = graph.get_undirected()
         self._spanning = []
         self.weighted = weighted
@@ -37,6 +42,11 @@ class ConstructQuery(object):
         for node_index in range(0, len(self.undirected_graph)):
             span = self.undirected_graph.breadth_first_search(node_index)
             self._spanning.append(span)
+        if weighted:
+            for index in range(0, len(self.graph)):
+                mst = prim(graph._graph, range(len(self.graph)), index)
+                self._mst[index] = RootedWGraph(mst, index)
+                self.undirected_graph.gen_dist_matrix()
 
     def print_spans(self):
         """print every spans in this spanning collection"""
@@ -73,7 +83,7 @@ class ConstructQuery(object):
         for span in self._spanning:
             sub_span = span.subtree_including(query_set)
             if sub_span is not None:
-                if sub_span.get_edges_number() < min_len:
+                if sub_span.get_edges_weight() < min_len:
                     min_len = sub_span.get_edges_weight()
                     smallest_span = sub_span
             span_index = span_index + 1
@@ -103,4 +113,36 @@ class ConstructQuery(object):
         """
         Iterator approach of calculating mcst
         """
-        return calmcst(query_elements, self.undirected_graph._graph, lefts)
+        _LOGGER.debug('query_elements %s' % str(query_elements))
+        _LOGGER.debug('graph %s' % str(self.undirected_graph._graph))
+        _LOGGER.debug('lefts %s' % str(lefts))
+        wt, subtree = calmcst(query_elements, self.undirected_graph._graph)
+        root = subtree.root_index
+        if root in lefts:
+            _LOGGER.debug("swith_root")
+            subtree.switch_root(lefts)
+        sub_span = self._mst[subtree.root_index]\
+                .subtree_including(subtree.nodesets())
+        if sub_span != None and sub_span.sum_weight() < wt:
+            return sub_span
+        else:
+            return subtree
+
+    def get_steiner(self, query_elements, lefts):
+        """
+        dynamic programming for steiner tree problem
+        """
+        subpaths, root = steiner(self.undirected_graph._graph, query_elements, \
+                self.undirected_graph.d, \
+                self.undirected_graph.PT)
+        n = len(self.undirected_graph._graph)
+        subtree = [[]] * n
+        for i, j in subpaths:
+            subtree[i].append((j, 0))
+            subtree[j].append((i, 0))
+        subtree = RootedWGraph(subtree, root)
+        root = subtree.root_index
+        if root in lefts:
+            _LOGGER.debug("swith_root")
+            subtree.switch_root(lefts)
+        return subtree

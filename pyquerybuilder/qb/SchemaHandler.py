@@ -330,6 +330,8 @@ class SchemaHandler(object):
             subtree = constructor.get_leastw_subtree(core_indices)
         elif algo == 'MIS':
             subtree = constructor.get_mcst(core_indices, lefts)
+        elif algo == 'MST':
+            subtree = constructor.get_steiner(core_indices, lefts)
         return subtree
 
     def root_join(self, whereclause, keylist, algo):

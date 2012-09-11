@@ -345,15 +345,15 @@ def main():
     originschema.recognize_shortcut()
 
     if options.view_simulate:
-        write_original_schema_graph(originschema, "simschema")
-        check_call(['dot', '-Tpng', 'simschema.dot', '-o', \
+        write_original_schema_graph(originschema, "simschema0")
+        check_call(['dot', '-Tpng', 'simschema0.dot', '-o', \
             'simschema.png'])
         for idx in range(len(simschemas)):
             simschema = simschemas[idx]
             fname = 'simschema%d.png' % idx
             if len(simschema.nodelist) > 1:
-                write_simulate_schema_graph(simschema, 'simschema')
-                check_call(['dot', '-Tpng', 'simschema.dot', '-o', fname])
+                write_simulate_schema_graph(simschema, 'simschema1')
+                check_call(['dot', '-Tpng', 'simschema1.dot', '-o', fname])
 
     if options.view_basics:
         for idx in range(len(simschemas)):

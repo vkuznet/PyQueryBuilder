@@ -24,6 +24,8 @@ class WGraph(object):
         self._reverse  = None
         self._edge_count  = None
         self._weight_count = 0.0
+        self.d = None # dist matrix
+        self.PT = None # path matrix
 
     def __eq__(self, other):
         """
@@ -347,6 +349,22 @@ class WGraph(object):
 
         return WGraph((tuple(x) for x in graph))
 
+    def gen_dist_matrix(self):
+        n = len(self._graph)
+        self.d = [ [65536]*n for _ in range(n)]
+        d = self.d
+        self.PT = [ [set([])]*n for _ in range(n)]
+        PT = self.PT
+        for i in range(n):
+            for j, w in self._graph[i]:
+                d[i][j] = w
+                PT[i][j] = set([(i,j)])
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    if (d[i][j] > d[i][k] + d[k][j]):
+                        d[i][j] = d[i][k] + d[k][j]
+                        check_PT(PT, i, j, k)
 
 class RootedWGraph(WGraph):
     """a graph generated from (nodes, root_node)"""
@@ -367,7 +385,7 @@ class RootedWGraph(WGraph):
         visited.append(node_index)
         if branches:
             for branch in branches:
-                if branch in visited:
+                if branch[0] in visited:
                     continue
                 if self.add_branch_in_set(branch[0], node_set, add_to, visited):
                     add.append(branch)
@@ -391,8 +409,42 @@ class RootedWGraph(WGraph):
         #add_to = [[] for x in self._graph]
         add_to = [[]] * self.__len__()
         visited = []
-        self.add_branch_in_set(self.root_index, node_set, add_to, visited)
+        if len(node_set) == 1 and self.root_index in node_set:
+            pass
+        else:
+            self.add_branch_in_set(self.root_index, node_set, add_to, visited)
         subtree = RootedWGraph(add_to, self.root_index)
         del visited
         return subtree
 
+    def sum_weight(self):
+        """return the sum weights of this graph"""
+        weights = 0
+        for adjs in self._graph:
+            for edge in adjs:
+                weights += edge[1]
+        return weights
+
+    def nodesets(self):
+        """return nodesets joined on this graph"""
+        visited = set([self.root_index])
+        for idx in range(len(self._graph)):
+            adjs = self._graph[idx]
+            if len(adjs) == 1 and adjs[0] == () or len(adjs) == 0:
+                continue
+            visited.add(idx)
+        return visited
+
+    def switch_root(self, avoids):
+        """change root only"""
+        root = self.root_index
+        for n2, wt in self._graph[self.root_index]:
+            if n2 not in avoids:
+                self.root_index = n2
+        if self.root_index == root:
+            _LOGGER.debug("failed switch root %d by avoids %s" % (root, str(avoids)))
+
+def check_PT(PT, i, j, k):
+    if i == j:
+        return
+    PT[i][j] = PT[i][k].union(PT[k][j])

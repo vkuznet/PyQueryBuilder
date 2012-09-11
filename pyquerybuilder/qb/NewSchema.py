@@ -884,6 +884,7 @@ class OriginSchema(TSchema):
              <------------/
         dataset<----file is a short cut for dataset<--block<--file
         """
+        visited = set([])
         # Do DFS for each node if a node is founded
         for node in self.v_ent:
             pathes = {} # { end_enitity : [[link1], [link2, link3], ] }
@@ -894,7 +895,6 @@ class OriginSchema(TSchema):
                 # out
             while stack:
                 link = stack.pop()
-#                _LOGGER.info("TEMPTEST, link %s %s %s" % (str(link), link.ltable, link.rtable))
                 table = link.rtable
                 if table not in self.v_attr and table != node:
 #                    and link.rcolumn is in table.primarykey:
@@ -906,17 +906,15 @@ class OriginSchema(TSchema):
                         new_path = [link]
                     else:
                         # trace back
-                        if link.ltable != node and \
-                            len(pathes[link.ltable]) < 2:# keep smallest one
-                            for aplink in pathes[link.ltable][0]: # shortest
-                                new_path.append(aplink)
-                            new_path.append(link)
+                        for aplink in pathes[link.ltable][0]: # shortest
+                            new_path.append(aplink)
+                        new_path.append(link)
                     # insert new path to correct position
-                    if table not in pathes:
+                    if table not in pathes and table != node:
                         pathes[table] = [new_path]
                     elif len(new_path) > 0:
                         for index in range(len(pathes[table])):
-                            if len(new_path) < len(pathes[table][index]):
+                            if len(new_path) > len(pathes[table][index]):
                                 continue
                             distinct = False
                             if len(new_path) == len(pathes[table][index]):
@@ -945,9 +943,21 @@ class OriginSchema(TSchema):
             # update weights for link
             for table in pathes:
                 if len(pathes[table]) > 1:
-                    for index in range(len(pathes[table])/2):
-                        link1 = pathes[table][index][0]
-                        link2 = pathes[table][-index-1][0]
-                        _LOGGER.debug('%s.%.5f switch to %s.%.5f' % \
+                    if pathes[table][0][0] == pathes[table][1][0]:
+                        continue
+                    link1 = pathes[table][0][0]
+                    link2 = pathes[table][1][0]
+                    vis = link1.name + link2.name
+                    if vis in visited:
+                        continue
+                    else:
+                        visited.add(vis)
+                    if len(pathes[table][0]) > 1:
+                        if link1.weight <= link2.weight:
+                            link1.weight = link2.weight + 0.0001
+                    else:
+                        if link2.weight <= link1.weight:
+                            link2.weight = link1.weight + 0.0001
+                    _LOGGER.debug('%s.%.5f switch to %s.%.5f' % \
                             (link1, link1.weight, link2, link2.weight))
-                        link1.weight, link2.weight = link2.weight, link1.weight
+                    link1.weight, link2.weight = link2.weight, link1.weight

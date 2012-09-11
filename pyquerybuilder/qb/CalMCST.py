@@ -1,8 +1,10 @@
 """cal minimal cost spanning tree"""
+#from logging import getLogger
 from heapq import heappush, heappop
 from pyquerybuilder.qb.WGraph import RootedWGraph
+#_LOGGER = getLogger("ConstructQuery")
 
-def calmcst(keys, graph, lefts):
+def calmcst(keys, graph):
     """
     Input: keys is the keywords set of a Query
     Output : minimal cost spanning tree, cover keys.
@@ -32,6 +34,7 @@ def calmcst(keys, graph, lefts):
                'ancestor':[None for _ in range(len(keys))], \
                'weight':[0 for _ in range(len(keys))] }\
               for _ in range(length)]
+
     heap_out = []
     iterator = 0
     for idx in range(len(keys)):
@@ -64,9 +67,10 @@ def calmcst(keys, graph, lefts):
 # if result, put it in heap_out, sort as SUM of ['weight']
                 if result_ready:
                 # calculate sum weight
-                    sum_weight = sum(infos[node]['weight'])
-                    if (sum_weight, node) not in heap_out:
-                        heappush(heap_out, (sum_weight, node))
+                    subgraph = traceback(node, infos, keys, graph)
+                    sum_weight = subgraph.sum_weight()
+                    if (sum_weight, subgraph) not in heap_out:
+                        heappush(heap_out, (sum_weight, subgraph))
 #                        print "heap update ", heap_out
                         if end_iterator > iterator:
                             end_iterator = iterator
@@ -100,9 +104,10 @@ def calmcst(keys, graph, lefts):
 # if result, put it in heap_out, sort as SUM of ['weight']
                     if result_ready:
                 # calculate sum weight
-                        sum_weight = sum(infos[adj]['weight'])
-                        if (sum_weight, adj) not in heap_out:
-                            heappush(heap_out, (sum_weight, adj))
+                        subgraph = traceback(adj, infos, keys, graph)
+                        sum_weight = subgraph.sum_weight()
+                        if (sum_weight, subgraph) not in heap_out:
+                            heappush(heap_out, (sum_weight, subgraph))
 #                            print "heap update ", heap_out
                             if end_iterator > iterator:
                                 end_iterator = iterator
@@ -134,30 +139,47 @@ def calmcst(keys, graph, lefts):
                 break
         iterator = iterator + 1
         if len(heap_out) != 0:
-            while True:
-                if len(heap_out) != 0:
-                    root = heappop(heap_out)
-                else:
-                    break
-                if root[1] not in lefts:
-                    return traceback(root, infos, keys)
-#            root = heappop(heap_out)
+            sum_weights, subgraph = heappop(heap_out)
+            return sum_weights, subgraph
 #            if len(heap_out) != 0:
 #                candi = heappop(heap_out)
 #                if root[0] == candi[0]:
 #                    raise Exception('Warnning: weight cofliction')
-            return traceback(root, infos, keys)
+#            return traceback(root, infos, keys)
 
-def traceback(node, infos, keys):
+def get_weight(graph, i, j):
+    """return graph[i][j]"""
+    for edge in graph[i]:
+        if edge[0] == j:
+            return edge[1]
+
+def check_including(li, anc):
+    for l in li:
+        if anc == l[0]:
+            return True
+    return False
+
+def traceback(node, infos, keys, graph):
     """traceback from root form a subtree"""
-    root = node[1]
+    root = node
     subtree = [[] for _ in range(len(infos))]
     for idx in range(len(infos[root]['ancestor'])):
-        while infos[root]['ancestor'][idx] != keys[idx]:
-            subtree[root].append((infos[root]['ancestor'][idx], 0))
-            root = infos[root]['ancestor'][idx]
-        subtree[root].append((keys[idx], 0))
-        root = node[1]
+        anc = infos[root]['ancestor'][idx]
+        while anc != keys[idx]:
+            if not check_including(subtree[root], anc):
+                #print root, anc, get_weight(graph, root, anc)
+                wt = get_weight(graph, root, anc)
+                subtree[root].append((anc, wt))
+                subtree[anc].append((root, wt))
+            root = anc
+            anc = infos[root]['ancestor'][idx]
+        anc = infos[root]['ancestor'][idx]
+        #print keys[idx], anc, get_weight(graph, root, anc)
+        if root != anc:
+            wt = get_weight(graph, root, anc)
+            subtree[root].append((keys[idx], wt))
+            subtree[keys[idx]].append((root, wt))
+        root = node
 #    print subtree
+#    _LOGGER.debug(subtree)
     return RootedWGraph(subtree, root)
-

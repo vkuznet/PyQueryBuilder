@@ -189,4 +189,3 @@ class QueryBuilder():
         query = self.querybuilder.build_query(whereclause, keylist)
         _LOGGER.debug("""build query is: %s""" % str(query))
         return query
-
