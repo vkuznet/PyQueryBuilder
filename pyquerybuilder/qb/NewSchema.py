@@ -947,17 +947,17 @@ class OriginSchema(TSchema):
                         continue
                     link1 = pathes[table][0][0]
                     link2 = pathes[table][1][0]
+                    link3 = pathes[table][1][-1]
                     vis = link1.name + link2.name
                     if vis in visited:
                         continue
                     else:
                         visited.add(vis)
-                    if len(pathes[table][0]) > 1:
-                        if link1.weight <= link2.weight:
-                            link1.weight = link2.weight + 0.0001
-                    else:
-                        if link2.weight <= link1.weight:
-                            link2.weight = link1.weight + 0.0001
+                    if link2.weight <= link1.weight and link1.weight < 1:
+                        link2.weight = link1.weight + (1 - link1.weight)/2
+                    if link3.weight >= link1.weight and link1.weight < 1:
+                        link3.weight = link1.weight - (1 - link1.weight)/2
                     _LOGGER.debug('%s.%.5f switch to %s.%.5f' % \
                             (link1, link1.weight, link2, link2.weight))
                     link1.weight, link2.weight = link2.weight, link1.weight
+                    link2.weight, link3.weight = link3.weight, link2.weight
