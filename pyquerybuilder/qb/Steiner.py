@@ -52,7 +52,6 @@ def steiner(G, K, d, PT):
     n = len(G)
     S = {}
     P = {}
-
     def check(key):
         """initailize S for key"""
         if not S.has_key(key):

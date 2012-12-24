@@ -884,8 +884,9 @@ class OriginSchema(TSchema):
              <------------/
         dataset<----file is a short cut for dataset<--block<--file
         """
-        visited = set([])
+        visited = set([]) # visited short_cut
         # Do DFS for each node if a node is founded
+        short_cuted = []
         for node in self.v_ent:
             pathes = {} # { end_enitity : [[link1], [link2, link3], ] }
             stack = []
@@ -949,10 +950,14 @@ class OriginSchema(TSchema):
                     link2 = pathes[table][1][0]
                     link3 = pathes[table][1][-1]
                     vis = link1.name + link2.name
-                    if vis in visited:
+                    if not (pathes[table][0][-1] != pathes[table][1][-1] \
+                      and pathes[table][0][0] != pathes[table][1][0]):
                         continue
-                    else:
-                        visited.add(vis)
+                    short_cuted.append((pathes[table][0],pathes[table][1]))
+                    #if vis in visited:
+                    #    continue
+                    #else:
+                    #    visited.add(vis)
                     if link2.weight <= link1.weight and link1.weight < 1:
                         link2.weight = link1.weight + (1 - link1.weight)/2
                     if link3.weight >= link1.weight and link1.weight < 1:
@@ -961,3 +966,135 @@ class OriginSchema(TSchema):
                             (link1, link1.weight, link2, link2.weight))
                     link1.weight, link2.weight = link2.weight, link1.weight
                     link2.weight, link3.weight = link3.weight, link2.weight
+        sc_nodeset = []
+        for idx in range(len(short_cuted)):
+            sc_nodeset.append(set([]))
+            for lk in short_cuted[idx][1]:
+                sc_nodeset[idx].add(lk.ltable)
+                sc_nodeset[idx].add(lk.rtable)
+        #print "sc_nodeset", sc_nodeset
+        # get all basic cycles on undirected graph
+        # for a cycle, calculate node with outdegree == 0 on directed graph
+        # then for a cycle with two such nodes,
+            # if there is shortcut including,
+            # reorganize the link.weight to make sure:
+                # 1. path weight to dataset is higher than path weight to files
+                # 2. make sure the whole path is selected when all node on this cycle is selected
+        relations = self.get_graph_from_schema()
+        graph = Graph(relations)
+        ugraph = graph.get_undirected()
+        cycles = self.get_cycle_basis(ugraph._graph)
+        if len(cycles) == 0:
+            return False
+        nodes = None
+        order = self.ordered
+        for cycle in cycles:
+            # contains outdegree = 0, directed graph
+            # contains shortcut 's'
+                # get the pathes to outmod and start file, 1
+                # get the pathes to outmod and end dataset, 2
+                    # sum(1) < sum(2)
+                    # sum(1+2) > sum('s') for BFS, min(1,2) > max('s')
+            nodes = set([self.ordered[nd].name for nd in cycle])
+            is_shortcut = True
+            for sc in sc_nodeset:
+                if nodes.difference(sc) == set([]):
+                    is_shortcut = False
+            if not is_shortcut:
+                continue
+            #print "cycle is", nodes
+            tables = set([self.ordered[nd] for nd in cycle])
+            degree0 = {}
+            for node in cycle:
+                tnode = self.nodelist[self.ordered[node].name]
+                queue = []
+                linkpaths = []
+                if self.get_indegree(tnode, tables) == 0:
+                    #print tnode
+                    for link in tnode.outlinks:
+                        linkpath = []
+                        #print link,self.links[link].ltable,self.links[link].rtable
+                        if self.links[link].rtable in nodes:
+                            queue.insert(0, self.nodelist[self.links[link].rtable])
+                            linkpath.append(self.links[link])
+                            while len(queue) > 0:
+                                node = queue.pop()
+                                for link in node.outlinks:
+                                    if self.links[link].rtable in nodes:
+                                        queue.insert(0, self.nodelist[self.links[link].rtable])
+                                        linkpath.append(self.links[link])
+                        if linkpath != []:
+                            linkpaths.append(linkpath)
+                if linkpaths != []:
+                    degree0[tnode]= linkpaths
+            if len(degree0) == 2:
+                source1, source2 = degree0.keys()
+                s1l1 = degree0[source1][0]
+                s1l2 = degree0[source1][1]
+                s2l1 = degree0[source2][0]
+                s2l2 = degree0[source2][1]
+                pathc = None
+                pathp = None
+                pathcc = None
+                pathpc = None
+                if len(s1l1) + len(s1l2) > len(s2l1) + len(s2l2):
+                    if s1l1[-1].rtable == s2l1[-1].rtable:
+                        if len(s1l1) > len(s2l1):
+                            pathc = s1l1
+                            pathp = s2l1
+                            pathcc, pathpc = s1l2, s2l2
+                        else:
+                            pathcc, pathpc = s1l1, s2l1
+                            pathc = s1l2
+                            pathp = s2l2
+                    else: #s1l1[-1].rtable == s2l2[-1].rtable:
+                        if len(s1l1) > len(s2l2):
+                            pathc = s1l1
+                            pathp = s2l2
+                            pathcc, pathpc = s1l2, s2l1
+                        else:
+                            pathcc, pathpc = s1l1, s2l2
+                            pathc = s1l2
+                            pathp = s2l1
+                else:
+                    if s2l1[-1].rtable == s1l1[-1].rtable:
+                        if len(s2l1) > len(s1l1):
+                            pathc = s2l1
+                            pathp = s1l1
+                            pathcc, pathpc = s2l2, s1l2
+                        else:
+                            pathcc, pathpc = s2l1, s1l1
+                            pathc = s2l2
+                            pathp = s1l2
+                    else: #s2l1[-1].rtable == s1l2[-1].rtable:
+                        if len(s2l1) > len(s1l2):
+                            pathc = s2l1
+                            pathp = s1l2
+                            pathcc, pathpc = s2l1, s1l2
+                        else:
+                            pathcc, pathpc = s2l1, s1l2
+                            pathc = s2l2
+                            pathp = s1l1
+                # find path to hierarchical parent node
+                # find path to hierarchical child node
+                # find path to hierarchical parent to child link, get weight
+                base = pathc[-1].weight
+                # get the pathes to outmod and start file, 1
+                # get the pathes to outmod and end dataset, 2
+                    # sum(1) < sum(2)
+                    # sum(1+2) > sum('s') for BFS, min(1,2) > max('s')
+                pathc[0].weight = base + (1 - base)/4
+                pathp[0].weight = base + (1 - base)/3
+                pathcc[0].weight = base + (1 - base)/4
+                pathpc[0].weight = base + (1 - base)/3
+
+    def get_indegree(self, table, tableset):
+        """
+        check_indegree of a table base on the tableset
+        """
+        indegree = 0
+        for fkey in self.links.values():
+            if cmp(self.nodelist[fkey.rtable], table) == 0:# link to table
+                if self.nodelist[fkey.ltable] in tableset:# point to ent
+                    indegree = indegree + 1
+        return indegree

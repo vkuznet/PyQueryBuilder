@@ -358,7 +358,7 @@ class WGraph(object):
         for i in range(n):
             for j, w in self._graph[i]:
                 d[i][j] = w
-                PT[i][j] = set([(i,j)])
+                PT[i][j] = set([(i, j)])
         for k in range(n):
             for i in range(n):
                 for j in range(n):
@@ -448,3 +448,130 @@ def check_PT(PT, i, j, k):
     if i == j:
         return
     PT[i][j] = PT[i][k].union(PT[k][j])
+
+class UWGraph(object):
+    """This represents a undirected weighted graph"""
+    def __init__(self, graph, root):
+        """
+        initialization
+        graph is a weighted undirected tree.
+        """
+        self._graph = tuple([tuple([tuple(idy) for idy in idx]) \
+                                               for idx in graph])
+        self.root_index = root
+        self._coverage = self.get_coverage()
+        self.leafs = self.gen_leafs()
+
+    def gen_leafs(self):
+        """get all leafs of this graph"""
+        leafs = set([])
+        for node in range(len(self._graph)):
+            if len(self._graph[node]) == 1:
+                leafs.add(node)
+        return leafs
+
+    def subtree_including(self, node_set):
+        """
+        return subtree contains all nodes in node_set
+        the nodes in node_set might not connected
+        try to set root as Root of this graph
+        """
+        if not node_set.issubset(self._coverage):
+            return None
+        leafs = list(self.leafs)
+        subtree = [[] for x in self._graph]
+        visited = [False for x in self._graph]
+        length = [len(x) for x in self._graph]
+        ##print "leafs is ", leafs
+        while len(leafs) != 0:
+            leaf = leafs.pop()
+            if leaf not in node_set:
+                visited[leaf] = True
+                length[leaf] = 0
+                adjs = self._graph[leaf]
+                for adj, _ in adjs:
+                    if length[adj] == 2:
+                        leafs.insert(0,adj)
+                        length[adj] = 1
+            #leaf not in node_set
+                # leaf visited = true, adj = leaf
+                # adj might not cutable
+            #leaf in node_set
+        ##print "visited is", visited, "root is", self.root_index
+        ##print "rooted", self.breadth_first_search(self._graph, self.root_index)
+        subtree = [[] for x in self._graph]
+        for idx in range(len(self._graph)):
+            if not visited[idx]:
+                for adj, wt in self._graph[idx]:
+                    if not visited[adj]:
+                        subtree[idx].append((adj, wt))
+        if self.root_index not in node_set:
+            root = node_set.pop()
+            for idx in range(len(subtree)):
+                if len(subtree[idx]) > len(subtree[root]):
+                    root = idx
+        else:
+            root = self.root_index
+        sub_span = self.breadth_first_search(subtree, root)
+        return sub_span
+
+    def subtree_includings(self, node_set):
+        """
+        return subtree contains all nodes in node_set
+        the nodes in node_set is connected
+        try to set root as Root of this graph
+        """
+        if not node_set.issubset(self._coverage):
+            return None
+        subtree = [[] for x in self._graph]
+        ##print "node_set is ", node_set
+        ##print "mst is ", self._graph
+        for idx in range(len(self._graph)):
+            if idx in node_set:
+                for adj, wt in self._graph[idx]:
+                    if adj in node_set:
+                        subtree[idx].append((adj, wt))
+        ##print "cutted", subtree
+        if self.root_index not in node_set:
+            root = node_set.pop()
+        else:
+            root = self.root_index
+        sub_span = self.breadth_first_search(subtree, root)
+        return sub_span
+
+    def get_coverage(self):
+        """Coverage returns the set of nodes in the graph.
+        We say a node is in the graph if it is on an edge."""
+        self._coverage = set()
+        for node_index in range(0, len(self._graph)):
+            if self._graph[node_index] != []:
+                self._coverage.add(node_index)
+        return self._coverage
+
+    def breadth_first_search(self, subtree, node_index):
+        """
+        Find a breadth first spanning tree of the graph. The return value
+        is another graph.
+        """
+        unexplored = [node_index]
+        #visited    = [False for x in self._graph]
+        visited = [False] * len(subtree)
+        span       = [[]    for x in subtree]
+        #span = [[]] * self.__len__()
+
+        starting_node_index = node_index
+        while unexplored:
+            node_index = unexplored[0]
+            if node_index >= len(visited) or node_index < 0:
+                _LOGGER.debug("graph %s node_index %d start %d" %
+                 (repr(subtree), node_index, starting_node_index))
+            visited[node_index] = True
+
+            for adjacent in subtree[node_index]:
+                if not visited[adjacent[0]]:
+                    unexplored.append(adjacent[0])
+                    visited[adjacent[0]] = True
+                    span[node_index].append(adjacent)
+
+            del unexplored[0]
+        return RootedWGraph(span, starting_node_index)

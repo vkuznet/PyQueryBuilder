@@ -119,12 +119,12 @@ class SchemaHandler(object):
             _LOGGER.debug('left_joins is %s' % str(self.left_joins))
         simschemas = self._schema.gen_simschema()
 
+        if dbmanager != None and db_alias != None:
+            self._schema.recognize_shortcut()
+
         _LOGGER.debug("%d simschemas are generated" % len(simschemas))
         for simschema in simschemas:
             simschema.update_nodelist()
-
-        if dbmanager != None and db_alias != None:
-            self._schema.recognize_shortcut()
 
         self._simschemas = simschemas
 

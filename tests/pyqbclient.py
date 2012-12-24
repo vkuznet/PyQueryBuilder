@@ -64,8 +64,9 @@ def close(alias):
 def find(arg, alias):
     """Execute QL expressions"""
     query = arg.split(';')[0].strip()
+    print query
     st = time.clock()
-    for _ in range(20000):
+    for _ in range(1):
         mquery = QB.build_query(query)
     print "total build time %f" % (time.clock() - st)
     if mquery == None:

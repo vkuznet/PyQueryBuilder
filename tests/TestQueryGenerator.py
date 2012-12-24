@@ -80,6 +80,10 @@ def main():
     doublec = gen_double_constraints(edict, double, mapper, samples)
     writedown(doublec, 'doublec.txt')
 
+    multiple = gen_multiple(edict, 3)
+    writedown(multiple, 'multiple.txt')
+    multiple = gen_multiple(edict, 4)
+    writedown(multiple, 'multiple4.txt')
 #    simschemas = originschema.gen_simschema()
 #    for simschema in simschemas:
 #        simschema.update_nodelist()
@@ -147,6 +151,44 @@ def gen_double(edict):
         query = query.rstrip(', ')
         double.append((query, pair))
     return double
+
+def gen_multiple(edict, num):
+    """gen list with num elements"""
+    multiple = []
+    sets = []
+    entlist = edict.keys()
+    lens = len(entlist)
+    for idx in range(lens):
+        items = range(idx, lens)
+        if len(items) > num:
+            for st in comb(items, num):
+                sts = [ entlist[ids] for ids in st ]
+                sets.append(sts)
+    print sets
+    for st in sets:
+        query = "find "
+        templist = []
+        for s in st:
+            templist.extend(edict[s])
+        for attr in templist:
+            query += attr + ', '
+        query = query.rstrip(', ')
+        #print ((query,st))
+        multiple.append(query)
+    return multiple
+
+def comb(items, n=None):
+    """return combination of items"""
+    if n is None:
+        n = len(items)
+    for i in range(len(items)):
+        v = items[i:i+1]
+        if n == 1:
+            yield v
+        else:
+            rest = items[i+1:]
+            for c in comb(rest, n-1):
+                yield v + c
 
 def get_sample_walias(mapper, alias, dbmanager, dbalias):
     """get sample after alias mapping"""
@@ -224,6 +266,24 @@ def gen_single_constraints(edict, single, mapper, samples):
     return constraints
 
 def gen_double_constraints(edict, double, mapper, samples):
+    """gen double constraints"""
+    constraints = []
+    sample_data = "NULL"
+    for query, pair in double:
+        attrs =  copy(edict[pair[0]])
+        attrs.extend(edict[pair[1]])
+        for attr in attrs:
+            col = mapper.get_column(attr)
+            table, col = col.split('.')
+            if samples.has_key(col):
+                sample_data = samples[col]
+            if sample_data != "NULL":
+                constraints.append(query + ' where ' + attr + ' = ' + str(sample_data))
+    p.pprint(constraints)
+#    print len(constraints)
+    return constraints
+
+def gen_multiple_constraints(edict, double, mapper, samples):
     """gen double constraints"""
     constraints = []
     sample_data = "NULL"
