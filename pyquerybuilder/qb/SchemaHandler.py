@@ -463,16 +463,17 @@ class SchemaHandler(object):
                                 current = link.rtable
                             current = link.ltable
                             continue
-                        if current == table.name:
-                            if table.name != link.ltable:
-                                root_join = \
-                                    self.join_link(root_join, \
-                                            link, False, compkey, tname, left)
-                                current = link.ltable
-                            else:
-                                root_join = self.join_link(root_join, \
-                                            link, True, compkey, tname, left)
-                                current = link.rtable
+                        if current != link.ltable:
+                            root_join = self.join_link(root_join, \
+                                    link, False, compkey, tname, left)
+                            current = link.ltable
+                            if left: left = False
+                            joined_tables.add(link.ltable)
+                            joined_tables.add(link.rtable)
+                        else:
+                            root_join = self.join_link(root_join, \
+                                    link, True, compkey, tname, left)
+                            current = link.rtable
                             if left: left = False
                             joined_tables.add(link.ltable)
                             joined_tables.add(link.rtable)

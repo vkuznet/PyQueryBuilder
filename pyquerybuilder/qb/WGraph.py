@@ -101,7 +101,7 @@ class WGraph(object):
             if node_index >= len(visited) or node_index < 0:
                 _LOGGER.debug("graph %s node_index %d start %d" %
                  (repr(self._graph), node_index, starting_node_index))
-            visited[node_index] = True
+                visited[node_index] = True
 
             for adjacent in self._graph[node_index]:
                 if not visited[adjacent[0]]:

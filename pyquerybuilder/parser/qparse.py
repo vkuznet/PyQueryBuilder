@@ -114,12 +114,12 @@ def p_constraint(pattern):
         pattern[0] = {}
         pattern[0]['keyword'] = pattern[1]
         pattern[0]['sign'] = pattern[2]
-        pattern[0]['value'] = pattern[3]
+        pattern[0]['value'] = pattern[3].strip('"').strip("'")
     elif len(pattern) == 5 and pattern[2] == 'NOT' :
         pattern[0] = {}
         pattern[0]['keyword'] = pattern[1]
         pattern[0]['sign'] = pattern[2:4]
-        pattern[0]['value'] = pattern[4]
+        pattern[0]['value'] = pattern[4].strip('"').strip('"')
 
 
 #### Catastrophic error handler

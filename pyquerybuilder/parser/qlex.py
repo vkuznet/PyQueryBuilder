@@ -50,7 +50,7 @@ def t_DATE(tok):
 
 def t_ID(tok):
 #    r'[a-zA-Z_][a-zA-Z_0-9]*'
-    r'[^\s><=!,()\"]+'
+    r'[^\s><=!,()\"]+|\"[^!,()]+\"|\'[^!,()]+\''
     tok.type = reserved.get(tok.value, 'ID')
     return tok
 
